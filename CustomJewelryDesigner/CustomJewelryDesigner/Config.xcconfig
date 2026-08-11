@@ -1,0 +1,12 @@
+//
+//  Config.xcconfig
+//  CustomJewelryDesigner
+//
+//  Created by Averina on 11/08/26.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
+
+SUPABASE_URL = https://pnwownwezwjopkpwevci.supabase.co
+SUPABASE_ANON_KEY = sb_publishable_QmlSAK-ODfxfROd2rTG2Xw_bsGf5lhX

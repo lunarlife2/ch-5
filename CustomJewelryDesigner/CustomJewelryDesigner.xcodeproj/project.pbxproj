@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1FFAE433302B3C65009BA99C /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1FFAE432302B3C65009BA99C /* Config.xcconfig */; };
 		A08115DB3029A2770013287D /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = A08115DA3029A2770013287D /* Functions */; };
 		A08115DD3029A2770013287D /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = A08115DC3029A2770013287D /* PostgREST */; };
 		A08115DF3029A2770013287D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = A08115DE3029A2770013287D /* Realtime */; };
@@ -17,7 +16,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1FFAE432302B3C65009BA99C /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		A08115B130299C5D0013287D /* CustomJewelryDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CustomJewelryDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -65,7 +63,6 @@
 				A08115B330299C5D0013287D /* CustomJewelryDesigner */,
 				A08115EA3029AF210013287D /* Frameworks */,
 				A08115B230299C5D0013287D /* Products */,
-				1FFAE432302B3C65009BA99C /* Config.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -157,7 +154,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1FFAE433302B3C65009BA99C /* Config.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,7 +172,6 @@
 /* Begin XCBuildConfiguration section */
 		A08115BC30299C5D0013287D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -240,7 +235,6 @@
 		};
 		A08115BD30299C5D0013287D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -297,7 +291,6 @@
 		};
 		A08115BF30299C5D0013287D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -334,7 +327,6 @@
 		};
 		A08115C030299C5D0013287D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
