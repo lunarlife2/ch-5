@@ -16,7 +16,10 @@ struct DetailView: View {
 	@State private var size: Double = 13.5
 	@State private var showPopUp: Bool = false
 	@State private var ringSizesGuide = ringSizes
-	let columnsCount = 4
+	let columns = Array(
+			repeating: GridItem(.flexible(minimum: 32, maximum: 100), spacing: 32),
+			count: 4
+		)
 
 	var body: some View {
 		ZStack {
@@ -104,21 +107,22 @@ struct DetailView: View {
 					Text("Ring Size Guide")
 						.font(.title)
 						.padding()
-
-					ForEach(ringSizesGuide) { ringSize in
-
+					LazyVGrid(columns: columns, spacing: 32){
+						ForEach(ringSizesGuide) { ringSize in
+							
 							Text(ringSize.size)
 								.padding()
 								.background(Color.blue.opacity(0.2))
 								.cornerRadius(8)
-
+								.fixedSize(horizontal: true, vertical: false)
+						}
 					}
-
+					.fixedSize(horizontal: true, vertical: false)
+					.padding()
 				}
 				.background(
 					RoundedRectangle(cornerRadius: 10).foregroundColor(.white)
 				)
-
 			}
 
 		}
