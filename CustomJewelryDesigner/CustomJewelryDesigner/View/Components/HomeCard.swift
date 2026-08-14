@@ -22,7 +22,7 @@ struct HomeCard: View {
 				.cornerRadius(10)
 				.shadow(radius: 5)
 			Text(title)
-				.font(.title)
+				.font(.title2)
 			Text("Last Modified at \(updatedAt.formatted(.dateTime.day(.twoDigits).month(.twoDigits).year(.extended())))")
 		}
 		.frame(width: 160)
@@ -31,5 +31,5 @@ struct HomeCard: View {
 }
 
 #Preview {
-	HomeCard(preview: Image(.detail34), title: "test", updatedAt: .now)
+	HomeCard(preview: Image(.detail34), title: "test my collection", updatedAt: .now)
 }

@@ -35,8 +35,34 @@ struct DesignFileStore {
 	}
 	
 	//tambah file ke folder
+	func addFileToFolder(file: DesignFile, folder: DesignFolder) {
+		file.folder = folder
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to add file to folder: \(error)")
+		}
+	}
+	
+	//move to another folder
+	func moveFileToAnotherFolder(file: DesignFile, folder: DesignFolder) {
+		file.folder = folder
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to move file to folder: \(error)")
+		}
+	}
 	
 	//keluarin file dari folder
+	func removeFileFromFolder(file: DesignFile, folder: DesignFolder) {
+		file.folder = nil
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to remove file from folder: \(error)")
+		}
+	}
 	
 	//delete folder
 	func deleteDesignFolder(_ file: DesignFolder) {
@@ -44,7 +70,7 @@ struct DesignFileStore {
 		do {
 			try modelContext.save()
 		} catch {
-			print("Failed to delete design folder: \(error)")
+			print("Failed to delete folder: \(error)")
 		}
 	}
 
