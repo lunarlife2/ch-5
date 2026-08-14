@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct CustomJewelryDesignerApp: App {
+	@State private var vm = ViewModel()
+	
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             DesignFile.self,
@@ -29,6 +31,7 @@ struct CustomJewelryDesignerApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+				.environment(vm)
         }
         .modelContainer(sharedModelContainer)
     }
