@@ -5,25 +5,133 @@
 //  Created by Averina on 12/08/26.
 //
 
+import SwiftData
 // DesignFileStore.swift
 import SwiftUI
-import SwiftData
 
 struct DesignFileStore {
 	let modelContext: ModelContext
 
+	//buat folder kosong
+	func createDesignFolder(name: String) {
+		let newFolder = DesignFolder(id: UUID(), name: name)
+		modelContext.insert(newFolder)
+		do {
+			try modelContext.save()
+			print("berhasil buat folder \(newFolder.name)")
+		} catch {
+			print("Failed to save folder: \(error)")
+		}
+	}
+	
+	//edit nama folder
+	func renameDesignFolder(design: DesignFolder, to newName: String) {
+		design.name = newName
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to update design folder name: \(error)")
+		}
+	}
+	
+	//tambah file ke folder
+	
+	//keluarin file dari folder
+	
+	//delete folder
+	func deleteDesignFolder(_ file: DesignFolder) {
+		modelContext.delete(file)
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to delete design folder: \(error)")
+		}
+	}
+
+	//buat file
 	func createDesignFile(name: String) {
-		let newFile = DesignFile(id: UUID(), name: name, createdAt: .now, updatedAt: .now, designs: [])
+		let newFile = DesignFile(
+			id: UUID(),
+			name: name,
+			updatedAt: .now,
+			ringPosition: .left,
+			design: nil
+		)
 		modelContext.insert(newFile)
-		try? modelContext.save()
-		print("berhasil save \(newFile.name)")
+		do {
+			try modelContext.save()
+			print("berhasil buat file design \(newFile.name)")
+		} catch {
+			print("Failed to save file: \(error)")
+		}
 	}
 
-	func addDesign(to file: DesignFile, name: String, materialPreset: String, bandComponent: BandComponent) {
-		let design = Design(id: UUID(), name: name, materialPreset: materialPreset, createdAt: .now, updatedAt: .now, band: bandComponent, gems: [])
-		file.designs.append(design)
-		try? modelContext.save()
+	//save design ke file
+	func addDesign(
+		to file: DesignFile,
+		name: String,
+		materialPreset: String,
+		bandComponent: BandComponent
+	) {
+		let design = Design(
+			materialPreset: materialPreset,
+			band: bandComponent,
+			gems: []
+		)
+		file.design = design
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to save design file: \(error)")
+		}
 	}
 
-	// fetch, update, delete functions go here too
+	//open a design file & load the design
+
+	//save updated design
+	func saveUpdatedDesign(
+		to file: DesignFile,
+		to position: DesignFile.RingPosition,
+		design: Design
+	) {
+		file.updatedAt = .now
+		file.ringPosition = position
+		file.design = design
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to update design file: \(error)")
+		}
+	}
+	
+	//rename design file
+	func renameDesignFile(design: DesignFile, to newName: String) {
+		design.name = newName
+		design.updatedAt = .now
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to update design file name: \(error)")
+		}
+	}
+	
+	//delete design file
+	func deleteDesignFile(_ file: DesignFile) {
+		modelContext.delete(file)
+		do {
+			try modelContext.save()
+		} catch {
+			print("Failed to delete design file: \(error)")
+		}
+	}
+
+//	func swapGem(in design: Design, oldGem: GemComponent, newGem: GemComponent) {
+//		if let index = design.gems.firstIndex(where: { $0.id == oldGem.id }) {
+//			design.gems.remove(at: index)
+//			modelContext.delete(oldGem)       // remove old row from DB
+//			design.gems.append(newGem)        // add new one
+//		}
+//		design.updatedAt = .now
+//		try? modelContext.save()
+//	}
 }
