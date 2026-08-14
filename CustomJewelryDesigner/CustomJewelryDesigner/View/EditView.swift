@@ -8,11 +8,59 @@
 import SwiftUI
 
 struct EditView: View {
-	var body: some View {
-		Text("EditView")
-	}
+    @State private var panelWidth: CGFloat = 508
+    @State private var dragStartWidth: CGFloat = 508
+
+    private let expandedWidth: CGFloat = 508
+    private let collapsedWidth: CGFloat = 20
+    private let collapseDistanceThreshold: CGFloat = 90
+    private let screenMargin: CGFloat = 20
+    
+    private var expandProgress: CGFloat {
+        let range = expandedWidth - collapsedWidth
+        guard range > 0 else { return 0 }
+        return (panelWidth - collapsedWidth) / range
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            JewelryEditorView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            SelectBandGemView(panelWidth: panelWidth, expandedWidth: expandedWidth, collapsedWidth: collapsedWidth
+            )
+            .frame(width: panelWidth, height: 558)
+            .padding(.trailing, screenMargin * expandProgress)
+            .overlay(alignment: .bottomLeading) {
+                ResizeHandle()
+                    .padding(.leading, 10)
+                    .padding(.bottom, 10)
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let newWidth = dragStartWidth - value.translation.width
+                                panelWidth = min(
+                                    expandedWidth,
+                                    max(collapsedWidth, newWidth)
+                                )
+                            }
+                            .onEnded { value in
+                                withAnimation(.smooth) {
+                                    if value.translation.width > collapseDistanceThreshold {
+                                        panelWidth = collapsedWidth
+                                    } else {
+                                        panelWidth = expandedWidth
+                                    }
+                                    dragStartWidth = panelWidth
+                                }
+                            }
+                    )
+            }
+        }
+    }
 }
 
+
 #Preview {
-	EditView()
+    EditView()
 }

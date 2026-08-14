@@ -25,7 +25,7 @@ struct CustomJewelryDesignerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            EditView()
         }
         //.modelContainer(sharedModelContainer)
     }

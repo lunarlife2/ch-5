@@ -8,15 +8,17 @@
 import Foundation
 
 struct Band: Codable {
-  var id: UUID
-  var assetId: Asset3D
-  var description: String
-  var bandTypeID: BandType
-	
-	enum CodingKeys: String, CodingKey {
-		case id = "band_id"
-		case assetId = "asset_id"
-		case description = "description"
-		case bandTypeID = "band_type_id"
-	}
+    var id: UUID
+    var assetId: Asset3D
+    var description: String
+    var bandStyleID: BandStyle
+    var material: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id = "band_id"
+        case assetId = "asset_id"
+        case description = "description"
+        case material = "material"
+        case bandStyleID = "band_style_id"
+    }
 }
