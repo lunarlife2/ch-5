@@ -26,7 +26,13 @@ final class DesignFile {
 	var name: String
 	var createdAt: Date
 	var updatedAt: Date
-	var ringPosition: RingPosition
+	var ringPositionRaw: RingPosition?
+	
+	// what the rest of your app uses — behaves exactly like before
+		var ringPosition: RingPosition {
+			get { ringPositionRaw ?? .left }
+			set { ringPositionRaw = newValue }
+		}
 
 	enum RingPosition: String, Codable, CaseIterable {
 		case left, right

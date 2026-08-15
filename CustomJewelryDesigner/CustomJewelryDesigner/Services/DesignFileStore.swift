@@ -13,7 +13,8 @@ struct DesignFileStore {
 	let modelContext: ModelContext
 
 	//buat folder kosong
-	func createDesignFolder(name: String) {
+	@discardableResult
+	func createDesignFolder(name: String) -> DesignFolder {
 		let newFolder = DesignFolder(id: UUID(), name: name)
 		modelContext.insert(newFolder)
 		do {
@@ -22,6 +23,7 @@ struct DesignFileStore {
 		} catch {
 			print("Failed to save folder: \(error)")
 		}
+		return newFolder
 	}
 	
 	//edit nama folder
