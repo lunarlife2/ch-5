@@ -8,18 +8,22 @@
 import SwiftUI
 
 struct SelectBandGemView: View {
+    @State private var selectedType = 0
+    @Bindable var bandGemViewModel: BandGemViewModel
+    
     let panelWidth: CGFloat
     let expandedWidth: CGFloat
     let collapsedWidth: CGFloat
-    @State private var selectedType = 0
     
+    private var collapseOffset: CGFloat {
+        expandedWidth - panelWidth
+    }
     var body: some View {
-        
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: .topLeading) {
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.shadowTertiary)
                 .frame(width: expandedWidth)
-            
+
             VStack(alignment: .leading, spacing: 0) {
                 Picker("", selection: $selectedType) {
                     Text("Band").tag(0)
@@ -27,25 +31,40 @@ struct SelectBandGemView: View {
                     Text("Size").tag(2)
                 }
                 .pickerStyle(.segmented)
-                .padding()
-                
-                if selectedType == 0 {
-                    BandView()
-                } else if selectedType == 1 {
-                    GemView()
-                } else {
-                    SizeView()
+                .padding(20)
+                .padding(.top, 10)
+
+                Group {
+                    if selectedType == 0 {
+                        BandView()
+                    } else if selectedType == 1 {
+                        GemView()
+                    } else {
+                        SizeView(bandGemViewModel: bandGemViewModel)
+                    }
                 }
-
+                .frame(
+                    maxWidth: .infinity,
+                    alignment: .topLeading
+                )
             }
-            .frame(width: expandedWidth - collapsedWidth, alignment: .leading)
-
+            .frame(
+                width: expandedWidth,
+                alignment: .topLeading
+            )
+            .offset(x: collapseOffset)
         }
-        .frame(width: panelWidth, alignment: .leading)
+        .frame(
+            width: panelWidth,
+            alignment: .topLeading
+        )
         .clipped()
     }
-    
 }
+
+
 //#Preview {
-//    SelectBandGemView(p)
+//    @Previewable @State var viewModel = BandGemViewModel()
+//    
+//    SelectBandGemView(panelWidth: 508, expandedWidth: 508, collapsedWidth: 40, viewModel: viewModel)
 //}

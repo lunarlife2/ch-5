@@ -12,7 +12,8 @@ extension Entity {
     func gestureTarget() -> Entity? {
         var current: Entity? = self
         while let entity = current {
-            if entity.components[GestureComponent.self] != nil {
+            if let gc = entity.components[GestureComponent.self],
+               gc.canScale || gc.canRotate || gc.canDrag {
                 return entity
             }
             current = entity.parent

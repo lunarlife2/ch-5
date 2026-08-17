@@ -4,18 +4,22 @@
 //
 //  Created by Averina on 10/08/26.
 //
+
 import Foundation
 import SwiftUI
 import RealityKit
+import SwiftData
+import simd
+
 
 enum JewelryEditorMode: String, CaseIterable, Identifiable {
     case band
     case handMannequin
-    
+
     var id: String {
         rawValue
     }
-    
+
     var title: String {
         switch self {
         case .band:
@@ -24,7 +28,7 @@ enum JewelryEditorMode: String, CaseIterable, Identifiable {
             return "Hand View"
         }
     }
-    
+
     var image: String {
         switch self {
         case .band:
@@ -33,7 +37,7 @@ enum JewelryEditorMode: String, CaseIterable, Identifiable {
             return "hand.raised"
         }
     }
-    
+
     var isSystemImage: Bool {
         switch self {
         case .band:
@@ -46,201 +50,200 @@ enum JewelryEditorMode: String, CaseIterable, Identifiable {
 
 @Observable
 final class EditViewModel {
-    private(set) var _mode: JewelryEditorMode = .band
-    
-    var mode: JewelryEditorMode {
-        get {
-            _mode
-        }
-        set {
-            _mode = newValue
-            updateVisibility()
-        }
+
+    let scene = JewelrySceneController()
+    private let persistence = DesignPersistenceService()
+    private(set) var designFile: DesignFile
+    private var modelContext: ModelContext?
+
+    var mode: JewelryEditorMode = .band {
+        didSet { scene.updateVisibility(for: mode) }
     }
-    
-    let rootEntity = Entity()
-    
-    let bandPivot = Entity()
-    let bandAnchor = Entity()
-    
-    let gemAnchor = Entity()
-    
-    let mannequinAnchor = Entity()
-    let mannequinPivot = Entity()
-    
-    let camera = Entity()
-    
-    var band: Entity {
-        bandAnchor
+
+    private(set) var hasUnsavedChanges = false
+    private(set) var selectedGemName: String?
+    private(set) var pendingDeleteGemName: String?
+    var liveDragGlobalPoint: CGPoint?
+    private(set) var editorFrameInGlobal: CGRect = .zero
+    private(set) var trashFrameInGlobal: CGRect = .zero
+    private var pendingBandAssetPath: String = "Flat_Band_Ring"
+    private var pendingBandName: String = "plain band usd"
+
+    private let snapScreenRadius: CGFloat = 50
+    private let tapAlignRadius: Float = 0.0025
+
+    var design: Design? {
+        designFile.design
     }
-    var selectedGem: Entity {
-        gemAnchor
+
+    init(designFile: DesignFile) {
+        self.designFile = designFile
     }
-    var mannequin: Entity {
-        mannequinAnchor
+
+    func setDesignFile(_ file: DesignFile) {
+        self.designFile = file
     }
-    var rotationY: Float = 0
-    var rotationX: Float = 0
-    var isDraggingGem = false
-    var scale: Float = 1
-    
-    private var isSetup = false
-    
-    private var realityContent: RealityViewCameraContent?
-    
+    func setModelContext(_ context: ModelContext) {
+        modelContext = context
+    }
     func setRealityContent(_ content: RealityViewCameraContent) {
-        realityContent = content
+        scene.setRealityContent(content)
     }
-    
-    func entityAtScreenLocation(_ location: CGPoint) -> Entity? {
-        guard let realityContent else {
-            return nil
-        }
 
-        let hitEntity = realityContent.entity( at: location, in: .local)
+    func setEditorFrame(_ frame: CGRect) {
+        editorFrameInGlobal = frame
+        scene.setEditorFrame(frame)
+    }
+    func isInsideEditor(_ globalPoint: CGPoint) -> Bool {
+        editorFrameInGlobal.contains(globalPoint)
+    }
+    func setTrashFrame(_ frame: CGRect) {
+        trashFrameInGlobal = frame
+    }
+    func isOverTrash(_ globalPoint: CGPoint) -> Bool {
+        trashFrameInGlobal.contains(globalPoint)
+    }
+    func markDirty() {
+        hasUnsavedChanges = true
+    }
+    func clearDirty() {
+        hasUnsavedChanges = false
+    }
+    func selectGem(_ gem: Entity) {
+        selectedGemName = gem.name
+    }
+    func clearSelection() {
+        selectedGemName = nil
+    }
+    func requestDelete(for gem: Entity) {
+        selectedGemName = gem.name
+        pendingDeleteGemName = gem.name
+    }
+    func cancelPendingDelete() {
+        pendingDeleteGemName = nil
+    }
+    func confirmPendingDelete() {
+        guard let name = pendingDeleteGemName else { return }
+        selectedGemName = name
+        delete()
+        pendingDeleteGemName = nil
+    }
 
-        guard let hitEntity else {
-            return nil
-        }
+    func loadScene() async {
+        await scene.setup(mode: mode, savedGems: design?.gems ?? [], savedBand: design?.band)
+    }
 
-        return hitEntity.gestureTarget()
-    }
-    
-    
-    func setup() async {
-        guard !isSetup else {
-            return
-        }
-        isSetup = true
-        
-        await loadBand()
-        await loadMannequin()
-        
-        //band
-        bandPivot.addChild(bandAnchor)
-        rootEntity.addChild(bandPivot)
-        
-        //mannequin
-        mannequinPivot.addChild(mannequinAnchor)
-        rootEntity.addChild(mannequinPivot)
-        
-        //gem
-        rootEntity.addChild(gemAnchor)
-        
-        updateVisibility()
-    }
-    
-    func save() {
-        //save edit
-    }
-    
-    func delete(){
-        //delete edit
-    }
-    
-    private func updateVisibility() {
-        bandPivot.isEnabled = mode == .band
-        mannequinPivot.isEnabled = mode == .handMannequin
-    }
-    
-    private func loadBand() async {
-        do {
-            //load
-            let plainBand = try await Entity(named: "Flat_Band_Ring")
-            //size
-            let plainBandSize = plainBand.visualBounds(relativeTo: nil).extents
-            let targetBandDiameter: Float = 0.004
-            //scale
-            plainBand.scale = .init(repeating:targetBandDiameter / max(plainBandSize.x,plainBandSize.y))
-            plainBand.position = [-0.001, 0, 0]
-            //band input
-            plainBand.generateCollisionShapes(recursive: true)
-            plainBand.components.set(InputTargetComponent())
-            plainBand.components.set(GestureComponent(typeJewelry: .band, canDrag: false, canScale: true, canRotate: true))
-            
-            //hierarchy
-            bandAnchor.addChild(plainBand)
-        }
-        catch {
-            print("Failed to load band entity", error)
-        }
-    }
-    
-    private func loadMannequin() async {
-        do {
-            //load
-            let mannequin = try await Entity(named: "Simplified_Hand_For_Artists")
-            //size
-            let mannequinSize = mannequin.visualBounds(relativeTo: nil).extents
-            let targetMannequinDiameter: Float = 0.008
-            //scale
-            mannequin.scale = .init(repeating:targetMannequinDiameter / max(mannequinSize.x,mannequinSize.y))
-            mannequin.position = [0, -0.5, 0]
-            //mannequin input
-            mannequin.generateCollisionShapes(recursive: true, static: true)
-            mannequin.components.set(InputTargetComponent())
-            mannequin.components.set(GestureComponent(typeJewelry: .handMannequin, canDrag: false, canScale: true, canRotate: true))
-            
-            //hierarchy
-            mannequinAnchor.addChild(mannequin)
-        }
-        catch {
-            print("Failed to load entity", error)
-        }
-    }
-    
-    public func addStone(screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async {
-        print("Stone Added")
-        
-        do {
-            let gemstone = try await Entity(named: "Gemstone")
-            
-            let gemstoneSize = gemstone.visualBounds(relativeTo: nil).extents
-            let targetGemstoneDiameter: Float = 0.004
-            //scale
-            gemstone.scale = .init(repeating:targetGemstoneDiameter / max(gemstoneSize.x,gemstoneSize.y))
-            
-            gemstone.name = "Gemstone"
-            
-            if let loc = screenLocation, let size = containerSize {
-                let nx = Float(loc.x / size.width) - 0.5
-                let nz = Float(loc.y / size.height) - 0.5
-                gemstone.position = [nx * 0.02, 1, nz * 0.02]
-            } else {
-                gemstone.position = [0, 1, 0]
-            }
-            
-            gemstone.generateCollisionShapes(recursive: true)
-            gemstone.components.set(InputTargetComponent())
-            gemstone.components.set(GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: true, canRotate: true))
-            
-            gemAnchor.addChild(gemstone)
-            
-            print("Gem parent:", gemstone.parent?.name ?? "nil")
-            print("Gem position:", gemstone.position)
-            print("Gem anchor children:", gemAnchor.children.count)
-        }
-        catch {
-            print("Failed to load entity", error)
-        }
-    }
-    
     func handleDrop(identifier: String, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async {
         switch identifier {
         case "Flat_Band_Ring":
-            await replaceBand()
+            await scene.replaceBand(saved: design?.band)
+            markDirty()
         case "Gemstone":
-            await addStone(screenLocation: screenLocation, containerSize: containerSize)
+            if let gem = await scene.addStone(screenLocation: screenLocation, containerSize: containerSize) {
+                selectGem(gem)
+            }
+            markDirty()
         default:
             print("Unknown drop identifier:", identifier)
         }
     }
-    
-    private func replaceBand() async {
-        bandAnchor.children.removeAll()
-        await loadBand()
+
+    func selectAndAlign(_ gem: Entity) {
+        selectedGemName = gem.name
+
+        let allSnapPoints = scene.band.children.first?.children.filter {
+            $0.components[SnapPointComponent.self] != nil
+        } ?? []
+
+        if let target = SnappingService.nearestSnapPoint(
+            to: gem,
+            among: allSnapPoints,
+            maxDistance: tapAlignRadius,
+            allowOccupiedBySelf: gem.name
+        ) {
+            SnappingService.attach(gem: gem, to: target)
+            markDirty()
+        }
     }
-    
-    
-    
+
+    func prepareGemForDragging(_ gem: Entity) {
+        selectedGemName = gem.name
+
+        if SnappingService.isAttached(gem) {
+            SnappingService.detach(gem: gem, backTo: scene.gemAnchor)
+        }
+
+        var state = gem.gestureStateComponent
+        state.lastPositionDrag = gem.position(relativeTo: nil)
+        gem.gestureStateComponent = state
+
+        markDirty()
+    }
+
+    func sceneTransformTarget() -> Entity {
+        if let selectedGemName,
+           let gem = scene.allGemEntities().first(where: { $0.name == selectedGemName }) {
+            return gem
+        }
+
+        switch mode {
+        case .band:
+            return scene.bandPivot
+        case .handMannequin:
+            return scene.mannequinPivot
+        }
+    }
+
+    func reapplyAttachedGemScales() {
+        guard let bandEntity = scene.bandAnchor.children.first else { return }
+
+        let snapPoints = bandEntity.children.filter {
+            $0.components[SnapPointComponent.self] != nil
+        }
+
+        for snap in snapPoints {
+            for child in snap.children {
+                SnappingService.reapplyFixedScale(for: child)
+            }
+        }
+    }
+
+    func delete() {
+        guard let name = selectedGemName,
+              let gem = scene.allGemEntities().first(where: { $0.name == name })
+        else { return }
+
+        if gem.components[AttachmentComponent.self]?.attachedSnapID != nil {
+            SnappingService.detach(gem: gem, backTo: scene.gemAnchor)
+        }
+        gem.removeFromParent()
+
+        if let design = designFile.design, let modelContext {
+            persistence.delete(gemName: name, from: design, modelContext: modelContext)
+        }
+
+        selectedGemName = nil
+        hasUnsavedChanges = true
+    }
+
+    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?) {
+        guard let modelContext, let design = designFile.design else { return }
+        do {
+            try persistence.save(
+                gemEntities: scene.allGemEntities(),
+                bandEntity: scene.bandAnchor.children.first,
+                bandPivot: scene.bandPivot,
+                pendingBandAssetPath: pendingBandAssetPath,
+                pendingBandName: pendingBandName,
+                ringSizeID: ringSizeID,
+                ringSizeSystem: ringSizeSystem,
+                designFile: designFile,
+                design: design,
+                modelContext: modelContext
+            )
+            hasUnsavedChanges = false
+        } catch {
+            print("save failed: \(error)")
+        }
+    }
 }

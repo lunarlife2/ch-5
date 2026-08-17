@@ -10,23 +10,30 @@ import SwiftData
 
 @main
 struct CustomJewelryDesignerApp: App {
-//    var sharedModelContainer: ModelContainer = {
-//        let schema = Schema([
-//            Item.self,
-//        ])
-//        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-//
-//        do {
-//            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-//        } catch {
-//            fatalError("Could not create ModelContainer: \(error)")
-//        }
-//    }()
+	@State private var vm = ViewModel()
+	
+    var sharedModelContainer: ModelContainer = {
+        let schema = Schema([
+            DesignFile.self,
+			Design.self,
+			BandComponent.self,
+			GemComponent.self,
+            SnapPointRecord.self
+        ])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, allowsSave: true)
+
+        do {
+            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
 
     var body: some Scene {
         WindowGroup {
-            EditView()
+            ContentView()
+				.environment(vm)
         }
-        //.modelContainer(sharedModelContainer)
+        .modelContainer(sharedModelContainer)
     }
 }

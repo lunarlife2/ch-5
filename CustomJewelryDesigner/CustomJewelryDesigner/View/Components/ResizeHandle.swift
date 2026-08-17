@@ -12,13 +12,9 @@ struct ResizeHandle: View {
             .trim(from: 0.0, to: 0.25)
             .stroke(
                 Color.black,
-                style: StrokeStyle(
-                    lineWidth: 8,
-                    lineCap: .round,
-                    lineJoin: .round
-                )
+                style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
             )
-            .frame(width: 30, height: 30)
+            .frame(width: 20, height: 20)
             .scaleEffect(x: -1, y: 1)
             .contentShape(Rectangle())
     }

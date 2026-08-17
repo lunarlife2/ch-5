@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BandView: View {
     //remove the enum state, use the variable from model
+    @Environment(EditViewModel.self) private var editViewModel
     @State private var selectedThickness: Double = 1
     @State private var isSelected = true
     @State private var selectedStyle: BandStyleEnum = .classic
@@ -22,16 +23,15 @@ struct BandView: View {
                     .font(.system(size: 16, weight: .semibold))
                 
                 HStack{
-                    ForEach(BandStyleEnum.allCases) { style in
+                    ForEach(BandStyleEnum.allCases, id: \.id) { style in
                         VStack{
                             Image("flat-2d")
                                 .resizable()
-                                .frame(maxWidth: 60, maxHeight: 60)
+                                .frame(maxWidth: 60, maxHeight: 50)
                                 .padding()
                                 .background(
                                     EditCard(isSelected: selectedStyle == style)
                                 )
-                                .draggable("Flat_Band_Ring")
                             
                             Text(style.title)
                                 .font(.system(size: 12))
@@ -39,6 +39,9 @@ struct BandView: View {
                         .padding(.trailing, 10)
                         .onTapGesture {
                             selectedStyle = style
+                            Task {
+                                await editViewModel.scene.replaceBand()
+                            }
                             print("Selected:", style)
                         }
                     }
@@ -79,7 +82,7 @@ struct BandView: View {
                         VStack{
                             Image("flat-2d")
                                 .resizable()
-                                .frame(maxWidth: 60, maxHeight: 60)
+                                .frame(maxWidth: 60, maxHeight: 50)
                                 .padding()
                                 .background(
                                     EditCard(isSelected: selectedMaterial == material)

@@ -9,11 +9,15 @@ import SwiftUI
 
 struct GemView: View {
     //remove the enum state, use the variable from model
+    
+    @Environment(EditViewModel.self) private var editViewModel
     @State private var selectedThickness: Double = 1
     @State private var isSelected = true
     @State private var selectedShape: GemShapeEnum = .round
     @State private var selectedMaterial: GemMaterialEnum = .diamond
+    @State private var dragMagnitude: CGFloat = 0
     
+    private let dragThreshold: CGFloat = 10
     var body: some View {
         VStack(alignment: .leading) {
             //style
@@ -22,16 +26,15 @@ struct GemView: View {
                     .font(.system(size: 16, weight: .semibold))
                 
                 HStack{
-                    ForEach(GemShapeEnum.allCases) { shape in
+                    ForEach(GemShapeEnum.allCases, id: \.id) { shape in
                         VStack{
                             Image("gemstone-blue")
                                 .resizable()
-                                .frame(maxWidth: 60, maxHeight: 60)
+                                .frame(maxWidth: 60, maxHeight: 50)
                                 .padding()
                                 .background(
                                     EditCard(isSelected: selectedShape == shape)
                                 )
-                                .draggable("Gemstone")
                             
                             Text(shape.title)
                                 .font(.system(size: 12))
@@ -39,13 +42,16 @@ struct GemView: View {
                         .padding(.trailing, 10)
                         .onTapGesture {
                             selectedShape = shape
+                            Task{
+                                await editViewModel.scene.addStone()
+                            }
                             print("Selected:", shape)
                         }
                     }
                 }
             }
             .padding()
-                        
+            
             //material
             VStack(alignment: .leading) {
                 Text("Materials")
@@ -56,7 +62,7 @@ struct GemView: View {
                         VStack{
                             Image("gemstone-blue")
                                 .resizable()
-                                .frame(maxWidth: 60, maxHeight: 60)
+                                .frame(maxWidth: 60, maxHeight: 50)
                                 .padding()
                                 .background(
                                     EditCard(isSelected: selectedMaterial == material)
@@ -76,8 +82,10 @@ struct GemView: View {
             }
             .padding()
         }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding()
     }
+    
 }
 
 #Preview {

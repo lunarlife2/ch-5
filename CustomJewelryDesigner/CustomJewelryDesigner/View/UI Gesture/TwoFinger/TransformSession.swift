@@ -37,7 +37,6 @@ final class TransformSession {
         }
 
         guard GestureLock.shared.tryClaim(entity, gesture: .transform) else {
-//            print("[TRANSFORM] BEGIN REJECTED", "entity:", entity.name)
             return false
         }
 
@@ -45,7 +44,6 @@ final class TransformSession {
 
         guard state.startTransform() else {
             GestureLock.shared.release(entity, gesture: .transform)
-//            print("[TRANSFORM] BEGIN REJECTED", "entity:", entity.name, "reason: entity-already-has-gesture")
             return false
         }
 
@@ -60,8 +58,6 @@ final class TransformSession {
         state.startOrientationRotate = entity.orientation
 
         entity.gestureStateComponent = state
-
-//        print("[TRANSFORM] BEGIN", "target:", entity.name, "classification:PENDING", "lock:acquired")
 
         return true
     }
@@ -85,34 +81,27 @@ final class TransformSession {
         let panNorm = pan / panDeadZone
 
         let scaleNorm = scale / scaleDeadZone
-
-//        print("[TRANSFORM] CLASSIFY", "pan:", pan, "scale:", scale, "panNorm:", panNorm, "scaleNorm:", scaleNorm)
-
         if !panReady && !scaleReady {
             return .undetermined
         }
 
         if panReady && !scaleReady {
             classification = .rotate
-//            print("[TRANSFORM] CLASSIFIED -> ROTATE", "panNorm:", panNorm, "scaleNorm:", scaleNorm)
             return .rotate
         }
 
         if scaleReady && !panReady {
             classification = .scale
-//            print("[TRANSFORM] CLASSIFIED -> SCALE", "panNorm:", panNorm, "scaleNorm:", scaleNorm)
             return .scale
         }
 
         if panNorm >= scaleNorm * dominanceMargin {
             classification = .rotate
-//            print("[TRANSFORM] CLASSIFIED -> ROTATE", "reason:pan-dominant", "panNorm:", panNorm, "scaleNorm:", scaleNorm)
             return .rotate
         }
 
         if scaleNorm >= panNorm * dominanceMargin {
             classification = .scale
-            print("[TRANSFORM] CLASSIFIED -> SCALE", "reason:scale-dominant", "panNorm:", panNorm, "scaleNorm:", scaleNorm)
             return .scale
         }
 
@@ -137,8 +126,6 @@ final class TransformSession {
 
         GestureLock.shared.release(entity, gesture: .transform)
 
-//        print("[TRANSFORM] END", "target:", entity.name, "classification:", classification)
-
         self.entity = nil
         self.classification = .undetermined
         self.isActive = false
@@ -160,11 +147,8 @@ final class TransformSession {
 
         GestureLock.shared.release(entity, gesture: .transform)
 
-        print("[TRANSFORM] FORCE END", "target:", entity.name)
-
         self.entity = nil
         self.classification = .undetermined
         self.isActive = false
     }
 }
-

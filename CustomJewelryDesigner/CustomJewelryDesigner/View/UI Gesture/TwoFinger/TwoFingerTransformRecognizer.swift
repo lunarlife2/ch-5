@@ -42,10 +42,7 @@ final class TwoFingerTransformRecognizer: UIGestureRecognizer {
             $0.phase != .cancelled
         }.count ?? 0
 
-//        print("[2F] TOUCHES BEGAN", "count:", count)
-
         if count > 2 {
-//            print("[2F] FAILED", "reason:more-than-2-fingers")
             state = .failed
             return
         }
@@ -79,8 +76,6 @@ final class TwoFingerTransformRecognizer: UIGestureRecognizer {
 
         panDelta = .zero
         scaleDelta = 0
-
-        print("[2F] TWO FINGERS READY", "center:", center, "distance:", distance)
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -97,8 +92,6 @@ final class TwoFingerTransformRecognizer: UIGestureRecognizer {
         }.count ?? 0
 
         if count > 2 {
-//            print("[2F] FAILED", "reason:more-than-2-fingers")
-
             state = .failed
             return
         }
@@ -130,7 +123,6 @@ final class TwoFingerTransformRecognizer: UIGestureRecognizer {
 
         scaleDelta = distance - startDistance
 
-        // First movement.
         if state == .possible {
             state = .began
         } else {
@@ -146,8 +138,6 @@ final class TwoFingerTransformRecognizer: UIGestureRecognizer {
             $0.phase != .cancelled
         }.count ?? 0
 
-        print("[2F] TOUCHES ENDED", "remaining:", count)
-
         if state == .began || state == .changed {
             state = .ended
         } else {
@@ -157,16 +147,12 @@ final class TwoFingerTransformRecognizer: UIGestureRecognizer {
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) {
         super.touchesCancelled(touches, with: event)
-//        print("[2F] TOUCHES CANCELLED")
         state = .cancelled
     }
 
 
     private func midpoint(_ p1: CGPoint, _ p2: CGPoint) -> CGPoint {
-        CGPoint(
-            x: (p1.x + p2.x) * 0.5,
-            y: (p1.y + p2.y) * 0.5
-        )
+        CGPoint(x: (p1.x + p2.x) * 0.5, y: (p1.y + p2.y) * 0.5)
     }
 
     private func distance(_ p1: CGPoint, _ p2: CGPoint) -> CGFloat {
@@ -175,7 +161,3 @@ final class TwoFingerTransformRecognizer: UIGestureRecognizer {
         return sqrt(dx * dx + dy * dy)
     }
 }
-
-
-
-

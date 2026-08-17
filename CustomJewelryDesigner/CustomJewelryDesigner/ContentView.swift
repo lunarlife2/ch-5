@@ -55,33 +55,32 @@
 //    }
 //}
 
-import Supabase
 import SwiftUI
+import Supabase
+import SwiftData
 
 struct ContentView: View {
-  @State var todos: [Todo] = []
 
-  var body: some View {
-//	NavigationStack {
-//	  List(todos) { todo in
-//		Text(todo.name)
-//	  }
-//	  .navigationTitle("Todos")
-//	  .task {
-//		do {
-//		  todos = try await supabase.from("Todo").select().execute().value
-//			print("Fetched \(todos.count) todos")
-//		} catch {
-//		  debugPrint(error)
-//		}
-//	  }
-//	}
-  }
-	  
+    @Environment(ViewModel.self) private var vm
+
+    var body: some View {
+        switch vm.sceneState {
+
+        case .home:
+            HomeView()
+
+        case .edit(let file):
+            EditView(designFile: file)
+            
+        case .detail:
+            DetailView()
+        }
+    }
 }
 
 #Preview {
-  ContentView()
+    ContentView()
+        .environment(ViewModel())
 }
 
 //#Preview {

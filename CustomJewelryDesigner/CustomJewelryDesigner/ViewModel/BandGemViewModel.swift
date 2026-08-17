@@ -203,33 +203,6 @@ enum Hand: String, CaseIterable, Identifiable {
     }
 }
 
-enum RingSizeSystem: String, CaseIterable, Identifiable {
-    case usCanada
-    case ukAustralia
-    case eu
-    case japan
-    case hongkong
-    
-    var id: String {
-        rawValue
-    }
-    
-    var title: String {
-        switch self {
-        case .usCanada:
-            return "US / Canada"
-        case .ukAustralia:
-            return "UK / Australia"
-        case .hongkong:
-            return "Hongkong"
-        case .eu:
-            return "EU"
-        case .japan:
-            return "Japan"
-        }
-    }
-}
-
 @Observable
 final class BandGemViewModel {
     private(set) var _mode: BandGemSize = .band
@@ -240,6 +213,16 @@ final class BandGemViewModel {
         }
         set {
             _mode = newValue
+        }
+    }
+    
+    var selectedRingSizeSystem: RingSizeSystem = .usCanada
+    
+    var selectedRingSizeID: Int = 20
+    
+    var selectedRingSize: RingSizeOption? {
+        ringSizeOptions.first {
+            $0.id == selectedRingSizeID
         }
     }
 }
