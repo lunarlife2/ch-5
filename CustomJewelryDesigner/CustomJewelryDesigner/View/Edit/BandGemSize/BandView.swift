@@ -8,101 +8,185 @@
 import SwiftUI
 
 struct BandView: View {
-    //remove the enum state, use the variable from model
-    @State private var selectedThickness: Double = 1
-    @State private var isSelected = true
-    @State private var selectedStyle: BandStyleEnum = .classic
-    @State private var selectedMaterial: BandMaterialEnum = .yellowGold
+    
+    var viewModel: EditViewModel
+    @State private var selectedStyle: BandStyle?
+    @State private var sliderValue: Double = 1
+    @State private var selectedMaterial: BandMaterialEnum?
     
     var body: some View {
+        
         VStack(alignment: .leading) {
-            //style
+            //Style
             VStack(alignment: .leading) {
                 Text("Style")
                     .font(.system(size: 16, weight: .semibold))
-                
-                HStack{
-                    ForEach(BandStyleEnum.allCases) { style in
-                        VStack{
-                            Image("flat-2d")
-                                .resizable()
-                                .frame(maxWidth: 60, maxHeight: 60)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(
+                            viewModel.uniqueBandsByStyle,
+                            id: \.id
+                        ) { band in
+                            VStack {
+                                AsyncImage(url: viewModel.thumbnailURL(for: band.assetId)) { phase in
+                                    switch phase {
+                                    case .success(let image):
+                                        image.resizable().scaledToFit()
+                                    case .failure:
+                                        Image(systemName: "exclamationmark.triangle")
+                                            .foregroundStyle(.secondary)
+                                    case .empty:
+                                        ProgressView()
+                                    @unknown default:
+                                        ProgressView()
+                                    }
+                                }
+                                .onAppear {
+                                    print("Thumbnail URL:", viewModel.thumbnailURL(for: band.assetId)?.absoluteString ?? "nil")
+                                }
+                                .frame(width: 60, height: 60)
                                 .padding()
                                 .background(
-                                    EditCard(isSelected: selectedStyle == style)
+                                    EditCard(
+                                        isSelected:
+                                            selectedStyle?.id
+                                        == band.bandStyleID.id
+                                    )
                                 )
-                                .draggable("Flat_Band_Ring")
-                            
-                            Text(style.title)
+                                Text(
+                                    band.bandStyleID.bandStyleName
+                                )
                                 .font(.system(size: 12))
-                        }
-                        .padding(.trailing, 10)
-                        .onTapGesture {
-                            selectedStyle = style
-                            print("Selected:", style)
+                            }
+                            .padding(.trailing, 10)
+                            .onTapGesture {
+                                selectedStyle = band.bandStyleID
+                                Task {
+                                    await viewModel.selectBand(
+                                        style: band.bandStyleID,
+                                        thickness: viewModel.thicknessLabel(forSliderValue: sliderValue)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
             .padding()
             
-            
-            //thickness
+            //Thickness
             VStack(alignment: .leading) {
                 Text("Thickness")
                     .font(.system(size: 16, weight: .semibold))
-
                 Slider(
-                    value: $selectedThickness,
+                    value: $sliderValue,
                     in: 1...3,
                     step: 1
-                ) {
-                    Text("Thickness")
-                } minimumValueLabel: {
-                    Text("Thin")
-                        .font(.system(size: 12))
-                } maximumValueLabel: {
-                    Text("Thick")
-                        .font(.system(size: 12))
-                }
-            }
-            .padding()
-            .frame(maxWidth: 550)
-            
-            //material
-            VStack(alignment: .leading) {
-                Text("Materials")
-                    .font(.system(size: 16, weight: .semibold))
-                
-                HStack{
-                    ForEach(BandMaterialEnum.allCases) { material in
-                        VStack{
-                            Image("flat-2d")
-                                .resizable()
-                                .frame(maxWidth: 60, maxHeight: 60)
-                                .padding()
-                                .background(
-                                    EditCard(isSelected: selectedMaterial == material)
-                                )
-                                .draggable("Flat_Band_Ring")
-                            
-                            Text(material.title)
-                                .font(.system(size: 12))
-                        }
-                        .padding(.trailing, 10)
-                        .onTapGesture {
-                            selectedMaterial = material
-                            print("Selected:", material)
+                )
+                .onChange(of: sliderValue) { _, newValue in
+                    let thickness = viewModel.thicknessLabel(forSliderValue: newValue)
+                    if let style = selectedStyle {
+                        Task {
+                            await viewModel.selectBand(style: style, thickness: thickness)
                         }
                     }
                 }
             }
-            .padding()
+            
+            Text(
+                viewModel
+                    .thicknessLabel(
+                        forSliderValue:
+                            sliderValue
+                    )
+                    .capitalized
+            )
+            .font(.caption)
+            
         }
         .padding()
+        .frame(maxWidth: 550)
+        
+        //Material
+        VStack(alignment: .leading) {
+            
+            Text("Materials")
+                .font(.system(size: 16, weight: .semibold))
+            
+            HStack {
+                
+                ForEach(
+                    BandMaterialEnum.allCases
+                ) { material in
+                    
+                    VStack {
+                        
+                        Image("flat-2d")
+                            .resizable()
+                            .frame(
+                                maxWidth: 60,
+                                maxHeight: 60
+                            )
+                            .padding()
+                            .background(
+                                EditCard(
+                                    isSelected:
+                                        selectedMaterial
+                                    == material
+                                )
+                            )
+                        
+                        Text(material.title)
+                            .font(.system(size: 12))
+                    }
+                    .padding(.trailing, 10)
+                    .onTapGesture {
+                        
+                        selectedMaterial =
+                        material
+                        
+                        print(
+                            "Selected:",
+                            material
+                        )
+                    }
+                }
+            }
+        }
+        //        .padding()
+        .padding()
+        .onAppear {
+            
+            if selectedStyle == nil {
+                
+                selectedStyle =
+                viewModel.defaultBandStyle
+            }
+            
+            if let thickness =
+                viewModel.defaultBandThickness {
+                
+                switch thickness.lowercased() {
+                    
+                case "thin":
+                    sliderValue = 1
+                    
+                case "medium":
+                    sliderValue = 2
+                    
+                case "thick":
+                    sliderValue = 3
+                    
+                default:
+                    sliderValue = 1
+                }
+            }
+        }
     }
 }
 
 #Preview {
-    BandView()
+    BandView(
+        viewModel: EditViewModel()
+    )
 }

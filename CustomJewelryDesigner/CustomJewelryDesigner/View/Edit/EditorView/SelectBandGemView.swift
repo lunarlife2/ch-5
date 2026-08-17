@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SelectBandGemView: View {
+    var viewModel: EditViewModel
     let panelWidth: CGFloat
     let expandedWidth: CGFloat
     let collapsedWidth: CGFloat
@@ -30,9 +31,9 @@ struct SelectBandGemView: View {
                 .padding()
                 
                 if selectedType == 0 {
-                    BandView()
+                    BandView(viewModel: viewModel)
                 } else if selectedType == 1 {
-                    GemView()
+                    GemView(viewModel: viewModel)
                 } else {
                     SizeView()
                 }
@@ -46,6 +47,11 @@ struct SelectBandGemView: View {
     }
     
 }
+
 //#Preview {
-//    SelectBandGemView(p)
+//    SelectBandGemView(
+//        panelWidth: 800,
+//        expandedWidth: 800,
+//        collapsedWidth: 100
+//    )
 //}

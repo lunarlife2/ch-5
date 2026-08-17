@@ -9,8 +9,7 @@ import SwiftUI
 import RealityKit
 
 struct JewelryEditorView: View {
-    
-    @State private var viewModel = EditViewModel()
+    var viewModel: EditViewModel
     @State private var isTargeted = false
     @State private var touchTracker = TouchCountViewModel()
     @Environment(\.dismiss) private var dismiss
@@ -60,6 +59,7 @@ struct JewelryEditorView: View {
                 .task {
                     await viewModel.setup()
                 }
+
                 .dropDestination(for: String.self) { items, location in
                     guard let identifier = items.first else {
                         return false
@@ -87,5 +87,7 @@ struct JewelryEditorView: View {
 }
 
 #Preview {
-    JewelryEditorView()
+    JewelryEditorView(
+        viewModel: EditViewModel()
+    )
 }

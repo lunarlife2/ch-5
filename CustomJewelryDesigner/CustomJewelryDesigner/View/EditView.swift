@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct EditView: View {
+    @State private var editViewModel = EditViewModel()
     @State private var panelWidth: CGFloat = 508
     @State private var dragStartWidth: CGFloat = 508
 
@@ -24,11 +25,19 @@ struct EditView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            JewelryEditorView()
+            JewelryEditorView(viewModel: editViewModel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            SelectBandGemView(panelWidth: panelWidth, expandedWidth: expandedWidth, collapsedWidth: collapsedWidth
+            SelectBandGemView(viewModel: editViewModel,panelWidth: panelWidth, expandedWidth: expandedWidth, collapsedWidth: collapsedWidth
             )
+            .task {
+                await editViewModel.fetchAllData()
+
+                print("Band:", editViewModel.bands.count)
+                print("Gem:", editViewModel.gems.count)
+                print("Style:", editViewModel.bandStyles.count)
+            }
+            
             .frame(width: panelWidth, height: 558)
             .padding(.trailing, screenMargin * expandProgress)
             .overlay(alignment: .bottomLeading) {

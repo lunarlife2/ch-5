@@ -7,14 +7,14 @@
 
 import Foundation
 
-struct BandStyle: Codable {
+struct BandStyle: Codable, Identifiable, Equatable  {
   var id: UUID
+  var bandStyleName: String
   var description: String
-  var bandStyleName: UUID
 	
 	enum CodingKeys: String, CodingKey {
 		case id = "band_style_id"
-		case description = "description"
-		case bandStyleName = "band_type_name"
+        case bandStyleName = "band_style_name"
+		case description = "band_style_description"
 	}
 }

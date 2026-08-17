@@ -8,16 +8,16 @@
 
 import Foundation
 
-struct Stone: Codable {
+struct Gem: Codable {
   var id: UUID
-  var name: String
-  var description: String
+  var gemShape: String
+  var gemMaterial: String
   var assetId: Asset3D
 	
 	enum CodingKeys: String, CodingKey {
-		case id = "stone_id"
-		case name
-		case description
+		case id = "gem_id"
+		case gemShape = "gem_shape"
+        case gemMaterial = "gem_material"
 		case assetId = "asset_id"
 	}
 }
