@@ -91,7 +91,7 @@ struct GemView: View {
                                 EditCard(isSelected: selectedMaterial == material)
                             )
                             .draggable("Gemstone")
-                        
+                            
                             Text(material.capitalized)
                                 .font(.system(size: 12))
                         }
@@ -113,6 +113,8 @@ struct GemView: View {
             applyDefaultsIfNeeded()
         }
     }
+    
+    
     private func applyDefaultsIfNeeded() {
         if selectedShape == nil {
             selectedShape = viewModel.defaultGemShape
@@ -123,7 +125,7 @@ struct GemView: View {
         selectCombination()
     }
     
-    
+    //to showing the object after tap the combination of gem shape and gem material
     private func selectCombination() {
         guard let shape = selectedShape, let material = selectedMaterial else {
             return

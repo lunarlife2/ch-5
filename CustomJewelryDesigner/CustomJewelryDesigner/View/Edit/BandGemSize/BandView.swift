@@ -12,7 +12,7 @@ struct BandView: View {
     var viewModel: EditViewModel
     @State private var selectedStyle: BandStyle?
     @State private var sliderValue: Double = 1
-    @State private var selectedMaterial: BandMaterialEnum?
+    @State private var selectedMaterial: BandMaterialEnum? //still hardcode bcs we still not decide to make the asset or no
     
     var body: some View {
         
@@ -74,7 +74,7 @@ struct BandView: View {
             }
             .padding()
             
-            //Thickness
+            //Thickness already work if user choose the thickness, the asset will showing the right asset
             VStack(alignment: .leading) {
                 Text("Thickness")
                     .font(.system(size: 16, weight: .semibold))
@@ -107,20 +107,15 @@ struct BandView: View {
         .padding()
         .frame(maxWidth: 550)
         
-        //Material
+        //Material still hardcode and doesn't work yet
         VStack(alignment: .leading) {
-            
             Text("Materials")
                 .font(.system(size: 16, weight: .semibold))
-            
             HStack {
-                
                 ForEach(
                     BandMaterialEnum.allCases
                 ) { material in
-                    
                     VStack {
-                        
                         Image("flat-2d")
                             .resizable()
                             .frame(
@@ -163,6 +158,8 @@ struct BandView: View {
                 viewModel.defaultBandStyle
             }
             
+            
+            //thickness already work to change the asset on database
             if let thickness =
                 viewModel.defaultBandThickness {
                 
