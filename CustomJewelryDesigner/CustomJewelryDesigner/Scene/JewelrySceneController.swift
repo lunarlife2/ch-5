@@ -48,7 +48,7 @@ final class JewelrySceneController {
     func setEditorFrame(_ frame: CGRect) { editorFrameInGlobal = frame }
     func setRealityContent(_ content: RealityViewCameraContent) { realityContent = content }
 
-    func setup(bandURL: URL, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
+    func setup(bandURL: URL, bandSource: BandSourceComponent, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
         guard !isSetup else { return }
         isSetup = true
         
@@ -76,7 +76,7 @@ final class JewelrySceneController {
             )
         )
 
-        await loadBand(from: bandURL, saved: savedBand)
+        await loadBand(from: bandURL, source: bandSource, saved: savedBand)
         await loadMannequin()
         await loadSavedGems(gems: savedGems, urls: gemURLs)
         updateVisibility(for: mode)
@@ -87,46 +87,72 @@ final class JewelrySceneController {
         mannequinPivot.isEnabled = mode == .handMannequin
     }
 
-    func loadBand(from localURL: URL, saved: BandComponent? = nil) async {
+    func loadBand(from localURL: URL, source: BandSourceComponent, saved: BandComponent? = nil) async {
         do {
             let band = try await ModelEntity(contentsOf: localURL)
-            let size = band.visualBounds(relativeTo: nil).extents
-            let scale = targetBandDiameter / max(size.x, size.y)
-            
-            band.scale = .init(repeating: scale)
-            band.position = [-0.001, 0, 0]
-
-            band.generateCollisionShapes(recursive: true)
-            band.components.set(InputTargetComponent())
-            band.components.set(
-                GestureComponent(
-                    typeJewelry: .band,
-                    canDrag: false,
-                    canScale: true,
-                    canRotate: true
-                )
-            )
-
-            SnappingService.addSnapPoints(to: band)
-
-            if let saved {
-                if let orientation = saved.orientation {
-                    band.orientation = orientation
-                }
-                if let scale = saved.scaleFactor {
-                    band.scale = .init(repeating: Float(scale))
-                }
-            }
-            bandAnchor.children.removeAll()
-            bandAnchor.addChild(band)
+            band.components.set(source)
+            prepareAndInstall(band: band, saved: saved)
         } catch {
             print("Failed to load band from URL: ", error)
         }
     }
 
-    func replaceBand(from localURL: URL, saved: BandComponent? = nil) async {
+    func loadBundledBand(named name: String, saved: BandComponent? = nil) async {
+        do {
+            let band = try await Entity(named: name)
+            band.components.set(
+                BandSourceComponent(libraryAssetID: UUID(), assetStoragePath: "Flat_Band_Ring", name: "plain band usd")
+            )
+            prepareAndInstall(band: band, saved: saved)
+        } catch {
+            print("Failed to load bundled band entity: ", error)
+        }
+    }
+
+    func replaceBand(from localURL: URL, source: BandSourceComponent, saved: BandComponent? = nil) async {
+        await loadBand(from: localURL, source: source, saved: saved)
+    }
+    
+
+    private func prepareAndInstall(band: Entity, saved: BandComponent?) {
+        let size = band.visualBounds(relativeTo: nil).extents
+
+        let scale =
+            targetBandDiameter /
+            max(size.x, size.y)
+
+        band.scale = .init(repeating: scale)
+        band.position = [-0.001, 0, 0]
+
+        band.generateCollisionShapes(recursive: true)
+
+        band.components.set(
+            InputTargetComponent()
+        )
+
+        band.components.set(
+            GestureComponent(
+                typeJewelry: .band,
+                canDrag: false,
+                canScale: true,
+                canRotate: true
+            )
+        )
+
+        SnappingService.addSnapPoints(to: band)
+
+        if let saved {
+            if let orientation = saved.orientation {
+                band.orientation = orientation
+            }
+
+            if let scale = saved.scaleFactor {
+                band.scale = .init(repeating: Float(scale))
+            }
+        }
+
         bandAnchor.children.removeAll()
-        await loadBand(from: localURL, saved: saved)
+        bandAnchor.addChild(band)
     }
 
     func loadMannequin() async {
@@ -154,7 +180,7 @@ final class JewelrySceneController {
         }
     }
 
-    func addStone(from localURL: URL, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async -> Entity? {
+    func addStone(from localURL: URL, source: Gem, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async -> Entity? {
         do {
             let gemstone = try await ModelEntity(contentsOf: localURL)
             let gemstoneSize = gemstone.visualBounds(relativeTo: nil).extents
@@ -163,9 +189,16 @@ final class JewelrySceneController {
             gemstone.scale = .init(repeating: initialScale)
             gemstone.components.set(AttachmentComponent(targetWorldScale: initialScale))
 
+            // BARU — simpen asal-usul gem ini
+            gemstone.components.set(GemSourceComponent(
+                libraryAssetID: source.id,
+                assetStoragePath: source.assetId.storagePath,
+                cut: source.gemShape,
+                color: source.gemMaterial
+            ))
+
             gemstone.name = UUID().uuidString
             gemstone.position = spawnPosition(screenLocation: screenLocation, containerSize: containerSize)
-
             gemstone.generateCollisionShapes(recursive: true)
             gemstone.components.set(InputTargetComponent())
             gemstone.components.set(

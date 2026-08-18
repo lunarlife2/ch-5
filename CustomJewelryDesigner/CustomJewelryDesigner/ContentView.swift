@@ -74,6 +74,9 @@ struct ContentView: View {
             
         case .detail:
             DetailView()
+            
+        default:
+            HomeView()
         }
     }
 }

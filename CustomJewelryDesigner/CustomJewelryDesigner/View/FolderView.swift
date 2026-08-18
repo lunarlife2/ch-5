@@ -115,7 +115,7 @@ struct FolderView: View {
 				selectedItemIDs.insert(file.id)
 			}
 		} else {
-			vm.moveScreenState(to: .edit)
+			vm.moveScreenState(to: .edit(file))
 		}
 	}
 	

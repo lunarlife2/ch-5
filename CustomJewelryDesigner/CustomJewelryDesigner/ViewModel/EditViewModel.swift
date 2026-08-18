@@ -294,40 +294,41 @@ final class EditViewModel {
     }
 
     func loadScene() async {
-        guard let design else {
-            print("No design found")
-            return
-        }
+        guard let design else { print("No design found"); return }
 
         var bandURL: URL?
+        var bandSource: BandSourceComponent
         var savedBandForSetup: BandComponent? = design.band
 
         if let savedBand = design.band {
             bandURL = await loadLocalModelURL(path: savedBand.assetStoragePath, bucket: "band")
+            bandSource = BandSourceComponent(
+                libraryAssetID: savedBand.libraryAssetID,
+                assetStoragePath: savedBand.assetStoragePath,
+                name: savedBand.name
+            )
             if bandURL == nil {
                 print("Saved band asset not found in storage (\(savedBand.assetStoragePath)), falling back to first Supabase band")
             }
         } else {
+            bandSource = BandSourceComponent(libraryAssetID: UUID(), assetStoragePath: "Flat_Band_Ring", name: "plain band usd")
             print("No saved band, falling back to first Supabase band")
         }
 
         if bandURL == nil {
-            if bands.isEmpty {
-                await fetchBands()
-            }
-            guard let firstBand = bands.first else {
-                print("No bands available from Supabase at all")
-                return
-            }
+            if bands.isEmpty { await fetchBands() }
+            guard let firstBand = bands.first else { print("No bands available from Supabase at all"); return }
             currentBand = firstBand
             bandURL = await loadLocalModelURL(path: firstBand.assetId.storagePath, bucket: "band")
-            savedBandForSetup = nil // belum ada saved band component yang valid untuk posisi/orientasi
+            bandSource = BandSourceComponent(
+                libraryAssetID: firstBand.id,
+                assetStoragePath: firstBand.assetId.storagePath,
+                name: firstBand.description
+            )
+            savedBandForSetup = nil
         }
 
-        guard let finalBandURL = bandURL else {
-            print("Failed to download any band")
-            return
-        }
+        guard let finalBandURL = bandURL else { print("Failed to download any band"); return }
 
         var gemURLs: [String: URL] = [:]
         for gem in design.gems {
@@ -338,61 +339,82 @@ final class EditViewModel {
             gemURLs[gem.name] = url
         }
 
-        await scene.setup(bandURL: finalBandURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+        await scene.setup(bandURL: finalBandURL, bandSource: bandSource, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
     }
     
+    private func applyPlaceholderBand() async {
+        currentBand = nil
+        await scene.loadBundledBand(named: "Flat_Band_Ring", saved: design?.band)
+        pendingBandAssetPath = "Flat_Band_Ring"
+        pendingBandName = "plain band usd"
+        markDirty()
+    }
+    
+    private func applySelectedBand(_ band: Band) async {
+        guard let localURL = await loadLocalModelURL(path: band.assetId.storagePath, bucket: "band") else {
+            print("Failed to download band model \(band.assetId.storagePath)")
+            return
+        }
+        currentBand = band
+
+        let source = BandSourceComponent(
+            libraryAssetID: band.id,
+            assetStoragePath: band.assetId.storagePath,
+            name: band.description
+        )
+        await scene.replaceBand(from: localURL, source: source, saved: design?.band)
+        markDirty()
+    }
+
     private func loadInitialBand() async {
         guard let band = bands.first else {
             print("No bands from Supabase yet, using bundled placeholder")
-            await loadBand(named: "Flat_Band_Ring")
+            await applyPlaceholderBand()
             return
         }
-        await loadBand(from: band)
+        await applySelectedBand(band)
     }
     
     func loadBand(from band: Band) async {
-        currentBand = band
-        //check the actual bucket name on Supabase Storage
-        guard let localURL = await loadLocalModelURL(path: band.assetId.storagePath, bucket: "band") else {
-            print("Failed to download band model \(band.assetId.storagePath), using bundled placeholder")
-            await loadBand(named: "Flat_Band_Ring")
+        await applySelectedBand(band)
+    }
+    
+    func selectBand(style: BandStyle, thickness: String) async {
+        guard let match = bands.first(where: {
+            $0.bandStyleID.id == style.id &&
+            $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame
+        }) else {
+            print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)'")
             return
         }
-        
-        do {
-            let entity = try await ModelEntity(contentsOf: localURL)
-            place(bandEntity: entity)
-        } catch {
-            print("Failed to load downloaded band entity", error)
-            await loadBand(named: "Flat_Band_Ring")
-        }
+        await applySelectedBand(match)
     }
     
-    private func loadBand(named name: String) async {
-        do {
-            let plainBand = try await Entity(named: name)
-            place(bandEntity: plainBand)
-        }
-        catch {
-            print("Failed to load band entity", error)
-        }
-    }
-    
-    
-    private func place(bandEntity: Entity) {
-        let bandSize = bandEntity.visualBounds(relativeTo: nil).extents
-        let targetBandDiameter: Float = 0.004
-        bandEntity.scale = .init(repeating: targetBandDiameter / max(bandSize.x, bandSize.y))
-        bandEntity.position = [-0.001, 0, 0]
-        
-        bandEntity.generateCollisionShapes(recursive: true)
-        bandEntity.components.set(InputTargetComponent())
-        bandEntity.components.set(GestureComponent(typeJewelry: .band, canDrag: false, canScale: true, canRotate: true))
-        
-        scene.bandAnchor.children.removeAll()
-        scene.bandAnchor.addChild(bandEntity)
-    }
-    
+//    private func applySelectedBand(_ band: Band) async {
+//        guard let localURL = await loadLocalModelURL(
+//            path: band.assetId.storagePath,
+//            bucket: "band"
+//        ) else {
+//            print(
+//                "Failed to download band model \(band.assetId.storagePath)"
+//            )
+//            return
+//        }
+//
+//        currentBand = band
+//
+//        // Data yang akan disimpan ke SwiftData
+//        pendingBandAssetPath = band.assetId.storagePath
+//        pendingBandName = band.description
+//
+//        // Satu-satunya jalur untuk memasukkan band ke RealityKit
+//        await scene.replaceBand(
+//            from: localURL,
+//            saved: design?.band
+//        )
+//
+//        markDirty()
+//    }
     
     func thicknessLabel(forSliderValue value: Double) -> String {
         switch Int(value.rounded()) {
@@ -404,27 +426,6 @@ final class EditViewModel {
     
     func updateThickness(sliderValue: Double) {
         currentBand?.bandThickness = thicknessLabel(forSliderValue: sliderValue)
-    }
-    
-    func selectBand(style: BandStyle, thickness: String) async {
-        guard let match = bands.first(where: {
-            $0.bandStyleID.id == style.id &&
-            $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame
-        }) else {
-            print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)'")
-            return
-        }
-        
-        currentBand = match
-        
-        guard let localURL = await loadLocalModelURL(path: match.assetId.storagePath, bucket: "band") else {
-            print("Failed to download band")
-            return
-        }
-        
-        await scene.replaceBand(from: localURL, saved: design?.band)
-        
-        markDirty()
     }
     
     func selectBandStyle(named styleName: String) async {
@@ -441,29 +442,19 @@ final class EditViewModel {
         guard let match = gems.first(where: {
             $0.gemShape.caseInsensitiveCompare(shape) == .orderedSame &&
             $0.gemMaterial.caseInsensitiveCompare(material) == .orderedSame
-        }) else {
-            print("No gem in Supabase for shape '\(shape)' + material '\(material)'")
-            return
-        }
-        guard let localURL = await loadLocalModelURL(path: match.assetId.storagePath, bucket: "stone") else {
-            print("Failed to download gem")
-            return
-        }
-        
-        if let entity = await scene.addStone(from: localURL) {
+        }) else { return }
+        guard let localURL = await loadLocalModelURL(path: match.assetId.storagePath, bucket: "stone") else { return }
+
+        if let entity = await scene.addStone(from: localURL, source: match) {
             selectGem(entity)
             markDirty()
         }
     }
-    
-    
+
     func loadGem(from gem: Gem, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async {
-        guard let localURL = await loadLocalModelURL(path: gem.assetId.storagePath, bucket: "stone") else {
-            print("Failed to download gem model \(gem.assetId.storagePath)")
-            return
-        }
-        
-        if let entity = await scene.addStone(from: localURL, screenLocation: screenLocation, containerSize: containerSize) {
+        guard let localURL = await loadLocalModelURL(path: gem.assetId.storagePath, bucket: "stone") else { return }
+
+        if let entity = await scene.addStone(from: localURL, source: gem, screenLocation: screenLocation, containerSize: containerSize) {
             selectGem(entity)
             markDirty()
         }
@@ -576,8 +567,6 @@ final class EditViewModel {
                 gemEntities: scene.allGemEntities(),
                 bandEntity: scene.bandAnchor.children.first,
                 bandPivot: scene.bandPivot,
-                pendingBandAssetPath: pendingBandAssetPath,
-                pendingBandName: pendingBandName,
                 ringSizeID: ringSizeID,
                 ringSizeSystem: ringSizeSystem,
                 designFile: designFile,
