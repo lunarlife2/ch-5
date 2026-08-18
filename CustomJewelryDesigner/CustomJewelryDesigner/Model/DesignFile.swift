@@ -23,39 +23,45 @@ final class DesignFolder {
 
 @Model
 final class DesignFile {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var createdAt: Date
-    var updatedAt: Date
-    var ringPosition: RingPosition
-    
-    enum RingPosition: String, Codable, CaseIterable {
-        case left, right
-    }
-    
-    @Attribute(.externalStorage)
-    var thumbnailData: Data?
-    
-    @Relationship(deleteRule: .cascade)
-    var design: Design?
-    
-    var folder: DesignFolder?
-    
-    init(
-        id: UUID,
-        name: String,
-        updatedAt: Date,
-        ringPosition: RingPosition,
-        design: Design?
-    ) {
-        self.id = id
-        self.name = name
-        self.createdAt = .now
-        self.updatedAt = updatedAt
-        self.ringPosition = ringPosition
-        self.design = design
-        self.folder = nil
-    }
+	@Attribute(.unique) var id: UUID
+	var name: String
+	var createdAt: Date
+	var updatedAt: Date
+	var ringPositionRaw: RingPosition?
+	
+	// what the rest of your app uses — behaves exactly like before
+		var ringPosition: RingPosition {
+			get { ringPositionRaw ?? .left }
+			set { ringPositionRaw = newValue }
+		}
+
+	enum RingPosition: String, Codable, CaseIterable {
+		case left, right
+	}
+
+	@Attribute(.externalStorage)
+	var thumbnailData: Data?
+
+	@Relationship(deleteRule: .cascade)
+	var design: Design?
+	
+	var folder: DesignFolder?
+
+	init(
+		id: UUID,
+		name: String,
+		updatedAt: Date,
+		ringPosition: RingPosition,
+		design: Design?
+	) {
+		self.id = id
+		self.name = name
+		self.createdAt = .now
+		self.updatedAt = updatedAt
+		self.ringPosition = ringPosition
+		self.design = design
+		self.folder = nil
+	}
 }
 
 @Model
