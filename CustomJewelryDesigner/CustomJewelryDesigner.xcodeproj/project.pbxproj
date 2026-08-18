@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1FFAE433302B3C65009BA99C /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 1FFAE432302B3C65009BA99C /* Config.xcconfig */; };
 		A08115DB3029A2770013287D /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = A08115DA3029A2770013287D /* Functions */; };
 		A08115DD3029A2770013287D /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = A08115DC3029A2770013287D /* PostgREST */; };
 		A08115DF3029A2770013287D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = A08115DE3029A2770013287D /* Realtime */; };
@@ -17,7 +16,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1FFAE432302B3C65009BA99C /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		A08115B130299C5D0013287D /* CustomJewelryDesigner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CustomJewelryDesigner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -65,7 +63,6 @@
 				A08115B330299C5D0013287D /* CustomJewelryDesigner */,
 				A08115EA3029AF210013287D /* Frameworks */,
 				A08115B230299C5D0013287D /* Products */,
-				1FFAE432302B3C65009BA99C /* Config.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -157,7 +154,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1FFAE433302B3C65009BA99C /* Config.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -176,7 +172,8 @@
 /* Begin XCBuildConfiguration section */
 		A08115BC30299C5D0013287D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
+			baseConfigurationReferenceAnchor = A08115B330299C5D0013287D /* CustomJewelryDesigner */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -240,7 +237,8 @@
 		};
 		A08115BD30299C5D0013287D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
+			baseConfigurationReferenceAnchor = A08115B330299C5D0013287D /* CustomJewelryDesigner */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -297,26 +295,28 @@
 		};
 		A08115BF30299C5D0013287D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
+			baseConfigurationReferenceAnchor = A08115B330299C5D0013287D /* CustomJewelryDesigner */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = G9544K6AMN;
+				DEVELOPMENT_TEAM = HJAN6GQWZK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CustomJewelryDesigner/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationLandscapeLeft;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ayuk.CustomJewelryDesigner;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yimei.CustomJewelryDesigner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -333,26 +333,28 @@
 		};
 		A08115C030299C5D0013287D /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1FFAE432302B3C65009BA99C /* Config.xcconfig */;
+			baseConfigurationReferenceAnchor = A08115B330299C5D0013287D /* CustomJewelryDesigner */;
+			baseConfigurationReferenceRelativePath = Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = G9544K6AMN;
+				DEVELOPMENT_TEAM = HJAN6GQWZK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CustomJewelryDesigner/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationLandscapeLeft;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.ayuk.CustomJewelryDesigner;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yimei.CustomJewelryDesigner;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -398,6 +400,8 @@
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.5.1;
 			};
+			traits = (
+			);
 		};
 /* End XCRemoteSwiftPackageReference section */
 

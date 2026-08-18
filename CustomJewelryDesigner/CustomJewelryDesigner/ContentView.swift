@@ -55,17 +55,32 @@
 //    }
 //}
 
-import Supabase
 import SwiftUI
+import Supabase
+import SwiftData
 
 struct ContentView: View {
-  var body: some View {
-	  HomeView()
-  }
+
+    @Environment(ViewModel.self) private var vm
+
+    var body: some View {
+        switch vm.sceneState {
+
+        case .home:
+            HomeView()
+
+        case .edit(let file):
+            EditView(designFile: file)
+            
+        case .detail:
+            DetailView()
+        }
+    }
 }
 
 #Preview {
-  ContentView()
+    ContentView()
+        .environment(ViewModel())
 }
 
 //#Preview {

@@ -18,8 +18,9 @@ struct CustomJewelryDesignerApp: App {
 			Design.self,
 			BandComponent.self,
 			GemComponent.self,
+            SnapPointRecord.self
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, allowsSave: true)
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
@@ -30,7 +31,7 @@ struct CustomJewelryDesignerApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+			vm.sceneState.viewAssociated()
 				.environment(vm)
         }
         .modelContainer(sharedModelContainer)

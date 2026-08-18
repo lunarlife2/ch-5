@@ -8,16 +8,11 @@
 import Combine
 import SwiftUI
 
+@Observable
 @MainActor
-@Observable class ViewModel {
+class ViewModel {
 
 	private(set) var sceneState: SceneState = .home
-
-}
-
-// Screen Manager
-extension ViewModel {
-
 	func moveScreenState(to new: SceneState) {
 		self.sceneState = new
 
@@ -28,21 +23,21 @@ extension ViewModel {
 enum SceneState {
 
 	case home
-	case edit
+	case edit(DesignFile)
 	case detail
-	//case storie(_ :StoryModel)
+	case folder(_ :DesignFolder)
 
 	@ViewBuilder func viewAssociated() -> some View {
 
 		switch self {
 		case .home:
 			HomeView()
-		case .edit:
-			EditView()
+		case .edit(let designFile):
+            EditView(designFile: designFile)
 		case .detail:
 			DetailView()
-//		case .storie(let storie):
-//			StoryView(story: storie)
+		case .folder(let folder):
+			FolderView(folder: folder)
 		}
 
 	}
