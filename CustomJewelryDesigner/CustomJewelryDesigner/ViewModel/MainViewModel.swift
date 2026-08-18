@@ -23,7 +23,7 @@ class ViewModel {
 enum SceneState {
 
 	case home
-	case edit
+	case edit(DesignFile)
 	case detail
 	case folder(_ :DesignFolder)
 
@@ -32,8 +32,8 @@ enum SceneState {
 		switch self {
 		case .home:
 			HomeView()
-		case .edit:
-			EditView()
+		case .edit(let designFile):
+            EditView(designFile: designFile)
 		case .detail:
 			DetailView()
 		case .folder(let folder):

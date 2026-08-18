@@ -151,8 +151,8 @@ struct HomeView: View {
 						}
 						
 						if fileOrFolder {
-							store.createDesignFile(name: fileName)
-							vm.moveScreenState(to: .edit)
+							let file = store.createDesignFile(name: fileName)
+							vm.moveScreenState(to: .edit(file))
 						} else {
 							let newFolder = store.createDesignFolder(name: folderName)
 							groupSelected(folder: newFolder)
@@ -182,7 +182,7 @@ struct HomeView: View {
 				selectedItemIDs.insert(file.id)
 			}
 		} else {
-			vm.moveScreenState(to: .edit)
+			vm.moveScreenState(to: .edit(file))
 		}
 	}
 

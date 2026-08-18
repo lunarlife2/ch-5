@@ -77,13 +77,22 @@ struct DesignFileStore {
 	}
 
 	//buat file
-	func createDesignFile(name: String) {
+	func createDesignFile(name: String) -> DesignFile {
+        
+        let band = BandComponent(
+            libraryAssetID: UUID(),
+            assetStoragePath: "Flat_Band_Ring",
+            name: "Flat Band Ring"
+        )
+        
+        let design = Design(materialPreset: "Yellow Gold", band: band, gems: [])
+        
 		let newFile = DesignFile(
 			id: UUID(),
 			name: name,
 			updatedAt: .now,
 			ringPosition: .left,
-			design: nil
+			design: design
 		)
 		modelContext.insert(newFile)
 		do {
@@ -92,6 +101,8 @@ struct DesignFileStore {
 		} catch {
 			print("Failed to save file: \(error)")
 		}
+        
+        return newFile
 	}
 
 	//save design ke file
