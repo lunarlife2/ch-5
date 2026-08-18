@@ -15,12 +15,12 @@ struct EditView: View {
 
     let designFile: DesignFile
 
-    @State private var viewModel: EditViewModel
+    @State private var editViewModel: EditViewModel
     @State private var bandGemViewModel = BandGemViewModel()
 
     init(designFile: DesignFile) {
         self.designFile = designFile
-        _viewModel = State(initialValue: EditViewModel(designFile: designFile))
+        _editViewModel = State(initialValue: EditViewModel(designFile: designFile))
     }
 
     @State private var panelWidth: CGFloat = Layout.expandedWidth
@@ -58,17 +58,19 @@ struct EditView: View {
             editorAndPanel
             bottomControls
         }
-        .overlay { liveDragOverlay }
-        .environment(viewModel)
+        .overlay {
+            liveDragOverlay
+        }
+        .environment(editViewModel)
         .alert(
             "Delete this gem?",
             isPresented: isPendingDeleteAlertPresented
         ) {
             Button("Delete", role: .destructive) {
-                viewModel.confirmPendingDelete()
+                editViewModel.confirmPendingDelete()
             }
             Button("Cancel", role: .cancel) {
-                viewModel.cancelPendingDelete()
+                editViewModel.cancelPendingDelete()
             }
         } message: {
             Text("The gem you drag to the trash will be deleted.")
@@ -77,17 +79,24 @@ struct EditView: View {
 
     private var editorAndPanel: some View {
         HStack(spacing: 0) {
-            JewelryEditorView(viewModel: viewModel)
+            JewelryEditorView(viewModel: editViewModel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             SelectBandGemView(
-                bandGemViewModel: bandGemViewModel,
+                bandGemViewModel: bandGemViewModel, viewModel: editViewModel,
                 panelWidth: panelWidth,
                 expandedWidth: Layout.expandedWidth,
                 collapsedWidth: Layout.collapsedWidth
             )
             .frame(width: panelWidth, height: Layout.panelHeight, alignment: .leading)
             .padding(.trailing, panelRightPadding)
+            .task {
+                await editViewModel.fetchAllData()
+
+                print("Band:", editViewModel.bands.count)
+                print("Gem:", editViewModel.gems.count)
+                print("Style:", editViewModel.bandStyles.count)
+            }
             .overlay(alignment: .bottomLeading) {
                 ResizeHandle()
                     .padding(.leading, Layout.resizeHandlePadding)
@@ -107,7 +116,7 @@ struct EditView: View {
 
     private var trashButton: some View {
         GlassButton {
-            viewModel.delete()
+            editViewModel.delete()
         } label: {
             Image(systemName: "trash")
         }
@@ -117,10 +126,10 @@ struct EditView: View {
             GeometryReader { proxy in
                 Color.clear
                     .onAppear {
-                        viewModel.setTrashFrame(proxy.frame(in: .global))
+                        editViewModel.setTrashFrame(proxy.frame(in: .global))
                     }
                     .onChange(of: proxy.frame(in: .global)) { _, newFrame in
-                        viewModel.setTrashFrame(newFrame)
+                        editViewModel.setTrashFrame(newFrame)
                     }
             }
         )
@@ -128,8 +137,8 @@ struct EditView: View {
 
     private var saveButton: some View {
         Button {
-            guard viewModel.hasUnsavedChanges else { return }
-            viewModel.save(
+            guard editViewModel.hasUnsavedChanges else { return }
+            editViewModel.save(
                 ringSizeID: bandGemViewModel.selectedRingSizeID,
                 ringSizeSystem: bandGemViewModel.selectedRingSizeSystem
             )
@@ -139,7 +148,7 @@ struct EditView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.glassProminent)
-        .disabled(!viewModel.hasUnsavedChanges)
+        .disabled(!editViewModel.hasUnsavedChanges)
         .frame(width: saveWidth)
         .padding(.trailing, Layout.screenMargin)
         .padding(.bottom, Layout.bottomPadding)
@@ -147,7 +156,7 @@ struct EditView: View {
 
     private var liveDragOverlay: some View {
         GeometryReader { proxy in
-            if let globalPoint = viewModel.liveDragGlobalPoint {
+            if let globalPoint = editViewModel.liveDragGlobalPoint {
                 let localPoint = CGPoint(
                     x: globalPoint.x - proxy.frame(in: .global).minX,
                     y: globalPoint.y - proxy.frame(in: .global).minY
@@ -182,10 +191,10 @@ struct EditView: View {
 
     private var isPendingDeleteAlertPresented: Binding<Bool> {
         Binding(
-            get: { viewModel.pendingDeleteGemName != nil },
+            get: { editViewModel.pendingDeleteGemName != nil },
             set: { isPresented in
                 if !isPresented {
-                    viewModel.cancelPendingDelete()
+                    editViewModel.cancelPendingDelete()
                 }
             }
         )

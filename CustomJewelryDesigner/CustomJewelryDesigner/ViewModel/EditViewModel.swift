@@ -10,7 +10,7 @@ import SwiftUI
 import RealityKit
 import SwiftData
 import simd
-
+import Supabase
 
 enum JewelryEditorMode: String, CaseIterable, Identifiable {
     case band
@@ -50,7 +50,6 @@ enum JewelryEditorMode: String, CaseIterable, Identifiable {
 
 @Observable
 final class EditViewModel {
-
     let scene = JewelrySceneController()
     private let persistence = DesignPersistenceService()
     private(set) var designFile: DesignFile
@@ -59,6 +58,171 @@ final class EditViewModel {
     var mode: JewelryEditorMode = .band {
         didSet { scene.updateVisibility(for: mode) }
     }
+    
+    //connecting to supabase
+    var bands: [Band] = []
+    var gems: [Gem] = []
+    var bandStyles: [BandStyle] = []
+    var selectedBand: Band?
+    var isLoading = false
+    var errorMessage: String?
+
+    
+    private(set) var currentBand: Band?
+
+    private func distinctPreservingOrder(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for value in values where !seen.contains(value) {
+            seen.insert(value)
+            result.append(value)
+        }
+        return result
+    }
+
+    var bandThicknessOptions: [String] {
+        distinctPreservingOrder(bands.map { $0.bandThickness })
+    }
+
+    var gemShapeOptions: [String] {
+        distinctPreservingOrder(gems.map { $0.gemShape })
+    }
+
+    var gemMaterialOptions: [String] {
+        distinctPreservingOrder(gems.map { $0.gemMaterial })
+    }
+
+    var defaultBandStyle: BandStyle? { bandStyles.first }
+    var defaultBandThickness: String? { bandThicknessOptions.first }
+    var defaultGemShape: String? {
+        gemShapeOptions.first { $0.caseInsensitiveCompare("oval") == .orderedSame }
+            ?? gemShapeOptions.first
+    }
+    var defaultGemMaterial: String? {
+        gemMaterialOptions.first { $0.caseInsensitiveCompare("silver") == .orderedSame }
+            ?? gemMaterialOptions.first
+    }
+    
+    func fetchBands() async {
+        do {
+            let bands: [Band] = try await supabase
+                .from("ms_band")
+                .select("""
+                    band_id,
+                    description,
+                    band_thickness,
+                    asset_id(*),
+                    band_style_id(*)
+                """)
+                .execute()
+                .value
+            self.bands = bands
+            print("Band count:", bands.count)
+        } catch {
+            print(error)
+            self.errorMessage = "Gagal memuat data band: \(error.localizedDescription)"
+        }
+    }
+        
+    func fetchGems() async {
+        do {
+            let gems: [Gem] = try await supabase
+                .from("ms_gem")
+                .select("""
+                    gem_id,
+                    gem_shape,
+                    gem_material,
+                    asset_id(*)
+                """)
+                .execute()
+                .value
+
+            self.gems = gems
+            print("Gem count:", gems.count)
+        } catch {
+            print(error)
+        }
+    }
+
+    func fetchBandStyles() async {
+        do {
+            let bandStyles: [BandStyle] = try await supabase
+                .from("ms_band_style")
+                .select("""
+                    band_style_id,
+                    band_style_name,
+                    band_style_description
+                """)
+                .execute()
+                .value
+
+            self.bandStyles = bandStyles
+            print("BandStyle count:", bandStyles.count)
+        } catch {
+            print(error)
+        }
+    }
+
+    func fetchAllData() async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        async let bandsTask: () = fetchBands()
+        async let gemsTask: () = fetchGems()
+        async let bandStylesTask: () = fetchBandStyles()
+
+        _ = await (bandsTask, gemsTask, bandStylesTask)
+    }
+    
+    //fetch 3d data on supabase storage
+    func getModelURL(path: String, bucket: String) async -> URL? {
+        do {
+            return try await supabase.storage
+                .from(bucket)
+                .createSignedURL(path: path, expiresIn: 3600 * 100)
+        } catch {
+            print("Gagal mendapatkan URL untuk \(path) di bucket \(bucket): \(error)")
+            return nil
+        }
+    }
+    
+    //download temp file data
+    func downloadModelToLocal(from remoteURL: URL, uniqueKey: String) async throws -> URL {
+        var request = URLRequest(url: remoteURL)
+        request.timeoutInterval = 15
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+            throw URLError(.badServerResponse)
+        }
+
+        let ext = remoteURL.lastPathComponent.components(separatedBy: "?").first
+            .flatMap { ($0 as NSString).pathExtension.isEmpty ? nil : ($0 as NSString).pathExtension } ?? "usdz"
+
+        let safeKey = uniqueKey
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: " ", with: "_")
+
+        let fileName = "\(safeKey).\(ext)"
+        let localURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+
+        if FileManager.default.fileExists(atPath: localURL.path) {
+            try FileManager.default.removeItem(at: localURL)
+        }
+
+        try data.write(to: localURL)
+        return localURL
+    }
+    
+    func loadLocalModelURL(path: String, bucket: String) async -> URL? {
+        guard let remoteURL = await getModelURL(path: path, bucket: bucket) else {
+            return nil
+        }
+        return try? await downloadModelToLocal(from: remoteURL, uniqueKey: "\(bucket)_\(path)")
+    }
+    
 
     private(set) var hasUnsavedChanges = false
     private(set) var selectedGemName: String?
@@ -130,31 +294,216 @@ final class EditViewModel {
     }
 
     func loadScene() async {
-        await scene.setup(mode: mode, savedGems: design?.gems ?? [], savedBand: design?.band)
-    }
+        guard let design else {
+            print("No design found")
+            return
+        }
 
-    func handleDrop(identifier: String, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async {
-        switch identifier {
-        case "Flat_Band_Ring":
-            await scene.replaceBand(saved: design?.band)
-            markDirty()
-        case "Gemstone":
-            if let gem = await scene.addStone(screenLocation: screenLocation, containerSize: containerSize) {
-                selectGem(gem)
+        var bandURL: URL?
+        var savedBandForSetup: BandComponent? = design.band
+
+        if let savedBand = design.band {
+            bandURL = await loadLocalModelURL(path: savedBand.assetStoragePath, bucket: "band")
+            if bandURL == nil {
+                print("Saved band asset not found in storage (\(savedBand.assetStoragePath)), falling back to first Supabase band")
             }
-            markDirty()
-        default:
-            print("Unknown drop identifier:", identifier)
+        } else {
+            print("No saved band, falling back to first Supabase band")
+        }
+
+        if bandURL == nil {
+            if bands.isEmpty {
+                await fetchBands()
+            }
+            guard let firstBand = bands.first else {
+                print("No bands available from Supabase at all")
+                return
+            }
+            currentBand = firstBand
+            bandURL = await loadLocalModelURL(path: firstBand.assetId.storagePath, bucket: "band")
+            savedBandForSetup = nil // belum ada saved band component yang valid untuk posisi/orientasi
+        }
+
+        guard let finalBandURL = bandURL else {
+            print("Failed to download any band")
+            return
+        }
+
+        var gemURLs: [String: URL] = [:]
+        for gem in design.gems {
+            guard let url = await loadLocalModelURL(path: gem.assetStoragePath, bucket: "stone") else {
+                print("Failed to download stone")
+                continue
+            }
+            gemURLs[gem.name] = url
+        }
+
+        await scene.setup(bandURL: finalBandURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+    }
+    
+    private func loadInitialBand() async {
+        guard let band = bands.first else {
+            print("No bands from Supabase yet, using bundled placeholder")
+            await loadBand(named: "Flat_Band_Ring")
+            return
+        }
+        await loadBand(from: band)
+    }
+    
+    func loadBand(from band: Band) async {
+        currentBand = band
+        //check the actual bucket name on Supabase Storage
+        guard let localURL = await loadLocalModelURL(path: band.assetId.storagePath, bucket: "band") else {
+            print("Failed to download band model \(band.assetId.storagePath), using bundled placeholder")
+            await loadBand(named: "Flat_Band_Ring")
+            return
+        }
+        
+        do {
+            let entity = try await ModelEntity(contentsOf: localURL)
+            place(bandEntity: entity)
+        } catch {
+            print("Failed to load downloaded band entity", error)
+            await loadBand(named: "Flat_Band_Ring")
         }
     }
+    
+    private func loadBand(named name: String) async {
+        do {
+            let plainBand = try await Entity(named: name)
+            place(bandEntity: plainBand)
+        }
+        catch {
+            print("Failed to load band entity", error)
+        }
+    }
+    
+    
+    private func place(bandEntity: Entity) {
+        let bandSize = bandEntity.visualBounds(relativeTo: nil).extents
+        let targetBandDiameter: Float = 0.004
+        bandEntity.scale = .init(repeating: targetBandDiameter / max(bandSize.x, bandSize.y))
+        bandEntity.position = [-0.001, 0, 0]
+        
+        bandEntity.generateCollisionShapes(recursive: true)
+        bandEntity.components.set(InputTargetComponent())
+        bandEntity.components.set(GestureComponent(typeJewelry: .band, canDrag: false, canScale: true, canRotate: true))
+        
+        scene.bandAnchor.children.removeAll()
+        scene.bandAnchor.addChild(bandEntity)
+    }
+    
+    
+    func thicknessLabel(forSliderValue value: Double) -> String {
+        switch Int(value.rounded()) {
+        case 1: return "thin"
+        case 2: return "medium"
+        default: return "thick"
+        }
+    }
+    
+    func updateThickness(sliderValue: Double) {
+        currentBand?.bandThickness = thicknessLabel(forSliderValue: sliderValue)
+    }
+    
+    func selectBand(style: BandStyle, thickness: String) async {
+        guard let match = bands.first(where: {
+            $0.bandStyleID.id == style.id &&
+            $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame
+        }) else {
+            print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)'")
+            return
+        }
+        
+        currentBand = match
+        
+        guard let localURL = await loadLocalModelURL(path: match.assetId.storagePath, bucket: "band") else {
+            print("Failed to download band")
+            return
+        }
+        
+        await scene.replaceBand(from: localURL, saved: design?.band)
+        
+        markDirty()
+    }
+    
+    func selectBandStyle(named styleName: String) async {
+        guard let match = bands.first(where: {
+            $0.bandStyleID.bandStyleName.caseInsensitiveCompare(styleName) == .orderedSame
+        }) else {
+            print("No band in Supabase yet for style '\(styleName)'")
+            return
+        }
+        await loadBand(from: match)
+    }
+    
+    func selectGem(shape: String, material: String) async {
+        guard let match = gems.first(where: {
+            $0.gemShape.caseInsensitiveCompare(shape) == .orderedSame &&
+            $0.gemMaterial.caseInsensitiveCompare(material) == .orderedSame
+        }) else {
+            print("No gem in Supabase for shape '\(shape)' + material '\(material)'")
+            return
+        }
+        guard let localURL = await loadLocalModelURL(path: match.assetId.storagePath, bucket: "stone") else {
+            print("Failed to download gem")
+            return
+        }
+        
+        if let entity = await scene.addStone(from: localURL) {
+            selectGem(entity)
+            markDirty()
+        }
+    }
+    
+    
+    func loadGem(from gem: Gem, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async {
+        guard let localURL = await loadLocalModelURL(path: gem.assetId.storagePath, bucket: "stone") else {
+            print("Failed to download gem model \(gem.assetId.storagePath)")
+            return
+        }
+        
+        if let entity = await scene.addStone(from: localURL, screenLocation: screenLocation, containerSize: containerSize) {
+            selectGem(entity)
+            markDirty()
+        }
+    }
+    
+    
+    func thumbnailURL(for asset: Asset3D) -> URL? {
+        do {
+            return try supabase.storage
+                .from("thumbnail")
+                .getPublicURL(path: asset.thumbnailPath)
+        } catch {
+            print("Thumbnail URL error:", error)
+            return nil
+        }
+    }
+    
+    var uniqueBandsByStyle: [Band] {
 
+        var seen = Set<UUID>()
+
+        return bands.filter { band in
+
+            let styleId = band.bandStyleID.id
+
+            if seen.contains(styleId) {
+                return false
+            }
+
+            seen.insert(styleId)
+
+            return true
+        }
+    }
+    
     func selectAndAlign(_ gem: Entity) {
         selectedGemName = gem.name
 
-        let allSnapPoints = scene.band.children.first?.children.filter {
-            $0.components[SnapPointComponent.self] != nil
-        } ?? []
-
+        let allSnapPoints = scene.allSnapPoints()
+        
         if let target = SnappingService.nearestSnapPoint(
             to: gem,
             among: allSnapPoints,
@@ -195,13 +544,7 @@ final class EditViewModel {
     }
 
     func reapplyAttachedGemScales() {
-        guard let bandEntity = scene.bandAnchor.children.first else { return }
-
-        let snapPoints = bandEntity.children.filter {
-            $0.components[SnapPointComponent.self] != nil
-        }
-
-        for snap in snapPoints {
+        for snap in scene.allSnapPoints() {
             for child in snap.children {
                 SnappingService.reapplyFixedScale(for: child)
             }
@@ -246,4 +589,29 @@ final class EditViewModel {
             print("save failed: \(error)")
         }
     }
+    
+    private func replaceBand() async {
+        await loadInitialBand()
+    }
+    
+    func handleDrop(item: JewelryDropPayload, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async {
+        switch item.type {
+        case "band":
+            guard let band = bands.first(where: { $0.id == item.id }) else {
+                return
+            }
+            await loadBand(from: band)
+            
+        case "gem":
+            guard let gem = gems.first(where: { $0.id == item.id }) else {
+                return
+            }
+            await loadGem(from: gem, screenLocation: screenLocation, containerSize: containerSize)
+            
+        default:
+            print("Unknown drop type: ", item.type)
+        }
+    }
 }
+
+

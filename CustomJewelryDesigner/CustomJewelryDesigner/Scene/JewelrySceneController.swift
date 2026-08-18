@@ -48,7 +48,7 @@ final class JewelrySceneController {
     func setEditorFrame(_ frame: CGRect) { editorFrameInGlobal = frame }
     func setRealityContent(_ content: RealityViewCameraContent) { realityContent = content }
 
-    func setup(mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
+    func setup(bandURL: URL, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
         guard !isSetup else { return }
         isSetup = true
         
@@ -76,9 +76,9 @@ final class JewelrySceneController {
             )
         )
 
-        await loadBand(saved: savedBand)
+        await loadBand(from: bandURL, saved: savedBand)
         await loadMannequin()
-        await loadSavedGems(savedGems)
+        await loadSavedGems(gems: savedGems, urls: gemURLs)
         updateVisibility(for: mode)
     }
 
@@ -87,17 +87,18 @@ final class JewelrySceneController {
         mannequinPivot.isEnabled = mode == .handMannequin
     }
 
-    func loadBand(saved: BandComponent?) async {
+    func loadBand(from localURL: URL, saved: BandComponent? = nil) async {
         do {
-            let plainBand = try await Entity(named: "Flat_Band_Ring")
+            let band = try await ModelEntity(contentsOf: localURL)
+            let size = band.visualBounds(relativeTo: nil).extents
+            let scale = targetBandDiameter / max(size.x, size.y)
+            
+            band.scale = .init(repeating: scale)
+            band.position = [-0.001, 0, 0]
 
-            let plainBandSize = plainBand.visualBounds(relativeTo: nil).extents
-            plainBand.scale = .init(repeating: targetBandDiameter / max(plainBandSize.x, plainBandSize.y))
-            plainBand.position = [-0.001, 0, 0]
-
-            plainBand.generateCollisionShapes(recursive: true)
-            plainBand.components.set(InputTargetComponent())
-            plainBand.components.set(
+            band.generateCollisionShapes(recursive: true)
+            band.components.set(InputTargetComponent())
+            band.components.set(
                 GestureComponent(
                     typeJewelry: .band,
                     canDrag: false,
@@ -106,29 +107,29 @@ final class JewelrySceneController {
                 )
             )
 
-            SnappingService.addSnapPoints(to: plainBand)
+            SnappingService.addSnapPoints(to: band)
 
             if let saved {
                 if let orientation = saved.orientation {
-                    plainBand.orientation = orientation
+                    band.orientation = orientation
                 }
                 if let scale = saved.scaleFactor {
-                    plainBand.scale = .init(repeating: Float(scale))
+                    band.scale = .init(repeating: Float(scale))
                 }
             }
-
-            bandAnchor.addChild(plainBand)
+            bandAnchor.children.removeAll()
+            bandAnchor.addChild(band)
         } catch {
-            print("Failed to load band entity", error)
+            print("Failed to load band from URL: ", error)
         }
     }
 
-    func replaceBand(saved: BandComponent? = nil) async {
+    func replaceBand(from localURL: URL, saved: BandComponent? = nil) async {
         bandAnchor.children.removeAll()
-        await loadBand(saved: saved)
+        await loadBand(from: localURL, saved: saved)
     }
 
-    private func loadMannequin() async {
+    func loadMannequin() async {
         do {
             let mannequin = try await Entity(named: "Simplified_Hand_For_Artists")
 
@@ -153,9 +154,9 @@ final class JewelrySceneController {
         }
     }
 
-    func addStone(screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async -> Entity? {
+    func addStone(from localURL: URL, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async -> Entity? {
         do {
-            let gemstone = try await Entity(named: "Gemstone")
+            let gemstone = try await ModelEntity(contentsOf: localURL)
             let gemstoneSize = gemstone.visualBounds(relativeTo: nil).extents
 
             let initialScale = targetGemstoneDiameter / max(gemstoneSize.x, gemstoneSize.y)
@@ -179,40 +180,46 @@ final class JewelrySceneController {
         }
     }
 
-    func loadSavedGems(_ gems: [GemComponent]) async {
+    func loadSavedGems(gems: [GemComponent], urls: [String: URL]) async {
         for component in gems {
-            guard let entity = try? await Entity(named: component.assetStoragePath) else {
-                print("[LOAD GEM] Failed to load:", component.assetStoragePath)
+            guard let localURL = urls[component.name] else {
+                print("Missing URL: ", component.name)
                 continue
             }
+            
+            do {
+                let entity = try await ModelEntity(contentsOf: localURL)
+                entity.name = component.name
 
-            entity.name = component.name
+                let gemstoneSize = entity.visualBounds(relativeTo: nil).extents
+                let defaultScale = targetGemstoneDiameter / max(gemstoneSize.x, gemstoneSize.y)
+                let targetWorldScale = Float(component.scaleFactor ?? Double(defaultScale))
 
-            let gemstoneSize = entity.visualBounds(relativeTo: nil).extents
-            let defaultScale = targetGemstoneDiameter / max(gemstoneSize.x, gemstoneSize.y)
-            let targetWorldScale = Float(component.scaleFactor ?? Double(defaultScale))
+                entity.components.set(AttachmentComponent(targetWorldScale: targetWorldScale))
+                entity.scale = .init(repeating: targetWorldScale) // sementara, sebelum attach/parent
 
-            entity.components.set(AttachmentComponent(targetWorldScale: targetWorldScale))
-            entity.scale = .init(repeating: targetWorldScale) // sementara, sebelum attach/parent
+                entity.generateCollisionShapes(recursive: true)
+                entity.components.set(InputTargetComponent())
+                entity.components.set(
+                    GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: true)
+                )
 
-            entity.generateCollisionShapes(recursive: true)
-            entity.components.set(InputTargetComponent())
-            entity.components.set(
-                GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: true)
-            )
-
-            if let snapID = component.attachedSnapPointID, let snapPoint = findSnapPoint(id: snapID) {
-                SnappingService.attach(gem: entity, to: snapPoint)
-                print("[LOAD GEM]", entity.name, "attached to", snapID)
-            } else {
-                if let pos = component.position {
-                    entity.position = pos
+                if let snapID = component.attachedSnapPointID, let snapPoint = findSnapPoint(id: snapID) {
+                    SnappingService.attach(gem: entity, to: snapPoint)
+                    print("[LOAD GEM]", entity.name, "attached to", snapID)
+                } else {
+                    if let pos = component.position {
+                        entity.position = pos
+                    }
+                    if let orientation = component.orientation {
+                        entity.orientation = orientation
+                    }
+                    gemAnchor.addChild(entity)
                 }
-                if let orientation = component.orientation {
-                    entity.orientation = orientation
-                }
-                gemAnchor.addChild(entity)
+            } catch {
+                print("Failed to load", component.name, error)
             }
+            
         }
     }
 

@@ -123,11 +123,11 @@ enum GemShapeEnum: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .round:
-            return "Thin"
+            return "Round"
         case .oval:
-            return "Medium"
+            return "Oval"
         case .princess:
-            return "Thick"
+            return "Princess"
         case .pear:
             return "Pear"
         }

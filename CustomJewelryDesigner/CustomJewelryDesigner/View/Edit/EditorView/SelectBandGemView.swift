@@ -11,6 +11,7 @@ struct SelectBandGemView: View {
     @State private var selectedType = 0
     @Bindable var bandGemViewModel: BandGemViewModel
     
+    var viewModel: EditViewModel
     let panelWidth: CGFloat
     let expandedWidth: CGFloat
     let collapsedWidth: CGFloat
@@ -43,6 +44,7 @@ struct SelectBandGemView: View {
                         SizeView(bandGemViewModel: bandGemViewModel)
                     }
                 }
+                .padding()
                 .frame(
                     maxWidth: .infinity,
                     alignment: .topLeading
@@ -61,10 +63,3 @@ struct SelectBandGemView: View {
         .clipped()
     }
 }
-
-
-//#Preview {
-//    @Previewable @State var viewModel = BandGemViewModel()
-//    
-//    SelectBandGemView(panelWidth: 508, expandedWidth: 508, collapsedWidth: 40, viewModel: viewModel)
-//}
