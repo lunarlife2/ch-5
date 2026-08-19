@@ -65,6 +65,7 @@ final class EditViewModel {
     var bandStyles: [BandStyle] = []
     var selectedBand: Band?
     var isLoading = false
+    var isBandUpdating = false
     var errorMessage: String?
 
     
@@ -111,6 +112,7 @@ final class EditViewModel {
                     band_id,
                     description,
                     band_thickness,
+                    band_material,
                     asset_id(*),
                     band_style_id(*)
                 """)
@@ -343,6 +345,9 @@ final class EditViewModel {
     }
     
     private func applyPlaceholderBand() async {
+        isBandUpdating = true
+        defer { isBandUpdating = false }
+
         currentBand = nil
         await scene.loadBundledBand(named: "Flat_Band_Ring", saved: design?.band)
         pendingBandAssetPath = "Flat_Band_Ring"
@@ -351,6 +356,9 @@ final class EditViewModel {
     }
     
     private func applySelectedBand(_ band: Band) async {
+        isBandUpdating = true
+        defer { isBandUpdating = false }
+
         guard let localURL = await loadLocalModelURL(path: band.assetId.storagePath, bucket: "band") else {
             print("Failed to download band model \(band.assetId.storagePath)")
             return
@@ -379,42 +387,42 @@ final class EditViewModel {
         await applySelectedBand(band)
     }
     
-    func selectBand(style: BandStyle, thickness: String) async {
+    func selectBand(style: BandStyle, thickness: String, material: BandMaterialEnum) async {
         guard let match = bands.first(where: {
             $0.bandStyleID.id == style.id &&
-            $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame
+            $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame &&
+            normalizedMaterial($0.bandMaterial) == normalizedMaterial(material.rawValue)
         }) else {
-            print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)'")
+            print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)' + material '\(material.title)'")
             return
         }
         await applySelectedBand(match)
     }
     
-//    private func applySelectedBand(_ band: Band) async {
-//        guard let localURL = await loadLocalModelURL(
-//            path: band.assetId.storagePath,
-//            bucket: "band"
-//        ) else {
-//            print(
-//                "Failed to download band model \(band.assetId.storagePath)"
-//            )
-//            return
-//        }
-//
-//        currentBand = band
-//
-//        // Data yang akan disimpan ke SwiftData
-//        pendingBandAssetPath = band.assetId.storagePath
-//        pendingBandName = band.description
-//
-//        // Satu-satunya jalur untuk memasukkan band ke RealityKit
-//        await scene.replaceBand(
-//            from: localURL,
-//            saved: design?.band
-//        )
-//
-//        markDirty()
-//    }
+    func selectBand(style: BandStyle, thickness: String) async {
+        await selectBand(style: style, thickness: thickness, material: defaultBandMaterial ?? .yellowGold)
+    }
+    
+    private func normalizedMaterial(_ raw: String) -> String {
+        raw.lowercased().replacingOccurrences(of: " ", with: "")
+    }
+    
+    var defaultBandMaterial: BandMaterialEnum? {
+        guard let first = bands.first else { return nil }
+        return BandMaterialEnum.allCases.first {
+            normalizedMaterial(first.bandMaterial) == normalizedMaterial($0.rawValue)
+        }
+    }
+
+    
+    func band(forStyle style: BandStyle?, thickness: String, material: BandMaterialEnum) -> Band? {
+        guard let style else { return nil }
+        return bands.first {
+            $0.bandStyleID.id == style.id &&
+            $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame &&
+            normalizedMaterial($0.bandMaterial) == normalizedMaterial(material.rawValue)
+        }
+    }
     
     func thicknessLabel(forSliderValue value: Double) -> String {
         switch Int(value.rounded()) {

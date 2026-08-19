@@ -33,6 +33,13 @@ struct JewelryEditorView: View {
                 .simultaneousGesture(DragAndDropGesture(touchTracker: touchTracker, editViewModel: viewModel, scene: viewModel.scene).dragGesture)
                 .gesture(
                     TwoFingerTransformGesture(touchTracker: touchTracker, entityProvider: { location in viewModel.scene.entityAtScreenLocation(location)}, editViewModel: viewModel, sceneController: viewModel.scene))
+                .overlay {
+                    if viewModel.isBandUpdating {
+                        ProgressView()
+                            .padding(20)
+                            .background(.thinMaterial, in: Circle())
+                    }
+                }
                 
                 VStack(alignment: .leading) {
                     HStack {

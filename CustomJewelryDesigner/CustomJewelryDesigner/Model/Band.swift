@@ -13,6 +13,7 @@ struct Band: Codable {
     var description: String
     var bandStyleID: BandStyle
     var bandThickness: String
+    var bandMaterial : String
     
     enum CodingKeys: String, CodingKey {
         case id = "band_id"
@@ -20,5 +21,6 @@ struct Band: Codable {
         case description = "description"
         case bandStyleID = "band_style_id"
         case bandThickness = "band_thickness"
+        case bandMaterial = "band_material"
     }
 }

@@ -8,51 +8,36 @@
 import SwiftUI
 
 struct BandView: View {
-    //remove the enum state, use the variable from model
     @Environment(EditViewModel.self) private var editViewModel
-    @State private var selectedThickness: Double = 1
-    @State private var isSelected = true
     @State private var selectedStyle: BandStyle?
     @State private var sliderValue: Double = 1
-    @State private var selectedMaterial: BandMaterialEnum? //still hardcode bcs we still not decide to make the asset or no
-    
+    @State private var selectedMaterial: BandMaterialEnum = .yellowGold
+
+    private var currentThicknessLabel: String {
+        editViewModel.thicknessLabel(forSliderValue: sliderValue)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            
+
             // style
             VStack(alignment: .leading, spacing: 10) {
                 Text("Style")
                     .font(.system(size: 16, weight: .semibold))
-                
+
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
-                        ForEach(
-                            editViewModel.uniqueBandsByStyle,
-                            id: \.id
-                        ) { band in
-                            
+                        ForEach(editViewModel.uniqueBandsByStyle, id: \.id) { band in
                             VStack {
-                                AsyncImage(
-                                    url: editViewModel.thumbnailURL(
-                                        for: band.assetId
-                                    )
-                                ) { phase in
+                                AsyncImage(url: editViewModel.thumbnailURL(for: band.assetId)) { phase in
                                     switch phase {
                                     case .success(let image):
-                                        image
-                                            .resizable()
-                                            .scaledToFit()
-                                        
+                                        image.resizable().scaledToFit()
                                     case .failure:
-                                        Image(
-                                            systemName:
-                                                "exclamationmark.triangle"
-                                        )
-                                        .foregroundStyle(.secondary)
-                                        
+                                        Image(systemName: "exclamationmark.triangle")
+                                            .foregroundStyle(.secondary)
                                     case .empty:
                                         ProgressView()
-                                        
                                     @unknown default:
                                         ProgressView()
                                     }
@@ -60,27 +45,20 @@ struct BandView: View {
                                 .frame(width: 60, height: 60)
                                 .padding()
                                 .background(
-                                    EditCard(
-                                        isSelected:
-                                            selectedStyle?.id
-                                        == band.bandStyleID.id
-                                    )
+                                    EditCard(isSelected: selectedStyle?.id == band.bandStyleID.id)
                                 )
-                                
+
                                 Text(band.bandStyleID.bandStyleName)
                                     .font(.system(size: 12))
                             }
                             .padding(.trailing, 10)
                             .onTapGesture {
                                 selectedStyle = band.bandStyleID
-                                
                                 Task {
                                     await editViewModel.selectBand(
                                         style: band.bandStyleID,
-                                        thickness:
-                                            editViewModel.thicknessLabel(
-                                                forSliderValue: sliderValue
-                                            )
+                                        thickness: currentThicknessLabel,
+                                        material: selectedMaterial
                                     )
                                 }
                             }
@@ -88,66 +66,76 @@ struct BandView: View {
                     }
                 }
             }
-            
-            //thickness alr works
+
+            // thickness
             VStack(alignment: .leading, spacing: 10) {
                 Text("Thickness")
                     .font(.system(size: 16, weight: .semibold))
-                
-                Slider(
-                    value: $sliderValue,
-                    in: 1...3,
-                    step: 1
-                ) {
+
+                Slider(value: $sliderValue, in: 1...3, step: 1) {
                     Text("Thickness")
                 } minimumValueLabel: {
-                    Text("Thin")
-                        .font(.system(size: 12))
+                    Text("Thin").font(.system(size: 12))
                 } maximumValueLabel: {
-                    Text("Thick")
-                        .font(.system(size: 12))
+                    Text("Thick").font(.system(size: 12))
                 }
-                
-                Text(
-                    editViewModel
-                        .thicknessLabel(
-                            forSliderValue: sliderValue
-                        )
-                        .capitalized
-                )
-                .font(.caption)
+
+                Text(currentThicknessLabel.capitalized)
+                    .font(.caption)
             }
             .frame(maxWidth: 550)
-            
-            //material
+
+            // material
             VStack(alignment: .leading, spacing: 10) {
                 Text("Materials")
                     .font(.system(size: 16, weight: .semibold))
-                
+
                 HStack {
                     ForEach(BandMaterialEnum.allCases) { material in
+                        let matchedBand = editViewModel.band(
+                            forStyle: selectedStyle,
+                            thickness: currentThicknessLabel,
+                            material: material
+                        )
+                        let isAvailable = matchedBand != nil
+
                         VStack {
-                            Image("flat-2d")
-                                .resizable()
-                                .frame(
-                                    maxWidth: 60,
-                                    maxHeight: 60
-                                )
-                                .padding()
-                                .background(
-                                    EditCard(
-                                        isSelected:
-                                            selectedMaterial == material
-                                    )
-                                )
-                            
+                            AsyncImage(url: matchedBand.flatMap { editViewModel.thumbnailURL(for: $0.assetId) }) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable().scaledToFit()
+                                case .failure:
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .foregroundStyle(.secondary)
+                                case .empty:
+                                    if isAvailable {
+                                        ProgressView()
+                                    } else {
+                                        Image("flat-2d").resizable().scaledToFit()
+                                    }
+                                @unknown default:
+                                    ProgressView()
+                                }
+                            }
+                            .frame(width: 60, height: 60)
+                            .padding()
+                            .background(EditCard(isSelected: selectedMaterial == material))
+                            .opacity(isAvailable ? 1 : 0.4)
+
                             Text(material.title)
                                 .font(.system(size: 12))
                         }
                         .padding(.trailing, 10)
                         .onTapGesture {
+                            guard isAvailable, let style = selectedStyle else { return }
                             selectedMaterial = material
-                            print("Selected material:", material)
+                            Task {
+                                await editViewModel.selectBand(
+                                    style: style,
+                                    thickness: currentThicknessLabel,
+                                    material: material
+                                )
+                            }
                         }
                     }
                 }
@@ -155,58 +143,42 @@ struct BandView: View {
         }
         .padding()
         .frame(maxWidth: 550)
-        
-        // MARK: - Initial State
-        
+        .disabled(editViewModel.isBandUpdating)
+        .opacity(editViewModel.isBandUpdating ? 0.5 : 1)
+        .overlay {
+            if editViewModel.isBandUpdating {
+                ProgressView("Updating…")
+                    .padding()
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .animation(.default, value: editViewModel.isBandUpdating)
         .onAppear {
             setupInitialSelection()
         }
-        
-        // MARK: - Thickness Changed
-        
         .onChange(of: sliderValue) { _, newValue in
-            guard let style = selectedStyle else {
-                return
-            }
-            
-            let thickness = editViewModel.thicknessLabel(
-                forSliderValue: newValue
-            )
-            
+            guard let style = selectedStyle else { return }
+            let thickness = editViewModel.thicknessLabel(forSliderValue: newValue)
             Task {
-                await editViewModel.selectBand(
-                    style: style,
-                    thickness: thickness
-                )
+                await editViewModel.selectBand(style: style, thickness: thickness, material: selectedMaterial)
             }
         }
     }
-    
+
     private func setupInitialSelection() {
         if selectedStyle == nil {
             selectedStyle = editViewModel.defaultBandStyle
         }
-        
+        selectedMaterial = editViewModel.defaultBandMaterial ?? .yellowGold
+
         if let thickness = editViewModel.defaultBandThickness {
             switch thickness.lowercased() {
-            case "thin":
-                sliderValue = 1
-                
-            case "medium":
-                sliderValue = 2
-                
-            case "thick":
-                sliderValue = 3
-                
-            default:
-                sliderValue = 1
+            case "thin": sliderValue = 1
+            case "medium": sliderValue = 2
+            case "thick": sliderValue = 3
+            default: sliderValue = 1
             }
         }
     }
 }
 
-//#Preview {
-//    BandView(
-//        viewModel: EditViewModel()
-//    )
-//}
