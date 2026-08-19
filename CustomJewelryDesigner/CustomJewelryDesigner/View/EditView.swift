@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import RealityKit
 
 struct EditView: View {
 
@@ -22,9 +23,12 @@ struct EditView: View {
         self.designFile = designFile
         _editViewModel = State(initialValue: EditViewModel(designFile: designFile))
     }
+    
 
     @State private var panelWidth: CGFloat = Layout.expandedWidth
     @State private var dragStartWidth: CGFloat = Layout.expandedWidth
+    @State private var selectedGizmoAxis: ViewAxis?
+    @State private var bottomControlsHeight: CGFloat = 0
 
     private enum Layout {
         static let expandedWidth: CGFloat = 408
@@ -79,39 +83,141 @@ struct EditView: View {
 
     private var editorAndPanel: some View {
         HStack(spacing: 0) {
-            JewelryEditorView(viewModel: editViewModel)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            JewelryEditorView(
+                viewModel: editViewModel,
+                bottomInset: bottomControlsHeight
+            )
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity
+            )
 
             SelectBandGemView(
-                bandGemViewModel: bandGemViewModel, viewModel: editViewModel,
+                bandGemViewModel: bandGemViewModel,
+                viewModel: editViewModel,
                 panelWidth: panelWidth,
                 expandedWidth: Layout.expandedWidth,
                 collapsedWidth: Layout.collapsedWidth
             )
-            .frame(width: panelWidth, height: Layout.panelHeight, alignment: .leading)
+            .frame(
+                width: panelWidth,
+                height: Layout.panelHeight,
+                alignment: .leading
+            )
             .padding(.trailing, panelRightPadding)
             .task {
                 await editViewModel.fetchAllData()
 
-                print("Band:", editViewModel.bands.count)
-                print("Gem:", editViewModel.gems.count)
-                print("Style:", editViewModel.bandStyles.count)
+                print("Band:", editViewModel.bands.count
+                )
+
+                print(
+                    "Gem:",
+                    editViewModel.gems.count
+                )
+
+                print(
+                    "Style:",
+                    editViewModel.bandStyles.count
+                )
             }
             .overlay(alignment: .bottomLeading) {
+
                 ResizeHandle()
-                    .padding(.leading, Layout.resizeHandlePadding)
-                    .padding(.bottom, Layout.resizeHandlePadding)
+                    .padding(
+                        .leading,
+                        Layout.resizeHandlePadding
+                    )
+                    .padding(
+                        .bottom,
+                        Layout.resizeHandlePadding
+                    )
                     .gesture(resizeGesture)
             }
         }
     }
-
     private var bottomControls: some View {
         HStack {
-            trashButton
+            gizmo
+
             Spacer()
+
             saveButton
         }
+        .reportHeight(
+            BottomControlsHeightKey.self
+        )
+        .onPreferenceChange(
+            BottomControlsHeightKey.self
+        ) { height in
+            bottomControlsHeight = height
+        }
+    }
+    
+    private var gizmo: some View {
+        OrientationGizmoView(
+            orientation: editViewModel.scene.bandOrientation,
+            selectedAxis: $selectedGizmoAxis,
+
+            onAxisSelected: { axis, targetOrientation in
+                editViewModel.scene.snapBand(to: targetOrientation)
+            },
+            onRotate: { deltaX, deltaY in
+                editViewModel.scene.rotateBand(
+                    deltaX: Float(deltaX),
+                    deltaY: Float(deltaY)
+                )
+            },
+
+            onRotateBegin: {
+                editViewModel.scene.beginRotateBand()
+            },
+
+            onRotateEnd: {
+                editViewModel.scene.endRotateBand()
+            }
+        )
+        .padding(.leading, Layout.trashLeadingPadding)
+    }
+    
+    
+    private func rotateSelected(
+        _ entity: Entity,
+        axis: ViewAxis,
+        step: Float = .pi / 2
+    ) {
+
+        let axisVec: SIMD3<Float>
+
+        switch axis {
+
+        case .x:
+            axisVec = SIMD3<Float>(1, 0, 0)
+
+        case .negativeX:
+            axisVec = SIMD3<Float>(-1, 0, 0)
+
+        case .y:
+            axisVec = SIMD3<Float>(0, 1, 0)
+
+        case .negativeY:
+            axisVec = SIMD3<Float>(0, -1, 0)
+
+        case .z:
+            axisVec = SIMD3<Float>(0, 0, 1)
+
+        case .negativeZ:
+            axisVec = SIMD3<Float>(0, 0, -1)
+        }
+
+        entity.orientation =
+            simd_quatf(
+                angle: step,
+                axis: axisVec
+            ) * entity.orientation
+
+        editViewModel.markDirty()
     }
 
     private var trashButton: some View {
@@ -200,8 +306,3 @@ struct EditView: View {
         )
     }
 }
-
-
-//#Preview {
-//    EditView(designFile: DesignFile(id: 1, name: "Tes", updatedAt: .now, ringPosition: , design: ))
-//}

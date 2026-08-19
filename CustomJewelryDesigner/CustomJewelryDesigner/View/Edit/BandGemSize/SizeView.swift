@@ -130,8 +130,3 @@ struct SizeView: View {
         bandGemViewModel.selectedRingSizeID = availableRingSizes[ringSizeIndex].id
     }
 }
-
-//#Preview {
-//    @Previewable @State var viewModel = BandGemViewModel()
-//    SizeView(viewModel: viewModel)
-//}

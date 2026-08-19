@@ -51,6 +51,7 @@ enum JewelryEditorMode: String, CaseIterable, Identifiable {
 @Observable
 final class EditViewModel {
     let scene = JewelrySceneController()
+    
     private let persistence = DesignPersistenceService()
     private(set) var designFile: DesignFile
     private var modelContext: ModelContext?
@@ -67,7 +68,7 @@ final class EditViewModel {
     var isLoading = false
     var isBandUpdating = false
     var errorMessage: String?
-
+    var selectedGizmoAxis: ViewAxis?
     
     private(set) var currentBand: Band?
 
@@ -387,20 +388,35 @@ final class EditViewModel {
         await applySelectedBand(band)
     }
     
-    func selectBand(style: BandStyle, thickness: String, material: BandMaterialEnum) async {
+//     func selectBand(style: BandStyle, thickness: String, material: BandMaterialEnum) async {
+//         guard let match = bands.first(where: {
+//             $0.bandStyleID.id == style.id &&
+//             $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame &&
+//             normalizedMaterial($0.bandMaterial) == normalizedMaterial(material.rawValue)
+//         }) else {
+//             print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)' + material '\(material.title)'")
+//             return
+//         }
+//         await applySelectedBand(match)
+//     }
+    
+//     func selectBand(style: BandStyle, thickness: String) async {
+//         await selectBand(style: style, thickness: thickness, material: defaultBandMaterial ?? .yellowGold)
+//     }
+  
+     func selectBand(style: BandStyle, thickness: String, material: BandMaterialEnum? = nil) async {
+        let targetMaterial = material ?? defaultBandMaterial ?? .yellowGold
+
         guard let match = bands.first(where: {
             $0.bandStyleID.id == style.id &&
             $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame &&
-            normalizedMaterial($0.bandMaterial) == normalizedMaterial(material.rawValue)
+            normalizedMaterial($0.bandMaterial) == normalizedMaterial(targetMaterial.rawValue)
         }) else {
-            print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)' + material '\(material.title)'")
+            print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)' + material '\(targetMaterial.title)'")
             return
         }
+
         await applySelectedBand(match)
-    }
-    
-    func selectBand(style: BandStyle, thickness: String) async {
-        await selectBand(style: style, thickness: thickness, material: defaultBandMaterial ?? .yellowGold)
     }
     
     private func normalizedMaterial(_ raw: String) -> String {
@@ -424,6 +440,7 @@ final class EditViewModel {
         }
     }
     
+
     func thicknessLabel(forSliderValue value: Double) -> String {
         switch Int(value.rounded()) {
         case 1: return "thin"

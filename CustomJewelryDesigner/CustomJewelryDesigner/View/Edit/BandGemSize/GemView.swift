@@ -5,11 +5,6 @@
 //  Created by Yimei Winata on 14/08/26.
 //
 
-//
-//  GemView.swift
-//  CustomJewelryDesigner
-//
-
 import SwiftUI
 
 struct GemView: View {
@@ -199,9 +194,3 @@ struct GemView: View {
         }
     }
 }
-
-//#Preview {
-//    GemView(
-//        viewModel: EditViewModel()
-//    )
-//}
