@@ -204,9 +204,3 @@ struct BandView: View {
         }
     }
 }
-
-//#Preview {
-//    BandView(
-//        viewModel: EditViewModel()
-//    )
-//}

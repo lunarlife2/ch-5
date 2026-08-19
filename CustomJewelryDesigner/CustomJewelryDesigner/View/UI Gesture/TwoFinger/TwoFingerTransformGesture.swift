@@ -151,12 +151,20 @@ struct TwoFingerTransformGesture: UIGestureRecognizerRepresentable {
                 return
             }
             applyRotation(entity: entity,recognizer: recognizer, coordinator: context.coordinator)
+            sceneController.gizmoController.updateGizmoTransform()
+            
+            if gc.typeJewelry == .band {
+                sceneController.bandOrientation = entity.orientation(relativeTo: nil)
+            }
             
         case .scale:
             guard gc.canScale else {
                 return
             }
             applyScale(entity: entity, recognizer: recognizer, coordinator: context.coordinator)
+            sceneController
+                    .gizmoController
+                    .updateGizmoTransform()
             
         case .undetermined:
             break
@@ -165,18 +173,6 @@ struct TwoFingerTransformGesture: UIGestureRecognizerRepresentable {
 
     
     private func applyRotation(entity: Entity, recognizer: TwoFingerTransformRecognizer, coordinator: Coordinator) {
-        let beforeGemPositions: [(Entity, SIMD3<Float>)] =
-        sceneController.allGemEntities()
-            .compactMap { gem in
-                guard gem.components[AttachmentComponent.self] != nil else {
-                    return nil
-                }
-                
-                return (
-                    gem,
-                    gem.position(relativeTo: nil)
-                )
-            }
         var state = entity.gestureStateComponent
         
         state.isRotating = true
