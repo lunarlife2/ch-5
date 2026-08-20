@@ -146,7 +146,6 @@ struct JewelryEditorView: View {
     @ViewBuilder
     private func realityView(geometry: GeometryProxy) -> some View {
         RealityView { content in
-            
             content.add(viewModel.scene.rootEntity)
             content.subscribe(to: SceneEvents.Update.self) { _ in
                 viewModel.updateSelectedGemIconPositions()

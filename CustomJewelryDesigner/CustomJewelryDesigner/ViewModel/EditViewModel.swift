@@ -309,20 +309,40 @@ final class EditViewModel {
             var bandURL: URL?
             var bandSource: BandSourceComponent
             var savedBandForSetup: BandComponent? = design.band
+            var useBundledFallback = false
 
             if let savedBand = design.band {
-                bandURL = await loadLocalModelURL(path: savedBand.assetStoragePath, bucket: "band")
                 bandSource = BandSourceComponent(
                     libraryAssetID: savedBand.libraryAssetID,
                     assetStoragePath: savedBand.assetStoragePath,
                     name: savedBand.name
                 )
-                if bandURL == nil {
-                    print("Saved band asset not found in storage (\(savedBand.assetStoragePath)), falling back to first Supabase band")
+
+                if savedBand.assetStoragePath == "Flat_Band_Ring" {
+                    useBundledFallback = true
+                } else {
+                    bandURL = await loadLocalModelURL(path: savedBand.assetStoragePath, bucket: "band")
+                    if bandURL == nil {
+                        print("Saved band asset not found in storage (\(savedBand.assetStoragePath)), falling back to first Supabase band")
+                    }
                 }
             } else {
                 bandSource = BandSourceComponent(libraryAssetID: UUID(), assetStoragePath: "Flat_Band_Ring", name: "plain band usd")
-                print("No saved band, falling back to first Supabase band")
+                useBundledFallback = true
+            }
+
+            var gemURLs: [String: URL] = [:]
+            for gem in design.gems {
+                guard let url = await loadLocalModelURL(path: gem.assetStoragePath, bucket: "stone") else {
+                    print("Failed to download stone")
+                    continue
+                }
+                gemURLs[gem.name] = url
+            }
+
+            if useBundledFallback {
+                await scene.setup(bandURL: nil, bandSource: bandSource, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+                return
             }
 
             if bandURL == nil {
@@ -339,15 +359,6 @@ final class EditViewModel {
             }
 
             guard let finalBandURL = bandURL else { print("Failed to download any band"); return }
-
-            var gemURLs: [String: URL] = [:]
-            for gem in design.gems {
-                guard let url = await loadLocalModelURL(path: gem.assetStoragePath, bucket: "stone") else {
-                    print("Failed to download stone")
-                    continue
-                }
-                gemURLs[gem.name] = url
-            }
 
             await scene.setup(bandURL: finalBandURL, bandSource: bandSource, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
         }

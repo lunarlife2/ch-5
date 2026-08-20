@@ -42,7 +42,7 @@ final class JewelrySceneController {
     private var rotateBandStartOrientation: simd_quatf?
     private var rotateGemAnchorStartOrientation: simd_quatf?
     
-    private let targetBandDiameter: Float = 0.005
+    private let targetBandDiameter: Float = 0.3
     private let targetGemstoneDiameter: Float = 0.001
     private let targetMannequinDiameter: Float = 0.004
     private let gemFrontDepth: Float = 0.01
@@ -56,7 +56,7 @@ final class JewelrySceneController {
     func setRealityContent(_ content: RealityViewCameraContent) { realityContent = content }
     func isInsideEditorFrame(_ globalPoint: CGPoint) -> Bool { editorFrameInGlobal.contains(globalPoint) }
     
-    func setup(bandURL: URL, bandSource: BandSourceComponent, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
+    func setup(bandURL: URL?, bandSource: BandSourceComponent, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
         guard !isSetup else { return }
         isSetup = true
         
@@ -89,8 +89,12 @@ final class JewelrySceneController {
                 canRotate: true
             )
         )
-        
-        await loadBand(from: bandURL, source: bandSource, saved: savedBand)
+                
+        if let bandURL {
+            await loadBand(from: bandURL, source: bandSource, saved: savedBand)
+        } else {
+            await loadBundledBand(named: bandSource.assetStoragePath, saved: savedBand)
+        }
         await loadMannequin()
         await loadSavedGems(gems: savedGems, urls: gemURLs)
         updateVisibility(for: mode)

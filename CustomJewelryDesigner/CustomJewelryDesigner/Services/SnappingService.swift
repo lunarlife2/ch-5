@@ -11,6 +11,8 @@ import RealityKit
 import simd
 
 enum SnappingService {
+    static let snapPointIDs = ["band-snap-0", "band-snap-1", "band-snap-2"]
+    
     static let defaultDragScreenRadius: CGFloat = 50
 
     static func nearestSnapPoint(to gem: Entity, among snapPoints: [Entity], maxDistance: Float, allowOccupiedBySelf gemName: String) -> Entity? {
@@ -137,10 +139,13 @@ enum SnappingService {
     static func addSnapPoints(to band: Entity) {
         let bounds = band.visualBounds(relativeTo: band)
         let center = bounds.center
+
         let ringRadius = max(bounds.extents.x, bounds.extents.y) / 2
 
         let angles: [(id: String, degrees: Float)] = [
-            ("band-snap-0", -25), ("band-snap-1", 0), ("band-snap-2", 25)
+            ("band-snap-0", -25),
+            ("band-snap-1", 0),
+            ("band-snap-2", 25)
         ]
 
         for (index, entry) in angles.enumerated() {
@@ -155,10 +160,39 @@ enum SnappingService {
                 center.z
             )
 
-            let radialDirection = SIMD3<Float>(sin(radians), cos(radians), 0)
-            snap.orientation = simd_quatf(from: [0, 0, 1], to: normalize(radialDirection))
+            let radialDirection = SIMD3<Float>(
+                sin(radians),
+                cos(radians),
+                0
+            )
 
-            snap.components.set(SnapPointComponent(snapID: entry.id, index: index))
+            snap.orientation = simd_quatf(
+                from: [0, 0, 1],
+                to: normalize(radialDirection)
+            )
+
+            snap.components.set(
+                SnapPointComponent(
+                    snapID: entry.id,
+                    index: index
+                )
+            )
+
+            // Visual snap point
+            let visual = ModelEntity(
+                mesh: .generateSphere(radius: 5),
+                materials: [
+                    SimpleMaterial(
+                        color: .blue.withAlphaComponent(0.3),
+                        isMetallic: false
+                    )
+                ]
+            )
+
+            visual.name = "snap-visual"
+            visual.position = SIMD3<Float>(0, 2, 20)
+
+            snap.addChild(visual)
             band.addChild(snap)
         }
     }
