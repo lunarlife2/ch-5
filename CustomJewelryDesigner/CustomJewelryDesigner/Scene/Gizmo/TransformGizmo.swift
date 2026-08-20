@@ -221,8 +221,6 @@ final class TransformGizmo: Entity {
         )
     }
     
-    // MARK: - Axis
-    
     private enum Axis {
         case x
         case y

@@ -42,9 +42,9 @@ final class JewelrySceneController {
     private var rotateBandStartOrientation: simd_quatf?
     private var rotateGemAnchorStartOrientation: simd_quatf?
     
-    private let targetBandDiameter: Float = 0.004
+    private let targetBandDiameter: Float = 0.005
     private let targetGemstoneDiameter: Float = 0.001
-    private let targetMannequinDiameter: Float = 0.008
+    private let targetMannequinDiameter: Float = 0.004
     private let gemFrontDepth: Float = 0.01
     private let gemFixedTapPosition = SIMD3<Float>(0.2, 0, 0.001)
     
@@ -181,7 +181,6 @@ final class JewelrySceneController {
     }
     
     func deselectEntity() {
-        
         gizmoController.deselect()
     }
     
@@ -218,35 +217,54 @@ final class JewelrySceneController {
     
     
     private func prepareAndInstall(band: Entity, saved: BandComponent?) {
-        let size = band.visualBounds(relativeTo: nil).extents
-        let scale = targetBandDiameter / max(size.x, size.y)
-        
+        let size = band.visualBounds(relativeTo: band).extents
+
+        let rawDiameter = max(size.x, size.z)
+
+        guard rawDiameter > 0 else {
+            return
+        }
+
+        let scale = targetBandDiameter / rawDiameter
+
         band.scale = .init(repeating: scale)
         band.position = [-0.001, 0, 0]
-        
+
         band.generateCollisionShapes(recursive: true)
+
         band.components.set(InputTargetComponent())
+
         band.components.set(
-            GestureComponent(typeJewelry: .band, canDrag: false, canScale: true, canRotate: true)
+            GestureComponent(
+                typeJewelry: .band,
+                canDrag: false,
+                canScale: true,
+                canRotate: true
+            )
         )
-        
+
         SnappingService.addSnapPoints(to: band)
-        
-        bandAnchor.orientation = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
-        
+
+        bandAnchor.orientation = simd_quatf(
+            angle: 0,
+            axis: SIMD3<Float>(0, 1, 0)
+        )
+
         if let saved {
             if let orientation = saved.orientation {
                 bandAnchor.orientation = orientation
             }
+
             if let scale = saved.scaleFactor {
                 band.scale = .init(repeating: Float(scale))
             }
         }
-        
+
         bandAnchor.children.removeAll()
         bandAnchor.addChild(band)
-        
+
         bandOrientation = bandAnchor.orientation(relativeTo: nil)
+
         gizmoController.updateGizmoTransform()
     }
     
@@ -256,7 +274,7 @@ final class JewelrySceneController {
             
             let mannequinSize = mannequin.visualBounds(relativeTo: nil).extents
             mannequin.scale = .init(repeating: targetMannequinDiameter / max(mannequinSize.x, mannequinSize.y))
-            mannequin.position = [0, -0.5, 0]
+            mannequin.position = [0, -0.3, 0]
             
             mannequin.generateCollisionShapes(recursive: true, static: true)
             mannequin.components.set(InputTargetComponent())
@@ -269,6 +287,7 @@ final class JewelrySceneController {
                 )
             )
             mannequinAnchor.addChild(mannequin)
+            gizmoController.updateGizmoTransform()
         } catch {
             print("Failed to load entity", error)
         }
@@ -332,6 +351,11 @@ final class JewelrySceneController {
                 
                 if let snapID = component.attachedSnapPointID, let snapPoint = findSnapPoint(id: snapID) {
                     SnappingService.attach(gem: entity, to: snapPoint)
+
+                    if let orientation = component.orientation {
+                        entity.setOrientation(orientation, relativeTo: nil)
+                    }
+
                     print("[LOAD GEM]", entity.name, "attached to", snapID)
                 } else {
                     if let pos = component.position {
@@ -418,4 +442,43 @@ final class JewelrySceneController {
         }
     }
     
+    func screenAnchorPoints(for entity: Entity, padding: CGFloat = 24) -> (left: CGPoint, right: CGPoint)? {
+        guard let realityContent else { return nil }
+        let bounds = entity.visualBounds(relativeTo: nil)
+
+        let corners = [
+            SIMD3<Float>(bounds.min.x, bounds.min.y, bounds.min.z),
+            SIMD3<Float>(bounds.max.x, bounds.min.y, bounds.min.z),
+            SIMD3<Float>(bounds.min.x, bounds.max.y, bounds.min.z),
+            SIMD3<Float>(bounds.max.x, bounds.max.y, bounds.min.z),
+            SIMD3<Float>(bounds.min.x, bounds.min.y, bounds.max.z),
+            SIMD3<Float>(bounds.max.x, bounds.min.y, bounds.max.z),
+            SIMD3<Float>(bounds.min.x, bounds.max.y, bounds.max.z),
+            SIMD3<Float>(bounds.max.x, bounds.max.y, bounds.max.z),
+        ]
+
+        let projected = corners.compactMap { realityContent.project(point: $0, to: .local) }
+        guard !projected.isEmpty else { return nil }
+
+        let minX = projected.map(\.x).min()!
+        let maxX = projected.map(\.x).max()!
+        let midY = projected.map(\.y).reduce(0, +) / CGFloat(projected.count)
+
+        return (
+            left: CGPoint(x: minX - padding, y: midY),
+            right: CGPoint(x: maxX + padding, y: midY)
+        )
+    }
+
+    func rotateSelectedGemAroundViewAxis(byDegrees delta: Float) {
+        guard let entity = gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else { return }
+
+        let viewForward = normalize(cameraController.pivot.orientation.act(SIMD3<Float>(0, 0, -1)))
+        let rotation = simd_quatf(angle: delta * .pi / 180, axis: viewForward)
+        let currentWorldOrientation = entity.orientation(relativeTo: nil)
+        entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
+        
+        gizmoController.updateGizmoTransform()
+    }
 }

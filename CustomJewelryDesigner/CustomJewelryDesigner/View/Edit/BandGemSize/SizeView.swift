@@ -16,62 +16,68 @@ struct SizeView: View {
     
     var body: some View {
         
-        VStack(alignment: .leading) {
-            HStack {
-                Text("Finger")
-                
-                Spacer()
-                
-                Picker("", selection: $selectedFinger) {
-                    ForEach(Finger.allCases) { finger in
-                        Text(finger.title)
-                            .tag(finger)
+        VStack(alignment: .leading, spacing: 20) {
+            
+            VStack(alignment: .leading) {
+                //finger
+                HStack {
+                    Text("Finger")
+                    
+                    Spacer()
+                    
+                    Picker("", selection: $selectedFinger) {
+                        ForEach(Finger.allCases) { finger in
+                            Text(finger.title)
+                                .tag(finger)
+                        }
                     }
+                    .labelsHidden()
+                    .tint(.secondary)
                 }
-                .labelsHidden()
-                .tint(.secondary)
-            }
-            .padding(.top, 30)
-            .padding(.horizontal, 50)
-            
-            Divider()
-                .frame(maxWidth: .infinity, maxHeight: 1)
-                .background(Color.black)
-                .padding(.horizontal, 50)
-            
-            HStack {
-                Text("Hand")
+                .padding(.horizontal, 30)
                 
-                Spacer()
+                Divider()
+                    .frame(maxWidth: .infinity, maxHeight: 1)
+                    .background(Color.black)
+                    .padding(.horizontal, 30)
                 
-                Picker("", selection: $selectedHand) {
-                    ForEach(Hand.allCases) { hand in
-                        Text(hand.title)
-                            .tag(hand)
+                //hand
+                HStack {
+                    Text("Hand")
+                    
+                    Spacer()
+                    
+                    Picker("", selection: $selectedHand) {
+                        ForEach(Hand.allCases) { hand in
+                            Text(hand.title)
+                                .tag(hand)
+                        }
                     }
+                    .tint(.secondary)
+                    .labelsHidden()
                 }
-                .tint(.secondary)
-                .labelsHidden()
+                .padding(.horizontal, 30)
+                .padding(.bottom, 30)
             }
-            .padding(.horizontal, 50)
-            .padding(.bottom, 30)
             
             
+            //ring size
             VStack(alignment: .leading) {
                 Text("Ring Size")
                     .font(.system(size: 16, weight: .semibold))
-                    .padding(.horizontal, 30)
+                    .padding(.horizontal, 10)
                 
+                //stepper
                 Stepper("\(bandGemViewModel.selectedRingSizeSystem.title) \(bandGemViewModel.selectedRingSizeID)", value: $ringSizeIndex, in: 0...max(0, availableRingSizes.count - 1))
-                    .padding(.horizontal, 50)
+                    .padding(.horizontal, 30)
                     .padding(.top, 20)
                 
                 Divider()
                     .frame(maxWidth: .infinity, maxHeight: 1)
                     .background(Color.black)
-                    .padding(.horizontal, 50)
+                    .padding(.horizontal, 30)
 
-                
+                //system
                 HStack {
                     Text("System")
                     
@@ -86,12 +92,12 @@ struct SizeView: View {
                     .tint(.secondary)
                     .labelsHidden()
                 }
-                .padding(.horizontal, 50)
+                .padding(.horizontal, 30)
                 
                 Divider()
                     .frame(maxWidth: .infinity, maxHeight: 1)
                     .background(Color.black)
-                    .padding(.horizontal, 50)
+                    .padding(.horizontal, 30)
 
             }
             .onChange(of: bandGemViewModel.selectedRingSizeSystem) {
@@ -101,6 +107,8 @@ struct SizeView: View {
             .onChange(of: ringSizeIndex) {
                 updateSelectedRingSize()
             }
+            
+            //measure finger
             VStack{
                 Button {
                     //measure finger using VM
@@ -112,7 +120,8 @@ struct SizeView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
         
     }
     

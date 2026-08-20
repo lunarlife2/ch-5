@@ -33,7 +33,7 @@ struct EditView: View {
     private enum Layout {
         static let expandedWidth: CGFloat = 408
         static let collapsedWidth: CGFloat = 20
-        static let panelHeight: CGFloat = 558
+        static let panelHeight: CGFloat = 458
         static let collapseDistanceThreshold: CGFloat = 90
         static let screenMargin: CGFloat = 20
         static let saveMinimumWidth: CGFloat = 140
@@ -105,6 +105,7 @@ struct EditView: View {
                 height: Layout.panelHeight,
                 alignment: .leading
             )
+            .clipped()
             .padding(.trailing, panelRightPadding)
             .task {
                 await editViewModel.fetchAllData()

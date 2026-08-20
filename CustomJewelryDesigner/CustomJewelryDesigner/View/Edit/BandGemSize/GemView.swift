@@ -14,148 +14,147 @@ struct GemView: View {
     @State private var selectedMaterial: String?
 
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 20) {
 
             //shape
             VStack(alignment: .leading) {
                 Text("Shape")
                     .font(.system(size: 16, weight: .semibold))
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ForEach(
-                            editViewModel.gemShapeOptions,
-                            id: \.self
-                        ) { shape in
+                HStack {
+                    ForEach(editViewModel.gemShapeOptions, id: \.self) { shape in
 
-                            let representative = editViewModel.gems.first {
-                                $0.gemShape.caseInsensitiveCompare(shape)
-                                    == .orderedSame
-                            }
+                        let representative = editViewModel.gems.first {
+                            $0.gemShape.caseInsensitiveCompare(shape)
+                                == .orderedSame
+                        }
 
-                            VStack {
-                                AsyncImage(
-                                    url: representative.flatMap {
-                                        editViewModel.thumbnailURL(
-                                            for: $0.assetId
-                                        )
-                                    }
-                                ) { phase in
-
-                                    switch phase {
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .scaledToFit()
-
-                                    case .failure:
-                                        Image(
-                                            systemName:
-                                                "exclamationmark.triangle"
-                                        )
-                                        .foregroundStyle(.secondary)
-
-                                    case .empty:
-                                        ProgressView()
-
-                                    @unknown default:
-                                        ProgressView()
-                                    }
-                                }
-                                .frame(width: 60, height: 60)
-                                .padding()
-                                .background(
-                                    EditCard(
-                                        isSelected:
-                                            selectedShape == shape
+                        VStack {
+                            AsyncImage(
+                                url: representative.flatMap {
+                                    editViewModel.thumbnailURL(
+                                        for: $0.assetId
                                     )
-                                )
+                                }
+                            ) { phase in
 
-                                Text(shape.capitalized)
-                                    .font(.system(size: 12))
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+
+                                case .failure:
+                                    Image(
+                                        systemName:
+                                            "exclamationmark.triangle"
+                                    )
+                                    .foregroundStyle(.secondary)
+
+                                case .empty:
+                                    ProgressView()
+
+                                @unknown default:
+                                    ProgressView()
+                                }
                             }
-                            .padding(.trailing, 10)
-                            .onTapGesture {
-                                selectedShape = shape
-                                selectCombination()
-                            }
+                            .frame(width: 40, height: 40)
+                            .padding()
+                            .background(
+                                EditCard(
+                                    isSelected:
+                                        selectedShape == shape
+                                )
+                            )
+
+                            Text(shape.capitalized)
+                                .font(.system(size: 12))
+                        }
+                        .padding(.trailing, 15)
+                        .onTapGesture {
+                            selectedShape = shape
+                            selectCombination()
                         }
                     }
                 }
             }
-            .padding()
+            .padding(.bottom, 20)
 
             //material
             VStack(alignment: .leading) {
                 Text("Materials")
                     .font(.system(size: 16, weight: .semibold))
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ForEach(
-                            editViewModel.gemMaterialOptions,
-                            id: \.self
-                        ) { material in
+                HStack {
+                    ForEach(editViewModel.gemMaterialOptions, id: \.self) { material in
 
-                            let representative = editViewModel.gems.first {
-                                $0.gemMaterial.caseInsensitiveCompare(material)
-                                    == .orderedSame
-                            }
+                        let representative = editViewModel.gems.first {
+                            $0.gemMaterial.caseInsensitiveCompare(material)
+                                == .orderedSame
+                        }
 
-                            VStack {
-                                AsyncImage(
-                                    url: representative.flatMap {
-                                        editViewModel.thumbnailURL(
-                                            for: $0.assetId
-                                        )
-                                    }
-                                ) { phase in
-
-                                    switch phase {
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .scaledToFit()
-
-                                    case .failure:
-                                        Image(
-                                            systemName:
-                                                "exclamationmark.triangle"
-                                        )
-                                        .foregroundStyle(.secondary)
-
-                                    case .empty:
-                                        ProgressView()
-
-                                    @unknown default:
-                                        ProgressView()
-                                    }
-                                }
-                                .frame(width: 60, height: 60)
-                                .padding()
-                                .background(
-                                    EditCard(
-                                        isSelected:
-                                            selectedMaterial == material
+                        VStack {
+                            AsyncImage(
+                                url: representative.flatMap {
+                                    editViewModel.thumbnailURL(
+                                        for: $0.assetId
                                     )
-                                )
+                                }
+                            ) { phase in
 
-                                Text(material.capitalized)
-                                    .font(.system(size: 12))
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+
+                                case .failure:
+                                    Image(
+                                        systemName:
+                                            "exclamationmark.triangle"
+                                    )
+                                    .foregroundStyle(.secondary)
+
+                                case .empty:
+                                    ProgressView()
+
+                                @unknown default:
+                                    ProgressView()
+                                }
                             }
-                            .padding(.trailing, 10)
-                            .onTapGesture {
-                                selectedMaterial = material
-                                selectCombination()
-                            }
+                            .frame(width: 40, height: 40)
+                            .padding()
+                            .background(
+                                EditCard(
+                                    isSelected:
+                                        selectedMaterial == material
+                                )
+                            )
+
+                            Text(material.capitalized)
+                                .font(.system(size: 12))
+                        }
+                        .padding(.trailing, 15)
+                        .onTapGesture {
+                            selectedMaterial = material
+                            selectCombination()
                         }
                     }
                 }
             }
-            .padding()
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding()
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .disabled(editViewModel.isBandUpdating)
+        .opacity(editViewModel.isBandUpdating ? 0.5 : 1)
+        .overlay {
+            if editViewModel.isBandUpdating {
+                ProgressView("Updating…")
+                    .padding()
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .animation(.default, value: editViewModel.isBandUpdating)
         .onAppear {
             applyDefaultsIfNeeded()
         }
