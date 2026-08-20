@@ -90,22 +90,32 @@ enum SnappingService {
         else {
             return
         }
-
+        
+        //edited scale
+        let worldScale = gem.scale(relativeTo: nil)
         gem.setParent(freeAnchor, preservingWorldTransform: true)
-
         let parentWorldScale = freeAnchor.scale(relativeTo: nil)
-        gem.scale = SIMD3<Float>(repeating: attachment.targetWorldScale) / parentWorldScale
+        gem.scale = worldScale / parentWorldScale
+        
+        //original scale
+//        gem.setParent(freeAnchor, preservingWorldTransform: true)
+//        let parentWorldScale = freeAnchor.scale(relativeTo: nil)
+//        gem.scale = SIMD3<Float>(repeating: attachment.targetWorldScale) / parentWorldScale
 
         snapComponent.occupiedByGemName = nil
         snapPoint.components[SnapPointComponent.self] = snapComponent
 
         attachment.attachedSnapID = nil
+        
+        //edited scale
+        attachment.targetWorldScale = (worldScale.x + worldScale.y + worldScale.z) / 3
+        
         gem.components[AttachmentComponent.self] = attachment
 
         var gesture = gem.components[GestureComponent.self] ?? GestureComponent(typeJewelry: .gemstone)
         gesture.canDrag = true
         gesture.canScale = false
-        gesture.canRotate = true
+        gesture.canRotate = false
         gem.components[GestureComponent.self] = gesture
     }
     
@@ -178,7 +188,6 @@ enum SnappingService {
                 )
             )
 
-            // Visual snap point
             let visual = ModelEntity(
                 mesh: .generateSphere(radius: 5),
                 materials: [
@@ -191,6 +200,7 @@ enum SnappingService {
 
             visual.name = "snap-visual"
             visual.position = SIMD3<Float>(0, 2, 20)
+            visual.isEnabled = false
 
             snap.addChild(visual)
             band.addChild(snap)

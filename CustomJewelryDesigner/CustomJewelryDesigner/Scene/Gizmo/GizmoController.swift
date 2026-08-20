@@ -85,17 +85,19 @@ final class GizmoController {
 
     func updateSelectionWireframeTransform() {
         guard let selectedEntity else {
+            selectionWireframe.hide()
             return
         }
 
-        let worldPosition =
-            selectedEntity.position(relativeTo: nil)
+        // Target sudah tidak ada di hierarchy scene
+        guard selectedEntity.scene != nil else {
+            deselect()
+            return
+        }
 
-        let worldOrientation =
-            selectedEntity.orientation(relativeTo: nil)
-
-        let worldScale =
-            selectedEntity.scale(relativeTo: nil)
+        let worldPosition = selectedEntity.position(relativeTo: nil)
+        let worldOrientation = selectedEntity.orientation(relativeTo: nil)
+        let worldScale = selectedEntity.scale(relativeTo: nil)
 
         selectionWireframe.setPosition(
             worldPosition,
@@ -111,6 +113,8 @@ final class GizmoController {
             worldScale,
             relativeTo: nil
         )
+
+        selectionWireframe.refresh()
     }
     
     func updateGizmoTransform() {

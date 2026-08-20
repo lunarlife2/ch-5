@@ -41,9 +41,19 @@ struct DragAndDropGesture {
                     }
 
                     if SnappingService.isAttached(entity) {
-                        SnappingService.detach(gem: entity, backTo: scene.gemAnchor)
-                        scene.gizmoController.updateGizmoTransform()
+                        SnappingService.detach(
+                            gem: entity,
+                            backTo: scene.gemAnchor
+                        )
                     }
+                    
+                    editViewModel.selectGem(entity)
+
+                    scene.gizmoController.select(entity)
+                    scene.gizmoController.updateGizmoTransform()
+                    
+                    editViewModel.updateSelectedGemButtonPosition(for: entity)
+                    scene.setSnapPointVisualsVisible(true)
 
                     state.dragStartPoint = entity.position(relativeTo: nil)
 
@@ -58,6 +68,7 @@ struct DragAndDropGesture {
                     }
 
                     state.dragStartLocation = startLocation
+
                     state.dragOffset =
                         state.dragStartPoint - state.dragStartLocation
                 }
@@ -79,27 +90,21 @@ struct DragAndDropGesture {
                     entity.gestureStateComponent = state
                     return
                 }
-                guard let currentLocation = value.unproject(
-                    \.location,
-                    to: .scene
-                ) else {
+                guard let currentLocation = value.unproject(\.location, to: .scene) else {
                     entity.gestureStateComponent = state
                     return
                 }
 
-                let newWorldPosition =
-                    currentLocation + state.dragOffset
+                let newWorldPosition = currentLocation + state.dragOffset
 
                 if let parent = entity.parent {
-                    entity.position = parent.convert(
-                        position: newWorldPosition,
-                        from: nil
-                    )
+                    entity.position = parent.convert(position: newWorldPosition, from: nil)
                 } else {
                     entity.position = newWorldPosition
                 }
 
                 scene.gizmoController.updateGizmoTransform()
+                editViewModel.updateSelectedGemButtonPosition(for: entity)
                 entity.gestureStateComponent = state
             }
             .onEnded { value in
@@ -112,7 +117,10 @@ struct DragAndDropGesture {
                 guard state.activeGesture == .drag else {
                     return
                 }
-
+                
+                editViewModel.clearGemDragButtons()
+                scene.setSnapPointVisualsVisible(false)
+                scene.gizmoController.deselect()
                 editViewModel.markDirty()
 
                 let finalWorldPosition = entity.position(relativeTo: nil)
@@ -136,7 +144,6 @@ struct DragAndDropGesture {
                 }
 
                 if let realityContent = scene.realityContent {
-
                     let localPoint = scene.localPoint(
                         fromGlobal: globalPoint
                     )
@@ -152,6 +159,7 @@ struct DragAndDropGesture {
                     ) {
                         SnappingService.attach(gem: entity, to: snapTarget)
                         
+                        scene.gizmoController.deselect()
                         scene.gizmoController.updateGizmoTransform()
 
                     } else {
@@ -165,6 +173,7 @@ struct DragAndDropGesture {
                 state.lastPositionDrag = entity.position(relativeTo: nil)
 
                 state.endGesture()
+                scene.gizmoController.deselect()
                 entity.gestureStateComponent = state
 
                 GestureLock.shared.release(

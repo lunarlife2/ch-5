@@ -12,18 +12,18 @@ import SwiftData
 struct JewelryEditorView: View {
     
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Environment(ViewModel.self) private var vm
     
     let viewModel: EditViewModel
     let bottomInset: CGFloat
     
     @State private var isTargeted = false
     @State private var touchTracker = TouchCountViewModel()
-    @Environment(\.dismiss) private var dismiss
-    @Environment(ViewModel.self) private var vm
-    
     @State private var showUnsavedChangesAlert = false
-    
     @State private var topBarHeight: CGFloat = 0
+    @State private var isScaleDragging = false
+    @State private var isRotateDragging = false
     
     private var topInset: CGFloat {
         topSafeArea + topBarHeight
@@ -176,16 +176,17 @@ struct JewelryEditorView: View {
                 scene: viewModel.scene
             ).dragGesture
         )
+        .simultaneousGesture(
+            RingRotationGesture(touchTracker: touchTracker, editViewModel: viewModel, scene: viewModel.scene).rotateGesture
+        )
         .gesture(
             TwoFingerTransformGesture(
                 touchTracker: touchTracker,
                 entityProvider: { location in
-                    
                     let realityLocation = CGPoint(
                         x: location.x,
                         y: location.y - topInset
                     )
-                    
                     return viewModel.scene.entityAtScreenLocation(
                         realityLocation
                     )
@@ -197,41 +198,36 @@ struct JewelryEditorView: View {
     }
     
     @ViewBuilder
-    private func topControls(
-        geometry: GeometryProxy) -> some View {
-            
-            VStack(alignment: .leading) {
-                
-                HStack {
-                    
-                    GlassButton {
-                        handleBackTap()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                    }
-                    
-                    Spacer()
-                    
-                    SwitchView(
-                        viewModel: viewModel
-                    )
+    private func topControls(geometry: GeometryProxy) -> some View {
+        VStack(alignment: .leading) {
+            HStack {
+                GlassButton {
+                    handleBackTap()
+                } label: {
+                    Image(systemName: "chevron.left")
                 }
-                .reportHeight(TopBarHeightKey.self)
                 
                 Spacer()
+                
+                SwitchView(
+                    viewModel: viewModel
+                )
             }
-            .padding(.top, geometry.safeAreaInsets.top)
-            .padding(.leading, 50)
-            .onPreferenceChange(TopBarHeightKey.self) { height in
-                topBarHeight = height
-            }
+            .reportHeight(TopBarHeightKey.self)
+            
+            Spacer()
         }
+        .padding(.top, geometry.safeAreaInsets.top)
+        .padding(.leading, 50)
+        .onPreferenceChange(TopBarHeightKey.self) { height in
+            topBarHeight = height
+        }
+    }
     
     @ViewBuilder
     private var loadingOverlay: some View {
         ZStack {
             Color.black.opacity(0.15)
-            
             ProgressView()
                 .controlSize(.large)
                 .padding(24)
@@ -245,69 +241,26 @@ struct JewelryEditorView: View {
         .allowsHitTesting(true)
     }
     
-    private func updateEditorFrame(
-        geometry: GeometryProxy
-    ) {
-        
-        let frame = geometry.frame(
-            in: .global
-        )
-        
-        let realityFrame = insetFrame(
-            frame,
-            topInset: topInset
-        )
-        
-        viewModel.setEditorFrame(
-            realityFrame
-        )
+    private func updateEditorFrame(geometry: GeometryProxy) {
+        let frame = geometry.frame(in: .global)
+        let realityFrame = insetFrame(frame, topInset: topInset)
+        viewModel.setEditorFrame(realityFrame)
     }
     
-    private func insetFrame(
-        _ frame: CGRect,
-        topInset: CGFloat
-    ) -> CGRect {
-        
-        let bottom = max(
-            0,
-            min(
-                bottomInset,
-                frame.height - topInset
-            )
-        )
-        
-        let top = max(
-            0,
-            min(
-                topInset,
-                frame.height
-            )
-        )
-        
-        let height = max(
-            0,
-            frame.height - top - bottom
-        )
-        
-        return CGRect(
-            x: frame.minX,
-            y: frame.minY + top,
-            width: frame.width,
-            height: height
-        )
+    private func insetFrame(_ frame: CGRect, topInset: CGFloat) -> CGRect {
+        let bottom = max(0, min(bottomInset, frame.height - topInset))
+        let top = max(0, min(topInset, frame.height))
+        let height = max(0, frame.height - top - bottom)
+        return CGRect(x: frame.minX, y: frame.minY + top, width: frame.width, height: height)
     }
     
     private func insetSize(_ size: CGSize) -> CGSize {
         let top = min(max(0, topInset), size.height)
-        
         let bottom = min(max(0, bottomInset), max(0, size.height - top))
-        
-        return CGSize(width: size.width, height: max(0, size.height - top - bottom)
-        )
+        return CGSize(width: size.width, height: max(0, size.height - top - bottom))
     }
     
     private func handleBackTap() {
-        
         if viewModel.hasUnsavedChanges {
             showUnsavedChangesAlert = true
         } else {
@@ -326,15 +279,51 @@ struct JewelryEditorView: View {
                     }
                     .position(trashPos)
                 }
+                
+                if let scalePos = viewModel.selectedGemScalePosition {
+                    scaleHandle.position(scalePos)
+                }
+                
                 if let rotatePos = viewModel.selectedGemRotatePosition {
-                    GlassButton {
-                        viewModel.rotateSelectedGem()
-                    } label: {
-                        Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
-                    }
-                    .position(rotatePos)
+                    rotateHandle.position(rotatePos)
                 }
             }
+        }
+    }
+    
+    private var scaleHandle: some View {
+        GlassScaleButton(
+            onChanged: { value in
+                if !isScaleDragging {
+                    isScaleDragging = true
+                    viewModel.beginScaleSelectedGem()
+                }
+                viewModel.updateScaleSelectedGem(translationHeight: value.translation.height)
+            },
+            onEnded: { _ in
+                viewModel.endScaleSelectedGem()
+                isScaleDragging = false
+            }
+        ) {
+            Image(systemName: "arrow.up.and.down")
+        }
+    }
+    
+    private var rotateHandle: some View {
+        GlassRotateButton(
+            onBegin: {
+                isRotateDragging = true
+                viewModel.beginRotateSelectedGem()
+            },
+            onChanged: { deltaAngle in
+                viewModel.updateRotateSelectedGem(deltaAngleRadians: deltaAngle)
+            },
+            onEnded: {
+                viewModel.endRotateSelectedGem()
+                isRotateDragging = false
+            }
+        ) {
+            Image(systemName: "arrow.trianglehead.counterclockwise.rotate.90")
         }
     }
 }

@@ -21,6 +21,7 @@ struct OrientationGizmoView: View {
     let onRotateEnd: () -> Void
 
     @State private var viewModel = OrientationGizmoViewModel()
+    @State private var suppressNextOrientationReset = false
 
     var body: some View {
         let currentResolvedAxes = viewModel.resolvedAxes(for: orientation)
@@ -39,8 +40,6 @@ struct OrientationGizmoView: View {
                     )
                 }
             }
-
-            // Button Layer untuk Node Sumbu
             ForEach(currentResolvedAxes, id: \.info.axis) { resolved in
                 let isSelected = selectedAxis == resolved.info.axis
                 axisButton(
@@ -59,6 +58,10 @@ struct OrientationGizmoView: View {
         .overlay { Circle().stroke(.secondary.opacity(0.35), lineWidth: 1) }
         .gesture(dragGesture)
         .onChange(of: orientation) { _, _ in
+            if suppressNextOrientationReset {
+                suppressNextOrientationReset = false
+                return
+            }
             viewModel.tapSnapOverride = nil
             selectedAxis = nil
         }
@@ -89,6 +92,8 @@ struct OrientationGizmoView: View {
             currentOrientation: orientation
         )
 
+        suppressNextOrientationReset = true
+        
         withAnimation(.easeOut(duration: 0.25)) {
             viewModel.tapSnapOverride = targetOrientation
         }

@@ -170,18 +170,19 @@ final class JewelrySceneController {
     }
     
     func selectEntity(at screenLocation: CGPoint) {
-        guard let entity = entityAtScreenLocation(
-            screenLocation
-        ) else {
-            
+        guard let entity = entityAtScreenLocation(screenLocation) else {
             gizmoController.deselect()
-            
+            setSnapPointVisualsVisible(false)
             return
         }
         
-        gizmoController.select(
-            entity
-        )
+        gizmoController.select(entity)
+        
+        if entity.components[GestureComponent].self?.typeJewelry == .gemstone {
+            setSnapPointVisualsVisible(true)
+        } else {
+            setSnapPointVisualsVisible(false)
+        }
     }
     
     func deselectEntity() {
@@ -318,7 +319,7 @@ final class JewelrySceneController {
             gemstone.generateCollisionShapes(recursive: true)
             gemstone.components.set(InputTargetComponent())
             gemstone.components.set(
-                GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: true)
+                GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: false)
             )
             
             gemAnchor.addChild(gemstone)
@@ -446,8 +447,9 @@ final class JewelrySceneController {
         }
     }
     
-    func screenAnchorPoints(for entity: Entity, padding: CGFloat = 24) -> (left: CGPoint, right: CGPoint)? {
+    func screenAnchorPoints(for entity: Entity, buttonSpacing: CGFloat = 70) -> (left: CGPoint, right: CGPoint, center: CGPoint)? {
         guard let realityContent else { return nil }
+
         let bounds = entity.visualBounds(relativeTo: nil)
 
         let corners = [
@@ -458,31 +460,55 @@ final class JewelrySceneController {
             SIMD3<Float>(bounds.min.x, bounds.min.y, bounds.max.z),
             SIMD3<Float>(bounds.max.x, bounds.min.y, bounds.max.z),
             SIMD3<Float>(bounds.min.x, bounds.max.y, bounds.max.z),
-            SIMD3<Float>(bounds.max.x, bounds.max.y, bounds.max.z),
+            SIMD3<Float>(bounds.max.x, bounds.max.y, bounds.max.z)
         ]
 
-        let projected = corners.compactMap { realityContent.project(point: $0, to: .local) }
-        guard !projected.isEmpty else { return nil }
+        let projected = corners.compactMap {
+            realityContent.project(point: $0, to: .local)
+        }
+
+        guard !projected.isEmpty else {
+            return nil
+        }
 
         let minX = projected.map(\.x).min()!
         let maxX = projected.map(\.x).max()!
+
+        let centerX = (minX + maxX) / 2
+
         let midY = projected.map(\.y).reduce(0, +) / CGFloat(projected.count)
 
         return (
-            left: CGPoint(x: minX - padding, y: midY),
-            right: CGPoint(x: maxX + padding, y: midY)
+            left: CGPoint(x: centerX - buttonSpacing, y: midY),
+            right: CGPoint(x: centerX + buttonSpacing, y: midY),
+            center: CGPoint(x: centerX, y: midY)
         )
     }
 
     func rotateSelectedGemAroundViewAxis(byDegrees delta: Float) {
-        guard let entity = gizmoController.selectedEntity,
-              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else { return }
-
-        let viewForward = normalize(cameraController.pivot.orientation.act(SIMD3<Float>(0, 0, -1)))
-        let rotation = simd_quatf(angle: delta * .pi / 180, axis: viewForward)
+        guard let entity = gizmoController.selectedEntity, entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+        let rotation = simd_quatf(angle: delta * .pi / 180, axis: SIMD3<Float>(0, 1, 0))
         let currentWorldOrientation = entity.orientation(relativeTo: nil)
         entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
-        
         gizmoController.updateGizmoTransform()
+    }
+    
+    func setSnapPointVisualsVisible(_ visible: Bool, excludingOccupied: Bool = true) {
+        for snap in allSnapPoints() {
+            guard let visual = snap.children.first(where: { $0.name == "snap-visual" }) else {
+                continue
+            }
+
+            if excludingOccupied,
+               let component = snap.components[SnapPointComponent.self],
+               component.occupiedByGemName != nil {
+                visual.isEnabled = false
+                continue
+            }
+
+            visual.isEnabled = visible
+        }
     }
 }

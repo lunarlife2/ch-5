@@ -73,9 +73,23 @@ final class EditViewModel {
     var selectedGizmoAxis: ViewAxis?
     
     private(set) var currentBand: Band?
-    private(set) var selectedGemTrashPosition: CGPoint?
-    private(set) var selectedGemRotatePosition: CGPoint?
     private(set) var isGemSelected = false
+    
+    //position of three button
+    private var selectedGemButtonAnchor: CGPoint?
+    
+    //trash button
+    private(set) var selectedGemTrashPosition: CGPoint?
+    
+    //rotate button
+    private(set) var selectedGemRotatePosition: CGPoint?
+    
+    //button scale
+    private(set) var selectedGemScalePosition: CGPoint?
+    private var scaleDragStartLocalScale: SIMD3<Float>?
+    private let scaleDragSensitivity: Float = 0.01
+    private let scaleFactorMin: Float = 0.2
+    private let scaleFactorMax: Float = 5.0
 
     private func distinctPreservingOrder(_ values: [String]) -> [String] {
         var seen = Set<String>()
@@ -367,6 +381,7 @@ final class EditViewModel {
     private func applyPlaceholderBand() async {
         await performAssetLoading {
             currentBand = nil
+            scene.gizmoController.deselect()
             await scene.loadBundledBand(named: "Flat_Band_Ring", saved: design?.band)
             pendingBandAssetPath = "Flat_Band_Ring"
             pendingBandName = "plain band usd"
@@ -380,6 +395,7 @@ final class EditViewModel {
                 print("Failed to download band model \(band.assetId.storagePath)")
                 return
             }
+            scene.gizmoController.deselect()
             currentBand = band
 
             let source = BandSourceComponent(
@@ -579,15 +595,17 @@ final class EditViewModel {
     }
 
     func delete() {
-        guard let name = selectedGemName,
-              let gem = scene.allGemEntities().first(where: { $0.name == name })
-        else { return }
+        guard let name = selectedGemName, let gem = scene.allGemEntities().first(where: { $0.name == name }) else {
+            return
+        }
 
         if gem.components[AttachmentComponent.self]?.attachedSnapID != nil {
             SnappingService.detach(gem: gem, backTo: scene.gemAnchor)
         }
         
         scene.gizmoController.deselect()
+        clearGemDragButtons()
+        scene.setSnapPointVisualsVisible(false)
         gem.removeFromParent()
 
         if let design = designFile.design, let modelContext {
@@ -631,26 +649,16 @@ final class EditViewModel {
 
         switch item.type {
         case "band":
-            guard let band = bands.first(where: {
-                $0.id == item.id
-            }) else {
+            guard let band = bands.first(where: { $0.id == item.id}) else {
                 return
             }
-
             await loadBand(from: band)
 
         case "gem":
-            guard let gem = gems.first(where: {
-                $0.id == item.id
-            }) else {
+            guard let gem = gems.first(where: { $0.id == item.id }) else {
                 return
             }
-
-            await loadGem(
-                from: gem,
-                screenLocation: screenLocation,
-                containerSize: containerSize
-            )
+            await loadGem(from: gem, screenLocation: screenLocation, containerSize: containerSize)
 
         default:
             print("Unknown drop type:", item.type)
@@ -660,38 +668,131 @@ final class EditViewModel {
     func syncSelectionFromGizmo() {
         guard let entity = scene.gizmoController.selectedEntity,
               entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+
             selectedGemName = nil
             isGemSelected = false
             selectedGemTrashPosition = nil
             selectedGemRotatePosition = nil
+            selectedGemScalePosition = nil
+            selectedGemButtonAnchor = nil
             return
         }
+
         selectedGemName = entity.name
         isGemSelected = true
+
+        if let anchors = scene.screenAnchorPoints(for: entity) {
+            selectedGemButtonAnchor = anchors.center
+        }
     }
 
     func updateSelectedGemIconPositions() {
-        guard isGemSelected,
-              let entity = scene.gizmoController.selectedEntity,
-              let anchors = scene.screenAnchorPoints(for: entity) else {
+        guard isGemSelected, let anchor = selectedGemButtonAnchor else {
             selectedGemTrashPosition = nil
             selectedGemRotatePosition = nil
+            selectedGemScalePosition = nil
             return
         }
-        selectedGemTrashPosition = anchors.left
-        selectedGemRotatePosition = anchors.right
-    }
 
-    func rotateSelectedGem() {
-        scene.rotateSelectedGemAroundViewAxis(byDegrees: -90)
-        markDirty()
+        let spacing: CGFloat = 70
+
+        selectedGemTrashPosition = CGPoint(x: anchor.x - spacing, y: anchor.y)
+        selectedGemScalePosition = anchor
+        selectedGemRotatePosition = CGPoint(x: anchor.x + spacing, y: anchor.y)
+    }
+    
+    func updateSelectedGemButtonPosition(for entity: Entity) {
+        guard isGemSelected, selectedGemName == entity.name else {
+            return
+        }
+
+        guard let anchors = scene.screenAnchorPoints(for: entity) else {
+            return
+        }
+
+        selectedGemButtonAnchor = anchors.center
+        updateSelectedGemIconPositions()
     }
 
     func requestDeleteSelectedGem() {
-        guard let entity = scene.gizmoController.selectedEntity else { return }
+        guard let entity = scene.gizmoController.selectedEntity else {
+            return
+        }
         requestDelete(for: entity)
     }
+    
+    //scale button
+    func beginScaleSelectedGem() {
+        guard let entity = scene.gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+        scaleDragStartLocalScale = entity.scale
+    }
+    
+    func updateScaleSelectedGem(translationHeight: CGFloat) {
+        guard let entity = scene.gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone,
+              let startScale = scaleDragStartLocalScale else {
+            return
+        }
 
+        let rawFactor = 1 - Float(translationHeight) * scaleDragSensitivity
+        let clampedFactor = max(scaleFactorMin, min(rawFactor, scaleFactorMax))
+
+        entity.scale = startScale * clampedFactor
+        scene.gizmoController.updateGizmoTransform()
+    }
+
+    func endScaleSelectedGem() {
+        defer { scaleDragStartLocalScale = nil }
+
+        guard let entity = scene.gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+
+        if var attachment = entity.components[AttachmentComponent.self] {
+            let worldScale = entity.scale(relativeTo: nil)
+            attachment.targetWorldScale = (worldScale.x + worldScale.y + worldScale.z) / 3
+            entity.components[AttachmentComponent.self] = attachment
+        }
+
+        markDirty()
+    }
+    
+    //rotate button
+    func beginRotateSelectedGem() {
+        guard let entity = scene.gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+    }
+
+    func updateRotateSelectedGem(deltaAngleRadians: Float) {
+        guard let entity = scene.gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+
+        let deltaDegrees = deltaAngleRadians * 180 / .pi
+        scene.rotateSelectedGemAroundViewAxis(byDegrees: deltaDegrees)
+        markDirty()
+    }
+
+    func endRotateSelectedGem() {
+        //end rotate
+    }
+    
+    //end drag, three button gone
+    func clearGemDragButtons() {
+        isGemSelected = false
+        selectedGemName = nil
+        selectedGemButtonAnchor = nil
+        selectedGemTrashPosition = nil
+        selectedGemRotatePosition = nil
+        selectedGemScalePosition = nil
+    }
 }
 
 
