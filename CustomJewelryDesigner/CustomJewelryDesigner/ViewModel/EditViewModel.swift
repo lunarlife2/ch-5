@@ -120,6 +120,16 @@ final class EditViewModel {
 
     private let snapScreenRadius: CGFloat = 50
     private let tapAlignRadius: Float = 0.0025
+    
+    //skincolor
+    var skinColor: Color {
+        Color(scene.skinColor)
+    }
+
+    func setSkinColor(_ color: Color) {
+        scene.applySkinColor(UIColor(color))
+        markDirty()
+    }
 
     var design: Design? {
         designFile.design
@@ -217,6 +227,14 @@ final class EditViewModel {
                 .value
 
             self.gems = gems
+
+            for gem in gems {
+                print(
+                    "Shape:", gem.gemShape,
+                    "| Material:", gem.gemMaterial,
+                    "| Storage:", gem.assetId.storagePath
+                )
+            }
             print("Gem count:", gems.count)
         } catch {
             print(error)
@@ -468,12 +486,24 @@ final class EditViewModel {
             guard let match = gems.first(where: {
                 $0.gemShape.caseInsensitiveCompare(shape) == .orderedSame &&
                 $0.gemMaterial.caseInsensitiveCompare(material) == .orderedSame
-            }) else { return }
-            guard let localURL = await loadLocalModelURL(path: match.assetId.storagePath, bucket: "stone") else { return }
+            }) else {
+                print("❌ No gem match for \(shape)/\(material)")
+                return
+            }
+            print("✅ Match found: \(match.assetId.storagePath)")
+
+            guard let localURL = await loadLocalModelURL(path: match.assetId.storagePath, bucket: "stone") else {
+                print("❌ Failed to download/get URL for \(match.assetId.storagePath)")
+                return
+            }
+            print("✅ Downloaded to: \(localURL)")
 
             if let entity = await scene.addStone(from: localURL, source: match) {
+                print("✅ Entity added to scene: \(entity.name), position: \(entity.position), scale: \(entity.scale)")
                 selectGem(entity)
                 markDirty()
+            } else {
+                print("❌ scene.addStone returned nil for \(match.assetId.storagePath)")
             }
         }
     }
@@ -509,19 +539,13 @@ final class EditViewModel {
     }
     
     var uniqueBandsByStyle: [Band] {
-
         var seen = Set<UUID>()
-
         return bands.filter { band in
-
             let styleId = band.bandStyleID.id
-
             if seen.contains(styleId) {
                 return false
             }
-
             seen.insert(styleId)
-
             return true
         }
     }
@@ -539,6 +563,28 @@ final class EditViewModel {
         ) {
             SnappingService.attach(gem: gem, to: target)
             markDirty()
+        }
+    }
+    
+    var uniqueGemsByShape: [Gem] {
+        var seen = Set<String>()
+        return gems.filter { gem in
+            let key = gem.gemShape.lowercased()
+            if seen.contains(key) { return false }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    func gem(forShape shape: String) -> Gem? {
+        gems.first { $0.gemShape.caseInsensitiveCompare(shape) == .orderedSame }
+    }
+
+    func gem(forShape shape: String?, material: String) -> Gem? {
+        guard let shape else { return nil }
+        return gems.first { gem in
+            gem.gemShape.caseInsensitiveCompare(shape) == .orderedSame &&
+            gem.gemMaterial.caseInsensitiveCompare(material) == .orderedSame
         }
     }
 
@@ -561,7 +607,6 @@ final class EditViewModel {
            let gem = scene.allGemEntities().first(where: { $0.name == selectedGemName }) {
             return gem
         }
-
         switch mode {
         case .band:
             return scene.bandPivot
@@ -693,5 +738,3 @@ final class EditViewModel {
     }
 
 }
-
-
