@@ -11,7 +11,6 @@ import SwiftUI
 @Observable
 @MainActor
 class ViewModel {
-
 	private(set) var sceneState: SceneState = .home
 	func moveScreenState(to new: SceneState) {
 		self.sceneState = new
@@ -26,6 +25,7 @@ enum SceneState {
 	case edit(DesignFile)
 	case detail
 	case folder(_ :DesignFolder)
+    case measure
 
 	@ViewBuilder func viewAssociated() -> some View {
 
@@ -38,6 +38,11 @@ enum SceneState {
 			DetailView()
 		case .folder(let folder):
 			FolderView(folder: folder)
+        case .measure:
+            MeasureView(
+                bandGemViewModel: BandGemViewModel(),
+                
+            )
 		}
 
 	}

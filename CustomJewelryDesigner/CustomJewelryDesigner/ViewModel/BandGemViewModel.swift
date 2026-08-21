@@ -216,13 +216,40 @@ final class BandGemViewModel {
         }
     }
     
+    var selectedFinger: Finger = .thumb
+    var selectedHand: Hand = .right
     var selectedRingSizeSystem: RingSizeSystem = .usCanada
-    
     var selectedRingSizeID: Int = 20
-    
     var selectedRingSize: RingSizeOption? {
         ringSizeOptions.first {
             $0.id == selectedRingSizeID
         }
+    }
+    
+    func loadRingSize(
+        id: Int?,
+        system: RingSizeSystem?
+    ) {
+        if let system {
+            selectedRingSizeSystem = system
+        }
+        
+        guard let id else {
+            return
+        }
+        
+        guard let ring = ringSizeOptions.first(where: {
+            $0.id == id
+        }) else {
+            return
+        }
+        
+        // Pastikan size tersebut memang tersedia
+        // pada system yang tersimpan.
+        guard ring.size(for: selectedRingSizeSystem) != nil else {
+            return
+        }
+        
+        selectedRingSizeID = id
     }
 }

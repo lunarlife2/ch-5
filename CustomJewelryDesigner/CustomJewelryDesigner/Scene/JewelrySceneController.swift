@@ -43,7 +43,7 @@ final class JewelrySceneController {
     private var rotateGemAnchorStartOrientation: simd_quatf?
     
     private let targetBandDiameter: Float = 0.3
-    private let targetGemstoneDiameter: Float = 0.001
+    private let targetGemstoneDiameter: Float = 0.1
     private let targetMannequinDiameter: Float = 0.004
     private let gemFrontDepth: Float = 0.01
     private let gemFixedTapPosition = SIMD3<Float>(0.2, 0, 0.001)
@@ -300,32 +300,54 @@ final class JewelrySceneController {
     
     func addStone(from localURL: URL, source: Gem, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async -> Entity? {
         do {
-            let gemstone = try await ModelEntity(contentsOf: localURL)
-            let gemstoneSize = gemstone.visualBounds(relativeTo: nil).extents
-            
-            let initialScale = targetGemstoneDiameter / max(gemstoneSize.x, gemstoneSize.y)
-            gemstone.scale = .init(repeating: initialScale)
-            gemstone.components.set(AttachmentComponent(targetWorldScale: initialScale))
-            
-            gemstone.components.set(GemSourceComponent(
-                libraryAssetID: source.id,
-                assetStoragePath: source.assetId.storagePath,
-                cut: source.gemShape,
-                color: source.gemMaterial
-            ))
-            
-            gemstone.name = UUID().uuidString
-            gemstone.position = spawnPosition(screenLocation: screenLocation, containerSize: containerSize)
-            gemstone.generateCollisionShapes(recursive: true)
-            gemstone.components.set(InputTargetComponent())
-            gemstone.components.set(
-                GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: false)
+            let gemstone = try await ModelEntity(
+                contentsOf: localURL
             )
             
+            guard let model = gemstone.components[ModelComponent.self] else {
+                return nil
+            }
+            
+            gemstone.transform = Transform.identity
+            let localBounds = model.mesh.bounds
+            let extents = localBounds.extents
+
+            let maxDimension = max(extents.x, extents.y, extents.z)
+            guard maxDimension > 0, maxDimension.isFinite else {
+                return nil
+            }
+
+            let initialScale = targetGemstoneDiameter / maxDimension
+            
+            guard initialScale.isFinite, initialScale > 0 else {
+                return nil
+            }
+
+            gemstone.scale = .init(repeating: initialScale)
+
+            gemstone.components.set(AttachmentComponent(targetWorldScale: initialScale))
+
+            gemstone.components.set(GemSourceComponent(libraryAssetID: source.id, assetStoragePath: source.assetId.storagePath, cut: source.gemShape, color: source.gemMaterial))
+
+            gemstone.name = UUID().uuidString
+
+            gemstone.position = spawnPosition(screenLocation: screenLocation, containerSize: containerSize)
+
+            gemstone.generateCollisionShapes(recursive: true)
+
+            gemstone.components.set(InputTargetComponent())
+
+            gemstone.components.set(GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: false))
+
             gemAnchor.addChild(gemstone)
+
+            let finalBounds = gemstone.visualBounds(
+                relativeTo: nil
+            )
             return gemstone
+
         } catch {
-            print("Failed to load entity", error)
+            print(error)
             return nil
         }
     }

@@ -11,7 +11,7 @@ import RealityKit
 
 struct DesignPersistenceService {
     
-    func save(gemEntities: [Entity], bandEntity: Entity?, bandPivot: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
+    func save(gemEntities: [Entity], bandEntity: Entity?, bandPivot: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, finger: Finger, hand: Hand, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
         
         for gemEntity in gemEntities {
             let worldPosition = gemEntity.position(relativeTo: nil)
@@ -70,6 +70,9 @@ struct DesignPersistenceService {
         designFile.updatedAt = .now
         design.ringSizeID = ringSizeID
         design.ringSizeSystem = ringSizeSystem
+        design.finger = finger
+        design.hand = hand
+
         try modelContext.save()
         
     }

@@ -8,10 +8,9 @@
 import SwiftUI
 
 struct SizeView: View {
-    @State private var selectedHand: Hand = .right
-    @State private var selectedFinger: Finger = .thumb
-    @State private var ringSizeIndex = 0
+    @Environment(ViewModel.self) private var vm
     
+    @State private var ringSizeIndex = 0
     @Bindable var bandGemViewModel: BandGemViewModel
     
     var body: some View {
@@ -25,7 +24,7 @@ struct SizeView: View {
                     
                     Spacer()
                     
-                    Picker("", selection: $selectedFinger) {
+                    Picker("", selection: $bandGemViewModel.selectedFinger) {
                         ForEach(Finger.allCases) { finger in
                             Text(finger.title)
                                 .tag(finger)
@@ -47,7 +46,7 @@ struct SizeView: View {
                     
                     Spacer()
                     
-                    Picker("", selection: $selectedHand) {
+                    Picker("", selection: $bandGemViewModel.selectedHand) {
                         ForEach(Hand.allCases) { hand in
                             Text(hand.title)
                                 .tag(hand)
@@ -111,7 +110,7 @@ struct SizeView: View {
             //measure finger
             VStack{
                 Button {
-                    //measure finger using VM
+                    vm.moveScreenState(to: .measure)
                 } label: {
                     Text("Measure Finger")
                 }

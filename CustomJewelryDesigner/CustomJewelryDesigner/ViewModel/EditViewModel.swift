@@ -616,7 +616,7 @@ final class EditViewModel {
         hasUnsavedChanges = true
     }
 
-    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?) {
+    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, finger: Finger, hand: Hand) {
         guard let modelContext, let design = designFile.design else { return }
         do {
             try persistence.save(
@@ -625,6 +625,8 @@ final class EditViewModel {
                 bandPivot: scene.bandPivot,
                 ringSizeID: ringSizeID,
                 ringSizeSystem: ringSizeSystem,
+                finger: finger,
+                hand: hand,
                 designFile: designFile,
                 design: design,
                 modelContext: modelContext
