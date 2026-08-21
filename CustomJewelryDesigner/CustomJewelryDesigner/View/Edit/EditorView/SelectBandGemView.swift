@@ -30,28 +30,34 @@ struct SelectBandGemView: View {
             
             VStack(alignment: .leading, spacing: 0) {
 
-                Picker("", selection: $selectedType) {
-                    Text("Band").tag(0)
-                    Text("Gem").tag(1)
-                    Text("Size").tag(2)
+                if viewModel.mode != .handMannequin {
+                    Picker("", selection: $selectedType) {
+                        Text("Band").tag(0)
+                        Text("Gem").tag(1)
+                        Text("Size").tag(2)
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 10)
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 10)
 
                 Group {
-                    switch selectedType {
-                    case 0:
-                        BandView()
+                    if viewModel.mode == .handMannequin {
+                        MannequinView()
+                    } else {
+                        switch selectedType {
+                        case 0:
+                            BandView()
 
-                    case 1:
-                        GemView()
+                        case 1:
+                            GemView()
 
-                    default:
-                        SizeView(
-                            bandGemViewModel: bandGemViewModel
-                        )
+                        default:
+                            SizeView(
+                                bandGemViewModel: bandGemViewModel
+                            )
+                        }
                     }
                 }
                 .frame(

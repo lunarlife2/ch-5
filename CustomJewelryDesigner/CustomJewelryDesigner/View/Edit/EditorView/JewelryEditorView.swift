@@ -106,16 +106,48 @@ struct JewelryEditorView: View {
                 )
                 
                 Task {
+                    let gemBefore = viewModel.gems.count
                     await viewModel.handleDrop(
                         item: payload,
                         screenLocation: realityLocation,
                         containerSize: realitySize
                     )
+                    print("🔍 Drop payload id: \(payload.id), type: \(payload.type)")
+                    print("🔍 Available gems (\(gemBefore)):", viewModel.gems.map { "\($0.id) - \($0.gemShape)/\($0.gemMaterial)" })
                 }
                 
                 return true
             }
         }
+            
+//            .dropDestination(
+//                for: JewelryDropPayload.self
+//            ) { items, location in
+//                
+//                guard let payload = items.first else {
+//                    return false
+//                }
+//                
+//                let realityLocation = CGPoint(
+//                    x: location.x,
+//                    y: location.y - topInset
+//                )
+//                
+//                let realitySize = insetSize(
+//                    geometry.size
+//                )
+//                
+//                Task {
+//                    await viewModel.handleDrop(
+//                        item: payload,
+//                        screenLocation: realityLocation,
+//                        containerSize: realitySize
+//                    )
+//                }
+//                
+//                return true
+//            }
+//        }
         .onDisappear {
             GestureLock.shared.forceRelease()
             TransformSession.shared.forceEndIfStuck()

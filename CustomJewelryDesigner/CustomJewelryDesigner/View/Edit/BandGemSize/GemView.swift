@@ -12,6 +12,12 @@ struct GemView: View {
 
     @State private var selectedShape: String?
     @State private var selectedMaterial: String?
+    
+    @State private var isAdding = false
+
+    private var canAddGem: Bool {
+        selectedShape != nil && selectedMaterial != nil
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -24,10 +30,7 @@ struct GemView: View {
                 HStack {
                     ForEach(editViewModel.gemShapeOptions, id: \.self) { shape in
 
-                        let representative = editViewModel.gems.first {
-                            $0.gemShape.caseInsensitiveCompare(shape)
-                                == .orderedSame
-                        }
+                        let representative = editViewModel.gem(forShape: shape)
 
                         VStack {
                             AsyncImage(
@@ -61,10 +64,7 @@ struct GemView: View {
                             .frame(width: 40, height: 40)
                             .padding()
                             .background(
-                                EditCard(
-                                    isSelected:
-                                        selectedShape == shape
-                                )
+                                EditCard(isSelected: selectedShape == shape)
                             )
 
                             Text(shape.capitalized)
@@ -73,7 +73,7 @@ struct GemView: View {
                         .padding(.trailing, 15)
                         .onTapGesture {
                             selectedShape = shape
-                            selectCombination()
+                            selectedMaterial = nil
                         }
                     }
                 }
@@ -88,10 +88,9 @@ struct GemView: View {
                 HStack {
                     ForEach(editViewModel.gemMaterialOptions, id: \.self) { material in
 
-                        let representative = editViewModel.gems.first {
-                            $0.gemMaterial.caseInsensitiveCompare(material)
-                                == .orderedSame
-                        }
+                        let representative = editViewModel.gem(forShape: selectedShape, material: material)
+
+                        let isAvailable = representative != nil
 
                         VStack {
                             AsyncImage(
@@ -116,7 +115,12 @@ struct GemView: View {
                                     .foregroundStyle(.secondary)
 
                                 case .empty:
-                                    ProgressView()
+//                                    ProgressView()
+                                    if isAvailable {
+                                        ProgressView()
+                                    } else {
+                                        Image("gemstone-blue").resizable().scaledToFit()
+                                    }
 
                                 @unknown default:
                                     ProgressView()
@@ -124,72 +128,152 @@ struct GemView: View {
                             }
                             .frame(width: 40, height: 40)
                             .padding()
-                            .background(
-                                EditCard(
-                                    isSelected:
-                                        selectedMaterial == material
-                                )
-                            )
+                            .background(EditCard(isSelected: selectedMaterial == material))
+                            .opacity(isAvailable ? 1 : 0.4)
 
                             Text(material.capitalized)
                                 .font(.system(size: 12))
                         }
                         .padding(.trailing, 15)
                         .onTapGesture {
+                            guard isAvailable else { return }
                             selectedMaterial = material
-                            selectCombination()
                         }
                     }
                 }
             }
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 20)
-        .disabled(editViewModel.isBandUpdating)
-        .opacity(editViewModel.isBandUpdating ? 0.5 : 1)
-        .overlay {
-            if editViewModel.isBandUpdating {
-                ProgressView("Updating…")
-                    .padding()
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            
+            if canAddGem {
+                Button {
+                    addGem()
+                } label: {
+                    HStack {
+                        Spacer()
+
+                        if isAdding {
+                            ProgressView()
+                        } else {
+                            Text("Add Gem")
+                        }
+
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.mini)
+                .disabled(isAdding)
+            } else {
+                Button {
+                    addGem()
+                } label: {
+                    HStack {
+                        Spacer()
+
+                        if isAdding {
+                            ProgressView()
+                        } else {
+                            Text("Add Gem")
+                                .fontWeight(.semibold)                        }
+
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+                .disabled(true)
             }
+
         }
-        .animation(.default, value: editViewModel.isBandUpdating)
-        .onAppear {
-            applyDefaultsIfNeeded()
-        }
-        .onChange(of: editViewModel.gems.count) { _, _ in
-            applyDefaultsIfNeeded()
-        }
+        .padding()
+        .frame(maxWidth: 550)
     }
 
-    //default selection
-    private func applyDefaultsIfNeeded() {
-        if selectedShape == nil {
-            selectedShape = editViewModel.defaultGemShape
-        }
-
-        if selectedMaterial == nil {
-            selectedMaterial = editViewModel.defaultGemMaterial
-        }
-
-        selectCombination()
-    }
-
-    //select gem combination
-    private func selectCombination() {
-        guard
-            let shape = selectedShape,
-            let material = selectedMaterial
-        else {
-            return
-        }
-
+    private func addGem() {
+        guard let shape = selectedShape, let material = selectedMaterial, !isAdding else { return }
+        isAdding = true
         Task {
-            await editViewModel.selectGem(
-                shape: shape,
-                material: material
-            )
+            await editViewModel.selectGem(shape: shape, material: material)
+            isAdding = false
+            // reset so picking the next gem starts from a clean slate,
+            // instead of leaving a stale combo ready to be re-added
+            selectedShape = nil
+            selectedMaterial = nil
         }
     }
+}
+            
+//        }
+//        .padding(.horizontal, 20)
+//        .padding(.vertical, 20)
+//        .disabled(editViewModel.isBandUpdating)
+//        .opacity(editViewModel.isBandUpdating ? 0.5 : 1)
+//        .overlay {
+//            if editViewModel.isBandUpdating {
+//                ProgressView("Updating…")
+//                    .padding()
+//                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+//            }
+//        }
+//        .animation(.default, value: editViewModel.isBandUpdating)
+//        .onAppear {
+//            applyDefaultsIfNeeded()
+//        }
+//        .onChange(of: editViewModel.gems.count) { _, _ in
+//            applyDefaultsIfNeeded()
+//        }
+//    }
+//
+//    //default selection
+//    private func applyDefaultsIfNeeded() {
+//        if selectedShape == nil {
+//            selectedShape = editViewModel.defaultGemShape
+//        }
+//
+//        if selectedMaterial == nil {
+//            selectedMaterial = editViewModel.defaultGemMaterial
+//        }
+//
+//        selectCombination()
+//    }
+//
+//    //select gem combination
+//    private func selectCombination() {
+//        guard
+//            let shape = selectedShape,
+//            let material = selectedMaterial
+//        else {
+//            return
+//        }
+//
+//        Task {
+//            await editViewModel.selectGem(
+//                shape: shape,
+//                material: material
+//            )
+//        }
+//    }
+//    
+//    
+//}
+
+#Preview {
+    let design = Design(
+        materialPreset: "Yellow Gold",
+        gems: []
+    )
+    
+    let designFile = DesignFile(
+        id: UUID(),
+        name: "Preview Design",
+        updatedAt: .now,
+        ringPosition: .left,
+        design: design
+    )
+    
+    let viewModel = EditViewModel(
+        designFile: designFile
+    )
+    
+    GemView()
+        .environment(viewModel)
 }

@@ -52,6 +52,43 @@ final class JewelrySceneController {
     private(set) var realityContent: RealityViewCameraContent?
     private var isSetup = false
     
+    //skincolor
+    private(set) var skinColor: UIColor = UIColor(red: 0.79, green: 0.59, blue: 0.41, alpha: 1)
+    func applySkinColor(_ color: UIColor) {
+        skinColor = color
+        for child in mannequinAnchor.children {
+            tintMaterials(of: child, with: color)
+        }
+    }
+    
+    private func tintMaterials(of entity: Entity, with color: UIColor) {
+        if var model = entity.components[ModelComponent.self] {
+            model.materials = model.materials.map { material in
+                tinted(material: material, with: color)
+            }
+            entity.components.set(model)
+        }
+        for child in entity.children {
+            tintMaterials(of: child, with: color)
+        }
+    }
+    
+    private func tinted(material: RealityKit.Material, with color: UIColor) -> RealityKit.Material {
+        if var pbr = material as? PhysicallyBasedMaterial {
+            pbr.baseColor = .init(tint: color, texture: pbr.baseColor.texture)
+            return pbr
+        }
+        if var simple = material as? SimpleMaterial {
+            simple.color = .init(tint: color, texture: simple.color.texture)
+            return simple
+        }
+        if var unlit = material as? UnlitMaterial {
+            unlit.color = .init(tint: color, texture: unlit.color.texture)
+            return unlit
+        }
+        return material
+    }
+    
     func setEditorFrame(_ frame: CGRect) { editorFrameInGlobal = frame }
     func setRealityContent(_ content: RealityViewCameraContent) { realityContent = content }
     func isInsideEditorFrame(_ globalPoint: CGPoint) -> Bool { editorFrameInGlobal.contains(globalPoint) }
@@ -293,6 +330,8 @@ final class JewelrySceneController {
             )
             mannequinAnchor.addChild(mannequin)
             gizmoController.updateGizmoTransform()
+            //skin color
+            applySkinColor(skinColor)
         } catch {
             print("Failed to load entity", error)
         }
@@ -446,6 +485,43 @@ final class JewelrySceneController {
         search(rootEntity)
         return result
     }
+    
+    private func debugEntityHierarchy(_ entity: Entity, level: Int = 0) {
+        let indent = String(repeating: "  ", count: level)
+
+        print(
+            "\(indent)- \(entity.name.isEmpty ? "Unnamed" : entity.name)",
+            "ModelComponent:",
+            entity.components[ModelComponent.self] != nil,
+            "children:",
+            entity.children.count
+        )
+
+        for child in entity.children {
+            debugEntityHierarchy(child, level: level + 1)
+        }
+    }
+    
+    private func applyDebugMaterial(to entity: Entity) {
+        if var model = entity.components[ModelComponent.self] {
+            model.materials = [
+                SimpleMaterial(
+                    color: .red,
+                    isMetallic: false
+                )
+            ]
+
+            entity.components.set(model)
+
+            print("🔴 Debug material applied to:", entity.name)
+        }
+
+        for child in entity.children {
+            applyDebugMaterial(to: child)
+        }
+    }
+    
+    
     
     private func spawnPosition(screenLocation: CGPoint?, containerSize: CGSize?) -> SIMD3<Float> {
         guard let loc = screenLocation, let size = containerSize, size.width > 0, size.height > 0 else {
