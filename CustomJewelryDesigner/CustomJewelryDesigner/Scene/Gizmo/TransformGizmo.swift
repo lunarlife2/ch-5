@@ -94,11 +94,7 @@ final class TransformGizmo: Entity {
         visualRoot.addChild(zAxis)
     }
     
-    private func makeShaft(
-        length: Float,
-        axis: Axis,
-        color: UIColor
-    ) -> ModelEntity {
+    private func makeShaft(length: Float, axis: Axis, color: UIColor) -> ModelEntity {
         
         let thickness: Float = 0.008
         

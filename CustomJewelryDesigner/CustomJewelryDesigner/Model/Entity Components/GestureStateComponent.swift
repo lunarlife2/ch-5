@@ -20,7 +20,6 @@ public struct GestureStateComponent: Component {
 
     public var lastPositionDrag: SIMD3<Float> = .zero
     public var lastScale: SIMD3<Float> = .one
-
     public var lastRotate = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
 
     public var cumulativeRotationX: Float = 0
@@ -40,6 +39,8 @@ public struct GestureStateComponent: Component {
     public var dragStartAngle: Float = 0
 
     public var startOrientationRotate = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
+    public var lastRotateHorizontalX: Float = 0
+    public var lastRotateVerticalY: Float = 0
 
     public var isTransforming = false
 

@@ -43,7 +43,7 @@ final class JewelrySceneController {
     private var rotateGemAnchorStartOrientation: simd_quatf?
     
     private let targetBandDiameter: Float = 0.3
-    private let targetGemstoneDiameter: Float = 0.001
+    private let targetGemstoneDiameter: Float = 0.1
     private let targetMannequinDiameter: Float = 0.004
     private let gemFrontDepth: Float = 0.01
     private let gemFixedTapPosition = SIMD3<Float>(0.2, 0, 0.001)
@@ -207,18 +207,19 @@ final class JewelrySceneController {
     }
     
     func selectEntity(at screenLocation: CGPoint) {
-        guard let entity = entityAtScreenLocation(
-            screenLocation
-        ) else {
-            
+        guard let entity = entityAtScreenLocation(screenLocation) else {
             gizmoController.deselect()
-            
+            setSnapPointVisualsVisible(false)
             return
         }
         
-        gizmoController.select(
-            entity
-        )
+        gizmoController.select(entity)
+        
+        if entity.components[GestureComponent].self?.typeJewelry == .gemstone {
+            setSnapPointVisualsVisible(true)
+        } else {
+            setSnapPointVisualsVisible(false)
+        }
     }
     
     func deselectEntity() {
@@ -338,54 +339,54 @@ final class JewelrySceneController {
     
     func addStone(from localURL: URL, source: Gem, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async -> Entity? {
         do {
-            let gemstone = try await ModelEntity(contentsOf: localURL)
-            if source.gemShape.lowercased() == "pear" {
-                print("🔴 PEAR DETECTED - applying debug material")
-                applyDebugMaterial(to: gemstone)
-            }
-            print("========== GEM HIERARCHY ==========")
-            debugEntityHierarchy(gemstone)
-            print("====================================")
-            
-            let bounds = gemstone.visualBounds(relativeTo: nil)
-
-            print("========")
-            print("Gem:", source.gemShape)
-            print("Min:", bounds.min)
-            print("Max:", bounds.max)
-            print("Center:", bounds.center)
-            print("========")
-            
-            let gemstoneSize = gemstone.visualBounds(relativeTo: nil).extents
-            
-            let initialScale = targetGemstoneDiameter / max(gemstoneSize.x, gemstoneSize.y)
-            gemstone.scale = .init(repeating: initialScale)
-            print("Gem size:", gemstoneSize)
-            print("Gem scale:", gemstone.scale)
-            
-            gemstone.components.set(AttachmentComponent(targetWorldScale: initialScale))
-            
-            gemstone.components.set(GemSourceComponent(
-                libraryAssetID: source.id,
-                assetStoragePath: source.assetId.storagePath,
-                cut: source.gemShape,
-                color: source.gemMaterial
-            ))
-            
-            gemstone.name = UUID().uuidString
-            gemstone.position = spawnPosition(screenLocation: screenLocation, containerSize: containerSize)
-            print("Gem position:", gemstone.position)
-            
-            gemstone.generateCollisionShapes(recursive: true)
-            gemstone.components.set(InputTargetComponent())
-            gemstone.components.set(
-                GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: true)
+            let gemstone = try await ModelEntity(
+                contentsOf: localURL
             )
             
+            guard let model = gemstone.components[ModelComponent.self] else {
+                return nil
+            }
+            
+            gemstone.transform = Transform.identity
+            let localBounds = model.mesh.bounds
+            let extents = localBounds.extents
+
+            let maxDimension = max(extents.x, extents.y, extents.z)
+            guard maxDimension > 0, maxDimension.isFinite else {
+                return nil
+            }
+
+            let initialScale = targetGemstoneDiameter / maxDimension
+            
+            guard initialScale.isFinite, initialScale > 0 else {
+                return nil
+            }
+
+            gemstone.scale = .init(repeating: initialScale)
+
+            gemstone.components.set(AttachmentComponent(targetWorldScale: initialScale))
+
+            gemstone.components.set(GemSourceComponent(libraryAssetID: source.id, assetStoragePath: source.assetId.storagePath, cut: source.gemShape, color: source.gemMaterial))
+
+            gemstone.name = UUID().uuidString
+
+            gemstone.position = spawnPosition(screenLocation: screenLocation, containerSize: containerSize)
+
+            gemstone.generateCollisionShapes(recursive: true)
+
+            gemstone.components.set(InputTargetComponent())
+
+            gemstone.components.set(GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: false))
+
             gemAnchor.addChild(gemstone)
+
+            let finalBounds = gemstone.visualBounds(
+                relativeTo: nil
+            )
             return gemstone
+
         } catch {
-            print("Failed to load entity", error)
+            print(error)
             return nil
         }
     }
@@ -544,8 +545,9 @@ final class JewelrySceneController {
         }
     }
     
-    func screenAnchorPoints(for entity: Entity, padding: CGFloat = 24) -> (left: CGPoint, right: CGPoint)? {
+    func screenAnchorPoints(for entity: Entity, buttonSpacing: CGFloat = 70) -> (left: CGPoint, right: CGPoint, center: CGPoint)? {
         guard let realityContent else { return nil }
+
         let bounds = entity.visualBounds(relativeTo: nil)
 
         let corners = [
@@ -556,31 +558,55 @@ final class JewelrySceneController {
             SIMD3<Float>(bounds.min.x, bounds.min.y, bounds.max.z),
             SIMD3<Float>(bounds.max.x, bounds.min.y, bounds.max.z),
             SIMD3<Float>(bounds.min.x, bounds.max.y, bounds.max.z),
-            SIMD3<Float>(bounds.max.x, bounds.max.y, bounds.max.z),
+            SIMD3<Float>(bounds.max.x, bounds.max.y, bounds.max.z)
         ]
 
-        let projected = corners.compactMap { realityContent.project(point: $0, to: .local) }
-        guard !projected.isEmpty else { return nil }
+        let projected = corners.compactMap {
+            realityContent.project(point: $0, to: .local)
+        }
+
+        guard !projected.isEmpty else {
+            return nil
+        }
 
         let minX = projected.map(\.x).min()!
         let maxX = projected.map(\.x).max()!
+
+        let centerX = (minX + maxX) / 2
+
         let midY = projected.map(\.y).reduce(0, +) / CGFloat(projected.count)
 
         return (
-            left: CGPoint(x: minX - padding, y: midY),
-            right: CGPoint(x: maxX + padding, y: midY)
+            left: CGPoint(x: centerX - buttonSpacing, y: midY),
+            right: CGPoint(x: centerX + buttonSpacing, y: midY),
+            center: CGPoint(x: centerX, y: midY)
         )
     }
 
     func rotateSelectedGemAroundViewAxis(byDegrees delta: Float) {
-        guard let entity = gizmoController.selectedEntity,
-              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else { return }
-
-        let viewForward = normalize(cameraController.pivot.orientation.act(SIMD3<Float>(0, 0, -1)))
-        let rotation = simd_quatf(angle: delta * .pi / 180, axis: viewForward)
+        guard let entity = gizmoController.selectedEntity, entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+        let rotation = simd_quatf(angle: delta * .pi / 180, axis: SIMD3<Float>(0, 1, 0))
         let currentWorldOrientation = entity.orientation(relativeTo: nil)
         entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
-        
         gizmoController.updateGizmoTransform()
+    }
+    
+    func setSnapPointVisualsVisible(_ visible: Bool, excludingOccupied: Bool = true) {
+        for snap in allSnapPoints() {
+            guard let visual = snap.children.first(where: { $0.name == "snap-visual" }) else {
+                continue
+            }
+
+            if excludingOccupied,
+               let component = snap.components[SnapPointComponent.self],
+               component.occupiedByGemName != nil {
+                visual.isEnabled = false
+                continue
+            }
+
+            visual.isEnabled = visible
+        }
     }
 }

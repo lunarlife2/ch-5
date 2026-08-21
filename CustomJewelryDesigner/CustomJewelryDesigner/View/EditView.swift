@@ -18,6 +18,7 @@ struct EditView: View {
 
     @State private var editViewModel: EditViewModel
     @State private var bandGemViewModel = BandGemViewModel()
+    @State private var selectedPanelType = 0
 
     init(designFile: DesignFile) {
         self.designFile = designFile
@@ -94,6 +95,7 @@ struct EditView: View {
             )
 
             SelectBandGemView(
+                selectedType: $selectedPanelType,
                 bandGemViewModel: bandGemViewModel,
                 viewModel: editViewModel,
                 panelWidth: panelWidth,
@@ -109,6 +111,12 @@ struct EditView: View {
             .padding(.trailing, panelRightPadding)
             .task {
                 await editViewModel.fetchAllData()
+                if let design = designFile.design {
+                    bandGemViewModel.loadRingSize(
+                        id: design.ringSizeID,
+                        system: design.ringSizeSystem
+                    )
+                }
 
                 print("Band:", editViewModel.bands.count
                 )
@@ -247,7 +255,9 @@ struct EditView: View {
             guard editViewModel.hasUnsavedChanges else { return }
             editViewModel.save(
                 ringSizeID: bandGemViewModel.selectedRingSizeID,
-                ringSizeSystem: bandGemViewModel.selectedRingSizeSystem
+                ringSizeSystem: bandGemViewModel.selectedRingSizeSystem,
+                finger: bandGemViewModel.selectedFinger,
+                hand: bandGemViewModel.selectedHand
             )
             vm.moveScreenState(to: .home)
         } label: {

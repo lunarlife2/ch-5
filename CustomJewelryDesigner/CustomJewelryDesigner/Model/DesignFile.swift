@@ -68,6 +68,9 @@ final class DesignFile {
 final class Design {
     var materialPreset: String
     
+    var fingerRawValue: String?
+    var handRawValue: String?
+    
     var ringSizeID: Int?
     var ringSizeSystemRawValue: String?
     
@@ -86,7 +89,9 @@ final class Design {
         band: BandComponent? = nil,
         gems: [GemComponent],
         ringSizeID: Int? = nil,
-        ringSizeSystem: RingSizeSystem? = nil
+        ringSizeSystem: RingSizeSystem? = nil,
+        finger: Finger? = nil,
+        hand: Hand? = nil
         
     ) {
         self.materialPreset = materialPreset
@@ -94,6 +99,8 @@ final class Design {
         self.gems = gems
         self.ringSizeID = ringSizeID
         self.ringSizeSystemRawValue = ringSizeSystem?.rawValue
+        self.fingerRawValue = finger?.rawValue
+        self.handRawValue = hand?.rawValue
     }
     
     var ringSizeSystem: RingSizeSystem? {
@@ -115,6 +122,34 @@ final class Design {
         
         return ringSizeOptions.first {
             $0.id == ringSizeID
+        }
+    }
+    
+    var finger: Finger? {
+        get {
+            guard let rawValue = fingerRawValue else {
+                return nil
+            }
+
+            return Finger(rawValue: rawValue)
+        }
+
+        set {
+            fingerRawValue = newValue?.rawValue
+        }
+    }
+
+    var hand: Hand? {
+        get {
+            guard let rawValue = handRawValue else {
+                return nil
+            }
+
+            return Hand(rawValue: rawValue)
+        }
+
+        set {
+            handRawValue = newValue?.rawValue
         }
     }
 }
