@@ -10,7 +10,7 @@ import SwiftUI
 struct MannequinView: View {
     @State private var selectedFinger: Finger = .thumb
     @State private var showColorPicker = false
-    @Environment(EditViewModel.self) private var viewModel
+    var viewModel: EditViewModel
     
     var body: some View {
         VStack {
@@ -83,17 +83,17 @@ struct MannequinView: View {
     }
 }
 
-#Preview {
-    MannequinView()
-        .environment(
-            EditViewModel(
-                designFile: DesignFile(
-                    id: UUID(),
-                    name: "Preview",
-                    updatedAt: .now,
-                    ringPosition: .left,
-                    design: nil
-                )
-            )
-        )
-}
+//#Preview {
+//    MannequinView()
+//        .environment(
+//            EditViewModel(
+//                designFile: DesignFile(
+//                    id: UUID(),
+//                    name: "Preview",
+//                    updatedAt: .now,
+//                    ringPosition: .left,
+//                    design: nil
+//                )
+//            )
+//        )
+//}

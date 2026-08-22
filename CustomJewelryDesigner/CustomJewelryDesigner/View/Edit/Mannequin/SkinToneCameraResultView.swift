@@ -15,7 +15,6 @@ struct SkinToneCameraResultView: View {
     var onRetake: () -> Void
     var onApply: (Color) -> Void
 
-    /// Normalized (0...1, 0...1) position of the sampler within the image.
     @State private var samplePoint = CGPoint(x: 0.5, y: 0.42)
     @State private var isDraggingSampler = false
     @State private var color: Color = SkinColorDefault.color
@@ -42,8 +41,6 @@ struct SkinToneCameraResultView: View {
             .onAppear { sample(at: samplePoint) }
         }
     }
-
-    // MARK: Header
 
     private var header: some View {
         HStack {
@@ -75,8 +72,6 @@ struct SkinToneCameraResultView: View {
         .padding(.top, 16)
         .padding(.bottom, 8)
     }
-
-    // MARK: Photo + sampler
 
     private func photoWithSampler(containerSize: CGSize) -> some View {
         GeometryReader { geo in
@@ -138,7 +133,6 @@ struct SkinToneCameraResultView: View {
         .offset(y: -26)
     }
 
-    /// Computes the actual drawn rect of the .scaledToFit() image within its container.
     private func imageDisplayFrame(in containerSize: CGSize) -> CGRect {
         let imageSize = image.size
         guard imageSize.width > 0, imageSize.height > 0,
@@ -168,8 +162,6 @@ struct SkinToneCameraResultView: View {
         color = Color(uiColor)
     }
 
-    // MARK: Color panel
-
     private var colorPanel: some View {
         VStack(alignment: .leading, spacing: 18) {
             Text("Color")
@@ -194,8 +186,6 @@ struct SkinToneCameraResultView: View {
             Spacer()
         }
     }
-
-    // MARK: Footer
 
     private var footer: some View {
         HStack {

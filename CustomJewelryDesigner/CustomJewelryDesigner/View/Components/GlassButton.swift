@@ -23,7 +23,7 @@ struct GlassButton<Label: View>: View {
             label()
                 .foregroundStyle(Color.black)
                 .font(.system(size: 27, weight: .medium))
-                .frame(width: 30, height: 40)
+                .frame(width: 20, height: 30)
         }
         .buttonStyle(.glassProminent)
         .tint(.white)

@@ -38,9 +38,3 @@ struct SwitchView: View {
         }
     }
 }
-
-//#Preview {
-//    @Previewable @State var viewModel = EditViewModel()
-//    
-//    SwitchView(viewModel: viewModel)
-//}

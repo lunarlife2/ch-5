@@ -21,29 +21,48 @@ struct RingRotationGesture {
         DragGesture(minimumDistance: 1, coordinateSpace: .global)
             .targetedToAnyEntity()
             .onChanged { value in
-                guard let entity = value.entity.gestureTarget() else { return }
+                guard let hitEntity = value.entity.gestureTarget() else {
+                    return
+                }
 
-                guard let gc = entity.components[GestureComponent.self],
-                      gc.typeJewelry == .band,
+                guard let gc = hitEntity.components[GestureComponent.self],
+                      (gc.typeJewelry == .band || gc.typeJewelry == .handMannequin),
                       gc.canRotate
-                else { return }
+                else {
+                    return
+                }
 
-                var state = entity.gestureStateComponent
+                let target: Entity
+
+                switch gc.typeJewelry {
+                case .band:
+                    target = scene.bandAnchor
+
+                case .handMannequin:
+                    target = scene.mannequinAnchor
+
+                default:
+                    return
+                }
+
+                var state = target.gestureStateComponent
 
                 if !state.isRotating {
-                    guard touchTracker.activeTouchCount == 1 else { return }
+                    guard touchTracker.activeTouchCount == 1 else {
+                        return
+                    }
 
                     state.isRotating = true
-                    state.startOrientationRotate = entity.orientation(relativeTo: nil)
                     state.lastRotateHorizontalX = Float(value.location.x)
-                    state.lastRotateVerticalY = Float(value.location.y)   // <— tambah ini
-                    entity.gestureStateComponent = state
+                    state.lastRotateVerticalY = Float(value.location.y)
+
+                    target.gestureStateComponent = state
                     return
                 }
 
                 guard touchTracker.activeTouchCount == 1 else {
                     state.isRotating = false
-                    entity.gestureStateComponent = state
+                    target.gestureStateComponent = state
                     return
                 }
 
@@ -56,33 +75,62 @@ struct RingRotationGesture {
                 state.lastRotateHorizontalX = currentX
                 state.lastRotateVerticalY = currentY
 
-                let rotationY = deltaX * rotationSensitivity   // yaw
-                let rotationX = deltaY * rotationSensitivity   // pitch
+                let qY = simd_quatf(
+                    angle: deltaX * rotationSensitivity,
+                    axis: SIMD3<Float>(0, 1, 0)
+                )
 
-                let qY = simd_quatf(angle: rotationY, axis: SIMD3<Float>(0, 1, 0))
-                let qX = simd_quatf(angle: rotationX, axis: SIMD3<Float>(1, 0, 0))
+                let qX = simd_quatf(
+                    angle: deltaY * rotationSensitivity,
+                    axis: SIMD3<Float>(1, 0, 0)
+                )
 
-                let currentOrientation = entity.orientation(relativeTo: nil)
-                let newOrientation = qY * qX * currentOrientation
+                target.orientation = qY * qX * target.orientation
 
-                entity.setOrientation(newOrientation, relativeTo: nil)
+                state.lastRotate = target.orientation(relativeTo: nil)
+                target.gestureStateComponent = state
 
-                state.lastRotate = newOrientation
-                state.cumulativeRotationY += rotationY
-                entity.gestureStateComponent = state
+                switch gc.typeJewelry {
+                case .band:
+                    scene.bandOrientation = target.orientation(relativeTo: nil)
 
-                scene.bandOrientation = entity.orientation(relativeTo: nil)
+                case .handMannequin:
+                    scene.mannequinOrientation = target.orientation(relativeTo: nil)
+
+                default:
+                    break
+                }
+
                 scene.gizmoController.updateGizmoTransform()
             }
             .onEnded { value in
-                guard let entity = value.entity.gestureTarget() else { return }
+                guard let hitEntity = value.entity.gestureTarget() else {
+                    return
+                }
 
-                var state = entity.gestureStateComponent
-                guard state.isRotating else { return }
+                guard let gc = hitEntity.components[GestureComponent.self],
+                      (gc.typeJewelry == .band || gc.typeJewelry == .handMannequin)
+                else {
+                    return
+                }
 
-                state.lastRotate = entity.orientation(relativeTo: nil)
+                let target: Entity
+
+                switch gc.typeJewelry {
+                case .band:
+                    target = scene.bandAnchor
+
+                case .handMannequin:
+                    target = scene.mannequinAnchor
+
+                default:
+                    return
+                }
+
+                var state = target.gestureStateComponent
                 state.isRotating = false
-                entity.gestureStateComponent = state
+                state.lastRotate = target.orientation(relativeTo: nil)
+                target.gestureStateComponent = state
 
                 editViewModel.markDirty()
             }

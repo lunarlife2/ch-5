@@ -10,6 +10,11 @@ import SwiftUI
 import RealityKit
 import simd
 
+private struct PendingGemAttach {
+    let entity: Entity
+    let snapID: String
+}
+
 @Observable
 final class JewelrySceneController {
     
@@ -39,12 +44,17 @@ final class JewelrySceneController {
     }
     
     var bandOrientation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
+    var mannequinOrientation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
     private var rotateBandStartOrientation: simd_quatf?
     private var rotateGemAnchorStartOrientation: simd_quatf?
+    private var rotateMannequinStartOrientation: simd_quatf?
     
-    private let targetBandDiameter: Float = 0.3
+    //attach band gem to mannequin
+    private var fingerAnchors: [String: Entity] = [:]
+    
+    private let targetBandDiameter: Float = 0.2
     private let targetGemstoneDiameter: Float = 0.1
-    private let targetMannequinDiameter: Float = 0.004
+    private let targetMannequinDiameter: Float = 0.5
     private let gemFrontDepth: Float = 0.01
     private let gemFixedTapPosition = SIMD3<Float>(0.2, 0, 0.001)
     
@@ -93,7 +103,7 @@ final class JewelrySceneController {
     func setRealityContent(_ content: RealityViewCameraContent) { realityContent = content }
     func isInsideEditorFrame(_ globalPoint: CGPoint) -> Bool { editorFrameInGlobal.contains(globalPoint) }
     
-    func setup(bandURL: URL?, bandSource: BandSourceComponent, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
+    func setup(bandURL: URL?, bandSource: BandSourceComponent, mannequinURLs: URL?, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
         guard !isSetup else { return }
         isSetup = true
         
@@ -126,13 +136,19 @@ final class JewelrySceneController {
                 canRotate: true
             )
         )
-                
+        
         if let bandURL {
             await loadBand(from: bandURL, source: bandSource, saved: savedBand)
         } else {
             await loadBundledBand(named: bandSource.assetStoragePath, saved: savedBand)
         }
-        await loadMannequin()
+        
+        if let mannequinURLs {
+            await loadMannequin(from: mannequinURLs)
+        } else {
+            print("❌ No mannequin URL")
+        }
+        
         await loadSavedGems(gems: savedGems, urls: gemURLs)
         updateVisibility(for: mode)
     }
@@ -164,8 +180,7 @@ final class JewelrySceneController {
         }
         
         gizmoController.updateGizmoTransform()
-        
-//        ensureBandGroupVisible()
+        //        ensureBandGroupVisible()
     }
     
     func snapBand(to targetOrientation: simd_quatf) {
@@ -180,7 +195,6 @@ final class JewelrySceneController {
         rotateGemAnchorStartOrientation = nil
     }
     
-    
     func orbitCamera(deltaX: Float, deltaY: Float) {
         cameraController.orbit(
             deltaX: deltaX,
@@ -189,7 +203,7 @@ final class JewelrySceneController {
     }
     
     func rotateSelectedEntity(deltaX: Float, deltaY: Float) {
-        guard let entity = gizmoController.selectedEntity else {
+        guard let entity = gizmoController.activeEntity else {
             return
         }
         let rotationY = deltaX * 0.01
@@ -213,9 +227,8 @@ final class JewelrySceneController {
             return
         }
         
-        gizmoController.select(entity)
-        
         if entity.components[GestureComponent].self?.typeJewelry == .gemstone {
+            gizmoController.select(entity)
             setSnapPointVisualsVisible(true)
         } else {
             setSnapPointVisualsVisible(false)
@@ -227,8 +240,21 @@ final class JewelrySceneController {
     }
     
     func updateVisibility(for mode: JewelryEditorMode) {
-        bandPivot.isEnabled = mode == .band
-        mannequinPivot.isEnabled = mode == .handMannequin
+        switch mode {
+        case .band:
+            bandPivot.isEnabled = true
+            gemAnchor.isEnabled = true
+            mannequinPivot.isEnabled = false
+            setSnapPointVisualsVisible(true)
+
+        case .handMannequin:
+            bandPivot.isEnabled = false
+            gemAnchor.isEnabled = false
+            mannequinPivot.isEnabled = true
+            setSnapPointVisualsVisible(false)
+            gizmoController.deselect()
+            gizmoController.setTransformTarget(mannequinAnchor)
+        }
     }
     
     func loadBand(from localURL: URL, source: BandSourceComponent, saved: BandComponent? = nil) async {
@@ -253,95 +279,182 @@ final class JewelrySceneController {
         }
     }
     
-    func replaceBand(from localURL: URL, source: BandSourceComponent, saved: BandComponent? = nil) async {
-        await loadBand(from: localURL, source: source, saved: saved)
+    private func modelBounds(of entity: Entity) -> SIMD3<Float>? {
+        if let model = entity.components[ModelComponent.self] {
+            return model.mesh.bounds.extents
+        }
+        
+        for child in entity.children {
+            if let bounds = modelBounds(of: child) {
+                return bounds
+            }
+        }
+        
+        return nil
     }
     
+    func replaceBand(from localURL: URL, source: BandSourceComponent, saved: BandComponent? = nil) async {
+        await loadBand(from: localURL, source: source, saved: nil)
+    }
+    
+    private func captureAttachedGems() -> [PendingGemAttach] {
+        guard let bandEntity = bandAnchor.children.first else { return [] }
+        let snapPoints = bandEntity.children.filter { $0.components[SnapPointComponent.self] != nil }
+        
+        var captured: [PendingGemAttach] = []
+        for snap in snapPoints {
+            guard let snapID = snap.components[SnapPointComponent.self]?.snapID else { continue }
+            for child in snap.children where child.components[GestureComponent.self]?.typeJewelry == .gemstone {
+                captured.append(PendingGemAttach(entity: child, snapID: snapID))
+            }
+        }
+        return captured
+    }
     
     private func prepareAndInstall(band: Entity, saved: BandComponent?) {
-        let size = band.visualBounds(relativeTo: band).extents
-
-        let rawDiameter = max(size.x, size.z)
-
-        guard rawDiameter > 0 else {
+        band.position = .zero
+        band.orientation = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
+        band.scale = .init(repeating: 1)
+        
+        let rawBounds = band.visualBounds(relativeTo: band)
+        let rawExtents = rawBounds.extents
+        let rawCenter = rawBounds.center
+        
+        let correction = correctiveOrientation(for: rawExtents)
+        band.orientation = correction
+        let correctedExtents = abs(correction.act(rawExtents))
+        let correctedCenter = correction.act(rawCenter)
+        
+        let rawDiameter = max(correctedExtents.x, correctedExtents.y)
+        guard rawDiameter > 0, rawDiameter.isFinite else {
+            print("[BAND] Invalid diameter:", rawDiameter)
             return
         }
-
-        let scale = targetBandDiameter / rawDiameter
-
-        band.scale = .init(repeating: scale)
-        band.position = [-0.001, 0, 0]
-
+        
+        let normalizedScale = targetBandDiameter / rawDiameter
+        guard normalizedScale.isFinite, normalizedScale > 0 else {
+            print("[BAND] Invalid scale:", normalizedScale)
+            return
+        }
+        
+        band.scale = .init(repeating: normalizedScale)
+        band.position = -correctedCenter * normalizedScale
         band.generateCollisionShapes(recursive: true)
-
         band.components.set(InputTargetComponent())
-
-        band.components.set(
-            GestureComponent(
-                typeJewelry: .band,
-                canDrag: false,
-                canScale: true,
-                canRotate: true
+//        band.components.set(
+//            GestureComponent(typeJewelry: .band, canDrag: false, canScale: true, canRotate: true)
+//        )
+//        
+        SnappingService.addSnapPoints(
+            to: band,
+            correction: correction,
+            canonicalCenter: correctedCenter,
+            canonicalExtents: correctedExtents
+        )
+                
+        if let orientation = saved?.orientation {
+            bandAnchor.orientation = orientation
+        } else {
+            bandAnchor.orientation = simd_quatf(
+                angle: 0,
+                axis: SIMD3<Float>(0, 1, 0)
             )
-        )
-
-        SnappingService.addSnapPoints(to: band)
-
-        bandAnchor.orientation = simd_quatf(
-            angle: 0,
-            axis: SIMD3<Float>(0, 1, 0)
-        )
-
-        if let saved {
-            if let orientation = saved.orientation {
-                bandAnchor.orientation = orientation
-            }
-
-            if let scale = saved.scaleFactor {
-                band.scale = .init(repeating: Float(scale))
+        }
+                
+        let captureGems = captureAttachedGems()
+        
+        for captureGem in captureGems {
+            captureGem.entity.setParent(
+                gemAnchor,
+                preservingWorldTransform: true
+            )
+        }
+        
+        bandAnchor.children.removeAll()
+        
+        bandAnchor.addChild(band)
+                
+        let newSnapPoints = allSnapPoints()
+        
+        for capture in captureGems {
+            if let target = newSnapPoints.first(where: {
+                $0.components[SnapPointComponent.self]?.snapID
+                == capture.snapID
+            }) {
+                SnappingService.attach(
+                    gem: capture.entity,
+                    to: target
+                )
             }
         }
-
-        bandAnchor.children.removeAll()
-        bandAnchor.addChild(band)
-
-        bandOrientation = bandAnchor.orientation(relativeTo: nil)
-
+        
+        bandOrientation =
+        bandAnchor.orientation(relativeTo: nil)
+        
         gizmoController.updateGizmoTransform()
     }
     
-    func loadMannequin() async {
+    private func correctiveOrientation(for extents: SIMD3<Float>) -> simd_quatf {
+        let ax = extents.x, ay = extents.y, az = extents.z
+        
+        if az <= ax && az <= ay {
+            return simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
+        } else if ay <= ax && ay <= az {
+            return simd_quatf(angle: .pi / 2, axis: SIMD3<Float>(1, 0, 0))
+        } else {
+            return simd_quatf(angle: .pi / 2, axis: SIMD3<Float>(0, 1, 0))
+        }
+    }
+    
+    func allSnapPoints() -> [Entity] {
+        guard let bandEntity = bandAnchor.children.first else {
+            return []
+        }
+        
+        return bandEntity.children.filter {
+            $0.components[SnapPointComponent.self] != nil
+        }
+    }
+    
+    
+    func loadMannequin(from localURL: URL) async -> Entity? {
         do {
-            let mannequin = try await Entity(named: "Simplified_Hand_For_Artists")
-            
-            let mannequinSize = mannequin.visualBounds(relativeTo: nil).extents
-            mannequin.scale = .init(repeating: targetMannequinDiameter / max(mannequinSize.x, mannequinSize.y))
-            mannequin.position = [0, -0.3, 0]
-            
+            let mannequin = try await Entity(contentsOf: localURL)
+            let bounds = mannequin.visualBounds(relativeTo: mannequin)
+            let center = bounds.center
+            let extents = bounds.extents
+
+            let maxDimension = max(extents.x, max(extents.y, extents.z))
+
+            let initialScale = targetMannequinDiameter / maxDimension
+
+            mannequin.transform = .identity
+            mannequin.scale = .init(repeating: initialScale)
+
+            mannequin.position = -center * initialScale
             mannequin.generateCollisionShapes(recursive: true, static: true)
+
             mannequin.components.set(InputTargetComponent())
-            mannequin.components.set(
-                GestureComponent(
-                    typeJewelry: .handMannequin,
-                    canDrag: false,
-                    canScale: true,
-                    canRotate: true
-                )
-            )
+
+            mannequin.components.set(GestureComponent(typeJewelry: .handMannequin, canDrag: false, canScale: true, canRotate: true))
+
             mannequinAnchor.addChild(mannequin)
-            gizmoController.updateGizmoTransform()
-            //skin color
+
             applySkinColor(skinColor)
+
+            gizmoController.setTransformTarget(mannequinAnchor)
+
+            return mannequin
+
         } catch {
-            print("Failed to load entity", error)
+            print(error)
+            return nil
         }
     }
     
     func addStone(from localURL: URL, source: Gem, screenLocation: CGPoint? = nil, containerSize: CGSize? = nil) async -> Entity? {
         do {
-            let gemstone = try await ModelEntity(
-                contentsOf: localURL
-            )
+            let gemstone = try await ModelEntity(contentsOf: localURL)
             
             guard let model = gemstone.components[ModelComponent.self] else {
                 return nil
@@ -350,41 +463,41 @@ final class JewelrySceneController {
             gemstone.transform = Transform.identity
             let localBounds = model.mesh.bounds
             let extents = localBounds.extents
-
+            
             let maxDimension = max(extents.x, extents.y, extents.z)
             guard maxDimension > 0, maxDimension.isFinite else {
                 return nil
             }
-
+            
             let initialScale = targetGemstoneDiameter / maxDimension
             
             guard initialScale.isFinite, initialScale > 0 else {
                 return nil
             }
-
+            
             gemstone.scale = .init(repeating: initialScale)
-
+            
             gemstone.components.set(AttachmentComponent(targetWorldScale: initialScale))
-
+            
             gemstone.components.set(GemSourceComponent(libraryAssetID: source.id, assetStoragePath: source.assetId.storagePath, cut: source.gemShape, color: source.gemMaterial))
-
+            
             gemstone.name = UUID().uuidString
-
+            
             gemstone.position = spawnPosition(screenLocation: screenLocation, containerSize: containerSize)
-
+            
             gemstone.generateCollisionShapes(recursive: true)
-
+            
             gemstone.components.set(InputTargetComponent())
-
+            
             gemstone.components.set(GestureComponent(typeJewelry: .gemstone, canDrag: true, canScale: false, canRotate: false))
-
+            
             gemAnchor.addChild(gemstone)
-
+            
             let finalBounds = gemstone.visualBounds(
                 relativeTo: nil
             )
             return gemstone
-
+            
         } catch {
             print(error)
             return nil
@@ -417,11 +530,11 @@ final class JewelrySceneController {
                 
                 if let snapID = component.attachedSnapPointID, let snapPoint = findSnapPoint(id: snapID) {
                     SnappingService.attach(gem: entity, to: snapPoint)
-
+                    
                     if let orientation = component.orientation {
                         entity.setOrientation(orientation, relativeTo: nil)
                     }
-
+                    
                     print("[LOAD GEM]", entity.name, "attached to", snapID)
                 } else {
                     if let pos = component.position {
@@ -488,7 +601,7 @@ final class JewelrySceneController {
     
     private func debugEntityHierarchy(_ entity: Entity, level: Int = 0) {
         let indent = String(repeating: "  ", count: level)
-
+        
         print(
             "\(indent)- \(entity.name.isEmpty ? "Unnamed" : entity.name)",
             "ModelComponent:",
@@ -496,7 +609,7 @@ final class JewelrySceneController {
             "children:",
             entity.children.count
         )
-
+        
         for child in entity.children {
             debugEntityHierarchy(child, level: level + 1)
         }
@@ -510,18 +623,16 @@ final class JewelrySceneController {
                     isMetallic: false
                 )
             ]
-
+            
             entity.components.set(model)
-
+            
             print("🔴 Debug material applied to:", entity.name)
         }
-
+        
         for child in entity.children {
             applyDebugMaterial(to: child)
         }
     }
-    
-    
     
     private func spawnPosition(screenLocation: CGPoint?, containerSize: CGSize?) -> SIMD3<Float> {
         guard let loc = screenLocation, let size = containerSize, size.width > 0, size.height > 0 else {
@@ -535,21 +646,11 @@ final class JewelrySceneController {
         return SIMD3<Float>(normalizedX * 0.004, -normalizedY * 0.004, gemFrontDepth)
     }
     
-    func allSnapPoints() -> [Entity] {
-        guard let bandEntity = bandAnchor.children.first else {
-            return []
-        }
-        
-        return bandEntity.children.filter {
-            $0.components[SnapPointComponent.self] != nil
-        }
-    }
-    
     func screenAnchorPoints(for entity: Entity, buttonSpacing: CGFloat = 70) -> (left: CGPoint, right: CGPoint, center: CGPoint)? {
         guard let realityContent else { return nil }
-
+        
         let bounds = entity.visualBounds(relativeTo: nil)
-
+        
         let corners = [
             SIMD3<Float>(bounds.min.x, bounds.min.y, bounds.min.z),
             SIMD3<Float>(bounds.max.x, bounds.min.y, bounds.min.z),
@@ -560,34 +661,52 @@ final class JewelrySceneController {
             SIMD3<Float>(bounds.min.x, bounds.max.y, bounds.max.z),
             SIMD3<Float>(bounds.max.x, bounds.max.y, bounds.max.z)
         ]
-
+        
         let projected = corners.compactMap {
             realityContent.project(point: $0, to: .local)
         }
-
+        
         guard !projected.isEmpty else {
             return nil
         }
-
+        
         let minX = projected.map(\.x).min()!
         let maxX = projected.map(\.x).max()!
-
+        
         let centerX = (minX + maxX) / 2
-
+        
         let midY = projected.map(\.y).reduce(0, +) / CGFloat(projected.count)
-
+        
         return (
             left: CGPoint(x: centerX - buttonSpacing, y: midY),
             right: CGPoint(x: centerX + buttonSpacing, y: midY),
             center: CGPoint(x: centerX, y: midY)
         )
     }
-
-    func rotateSelectedGemAroundViewAxis(byDegrees delta: Float) {
-        guard let entity = gizmoController.selectedEntity, entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+    
+    func rotateSelectedGemAroundViewYAxis(byDegrees delta: Float) {
+        guard let entity = gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
             return
         }
-        let rotation = simd_quatf(angle: delta * .pi / 180, axis: SIMD3<Float>(0, 1, 0))
+        
+        let cameraUpWorld = cameraController.pivot.orientation(relativeTo: nil).act(SIMD3<Float>(1, 0, 0))
+        
+        let rotation = simd_quatf(angle: delta * .pi / 180, axis: normalize(cameraUpWorld))
+        let currentWorldOrientation = entity.orientation(relativeTo: nil)
+        entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
+        gizmoController.updateGizmoTransform()
+    }
+    
+    func rotateSelectedGemAroundViewXAxis(byDegrees delta: Float) {
+        guard let entity = gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+        
+        let cameraUpWorld = cameraController.pivot.orientation(relativeTo: nil).act(SIMD3<Float>(0, 1, 0))
+        
+        let rotation = simd_quatf(angle: delta * .pi / 180, axis: normalize(cameraUpWorld))
         let currentWorldOrientation = entity.orientation(relativeTo: nil)
         entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
         gizmoController.updateGizmoTransform()
@@ -598,15 +717,102 @@ final class JewelrySceneController {
             guard let visual = snap.children.first(where: { $0.name == "snap-visual" }) else {
                 continue
             }
-
+            
             if excludingOccupied,
                let component = snap.components[SnapPointComponent.self],
                component.occupiedByGemName != nil {
                 visual.isEnabled = false
                 continue
             }
-
+            
             visual.isEnabled = visible
         }
     }
+    
+    func updateGizmoTarget(for mode: JewelryEditorMode) {
+
+        if let selected = gizmoController.selectedEntity,
+           selected.components[GestureComponent.self]?.typeJewelry == .gemstone {
+
+            gizmoController.setTransformTarget(selected)
+            return
+        }
+
+        switch mode {
+        case .band:
+            gizmoController.setTransformTarget(bandAnchor)
+
+        case .handMannequin:
+            gizmoController.setTransformTarget(mannequinAnchor)
+        }
+    }
+    
+    func beginRotateMannequin() {
+        rotateMannequinStartOrientation = mannequinAnchor.orientation(relativeTo: nil)
+    }
+
+    func rotateMannequin(deltaX: Float, deltaY: Float) {
+        guard let startOrientation = rotateMannequinStartOrientation else {
+            rotateMannequinStartOrientation = mannequinAnchor.orientation(relativeTo: nil)
+            return
+        }
+
+        let rotationY = deltaX * 0.01
+        let rotationX = deltaY * 0.01
+
+        let qY = simd_quatf(angle: rotationY, axis: SIMD3<Float>(0, 1, 0))
+        let qX = simd_quatf(angle: rotationX, axis: SIMD3<Float>(1, 0, 0))
+        let delta = qY * qX
+
+        mannequinAnchor.orientation = delta * startOrientation
+        mannequinOrientation = mannequinAnchor.orientation(relativeTo: nil)
+
+        gizmoController.updateGizmoTransform()
+    }
+
+    func snapMannequin(to targetOrientation: simd_quatf) {
+        mannequinAnchor.orientation = targetOrientation
+        mannequinOrientation = mannequinAnchor.orientation(relativeTo: nil)
+        gizmoController.updateGizmoTransform()
+    }
+
+    func endRotateMannequin() {
+        rotateMannequinStartOrientation = nil
+    }
+    
+    private func indexFingerAnchors(in mannequin: Entity) {
+        fingerAnchors.removeAll()
+        for hand in Hand.allCases {
+            for finger in Finger.allCases {
+                let name = "anchor-\(hand.rawValue)-\(finger.rawValue)"
+                if let anchor = mannequin.findEntity(named: name) {
+                    fingerAnchors[name] = anchor
+                } else {
+                    print("⚠️ Missing finger anchor:", name)
+                }
+            }
+        }
+    }
+
+    func fingerAnchor(for hand: Hand, finger: Finger) -> Entity? {
+        fingerAnchors["anchor-\(hand.rawValue)-\(finger.rawValue)"]
+    }
+
+    func attachBandToFinger(hand: Hand, finger: Finger) {
+        guard let anchor = fingerAnchor(for: hand, finger: finger) else {
+            print("❌ No anchor for \(hand)-\(finger)")
+            return
+        }
+        bandAnchor.setParent(anchor, preservingWorldTransform: false)
+        bandAnchor.position = .zero
+        bandAnchor.orientation = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0)) // canonical "duduk di jari"
+        gizmoController.updateGizmoTransform()
+    }
+
+    func returnBandToPivot() {
+        bandAnchor.setParent(bandPivot, preservingWorldTransform: false)
+        bandAnchor.orientation = bandOrientation // balikin orientasi terakhir waktu edit band
+        gizmoController.updateGizmoTransform()
+    }
+
 }

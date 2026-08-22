@@ -31,7 +31,7 @@ final class TransformGizmo: Entity {
         addChild(yRing)
         addChild(zRing)
         
-        buildTranslationGizmo()
+//        buildTranslationGizmo()
         setupInteraction()
     }
         

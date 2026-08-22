@@ -128,7 +128,7 @@ enum SnappingService {
     
     static func reapplyFixedScale(for gem: Entity) {
         guard
-            let fixed = gem.components[AttachmentComponent.self],
+            gem.components[AttachmentComponent.self] != nil,
             let snapPoint = gem.parent,
             let snapComponent = snapPoint.components[SnapPointComponent.self]
         else {
@@ -137,20 +137,18 @@ enum SnappingService {
 
         let parentWorldScale = snapPoint.scale(relativeTo: nil)
 
-        gem.scale = SIMD3<Float>(repeating: fixed.targetWorldScale) / parentWorldScale
-
         let gemBoundsInSnap = gem.visualBounds(relativeTo: snapPoint)
         let gemHalfDepth = gemBoundsInSnap.extents.z / 2
+
         let standoffLocal = snapComponent.standoffDistance / parentWorldScale.z
 
         gem.position = SIMD3<Float>(0, 0, standoffLocal + gemHalfDepth)
     }
 
-    static func addSnapPoints(to band: Entity) {
-        let bounds = band.visualBounds(relativeTo: band)
-        let center = bounds.center
-
-        let ringRadius = max(bounds.extents.x, bounds.extents.y) / 2
+    static func addSnapPoints(to band: Entity, correction: simd_quatf, canonicalCenter: SIMD3<Float>, canonicalExtents: SIMD3<Float>) {
+        let ringRadius = max(canonicalExtents.x, canonicalExtents.y) / 2
+        let inverseCorrection = correction.inverse
+        let visualRadius = max(canonicalExtents.x, canonicalExtents.y, canonicalExtents.z) * 0.04
 
         let angles: [(id: String, degrees: Float)] = [
             ("band-snap-0", -25),
@@ -161,47 +159,28 @@ enum SnappingService {
         for (index, entry) in angles.enumerated() {
             let radians = entry.degrees * .pi / 180
 
+            let canonicalPos = SIMD3<Float>(canonicalCenter.x + sin(radians) * ringRadius, canonicalCenter.y + cos(radians) * ringRadius, canonicalCenter.z)
+
+            let canonicalRadialDir = normalize(SIMD3<Float>(sin(radians), cos(radians), 0))
+
             let snap = Entity()
             snap.name = entry.id
 
-            snap.position = SIMD3<Float>(
-                center.x + sin(radians) * ringRadius,
-                center.y + cos(radians) * ringRadius,
-                center.z
-            )
-
-            let radialDirection = SIMD3<Float>(
-                sin(radians),
-                cos(radians),
-                0
-            )
-
-            snap.orientation = simd_quatf(
-                from: [0, 0, 1],
-                to: normalize(radialDirection)
-            )
-
-            snap.components.set(
-                SnapPointComponent(
-                    snapID: entry.id,
-                    index: index
-                )
-            )
+            snap.position = inverseCorrection.act(canonicalPos)
+            snap.orientation = inverseCorrection * simd_quatf(from: [0, 0, 1], to: canonicalRadialDir)
+            snap.components.set(SnapPointComponent(snapID: entry.id, index: index))
 
             let visual = ModelEntity(
-                mesh: .generateSphere(radius: 5),
+                mesh: .generateSphere(radius: visualRadius),
                 materials: [
-                    SimpleMaterial(
-                        color: .blue.withAlphaComponent(0.3),
-                        isMetallic: false
-                    )
+                    SimpleMaterial(color: .blue.withAlphaComponent(0.3), isMetallic: false)
                 ]
             )
 
             visual.name = "snap-visual"
-            visual.position = SIMD3<Float>(0, 2, 20)
+            let visualOffset = max(canonicalExtents.x, canonicalExtents.y, canonicalExtents.z) * 0.02
+            visual.position = SIMD3<Float>(0, 0, visualOffset)
             visual.isEnabled = false
-
             snap.addChild(visual)
             band.addChild(snap)
         }

@@ -9,74 +9,41 @@ import SwiftUI
 
 struct SelectBandGemView: View {
 
-//    @State private var selectedType = 0
     @Binding var selectedType: Int
 
     @Bindable var bandGemViewModel: BandGemViewModel
     var viewModel: EditViewModel
 
-    let panelWidth: CGFloat
-    let expandedWidth: CGFloat
-    let collapsedWidth: CGFloat
-
-    private var collapseOffset: CGFloat {
-        expandedWidth - panelWidth
-    }
-
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.shadowTertiary)
-            
-            VStack(alignment: .leading, spacing: 0) {
-
-                if viewModel.mode != .handMannequin {
-                    Picker("", selection: $selectedType) {
-                        Text("Band").tag(0)
-                        Text("Gem").tag(1)
-                        Text("Size").tag(2)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 10)
+        VStack(alignment: .leading, spacing: 0) {
+            if viewModel.mode != .handMannequin {
+                Picker("", selection: $selectedType) {
+                    Text("Band").tag(0)
+                    Text("Gem").tag(1)
                 }
-
-                Group {
-                    if viewModel.mode == .handMannequin {
-                        MannequinView()
-                    } else {
-                        switch selectedType {
-                        case 0:
-                            BandView()
-
-                        case 1:
-                            GemView()
-
-                        default:
-                            SizeView(
-                                bandGemViewModel: bandGemViewModel
-                            )
-                        }
-                    }
-                }
-                .frame(
-                    width: expandedWidth,
-                    alignment: .topLeading
-                )
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
             }
-            .frame(
-                width: expandedWidth,
-                alignment: .topLeading
-            )
-            .offset(x: collapseOffset)
+
+            Group {
+                if viewModel.mode == .handMannequin {
+                    MannequinView(viewModel: viewModel)
+                } else {
+                    switch selectedType {
+                    case 0:
+                        BandView()
+                    case 1:
+                        GemView()
+                    default:
+                        BandView()
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(
-            width: panelWidth,
-            alignment: .topLeading
-        )
-        .clipShape(
-            RoundedRectangle(cornerRadius: 20)
-        )
+        .padding(.trailing, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }

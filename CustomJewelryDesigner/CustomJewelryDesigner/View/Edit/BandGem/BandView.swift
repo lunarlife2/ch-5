@@ -64,7 +64,9 @@ struct BandView: View {
                     }
                 }
             }
-
+            
+            Divider()
+            
             // thickness
             VStack(alignment: .leading, spacing: 10) {
                 Text("Thickness")
@@ -79,6 +81,8 @@ struct BandView: View {
                 }
             }
 
+            Divider()
+            
             // material
             VStack(alignment: .leading, spacing: 10) {
                 Text("Materials")
@@ -137,6 +141,7 @@ struct BandView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
+        .frame(maxWidth: 550)
         .disabled(editViewModel.isBandUpdating)
         .opacity(editViewModel.isBandUpdating ? 0.5 : 1)
         .overlay {
@@ -163,15 +168,32 @@ struct BandView: View {
         if selectedStyle == nil {
             selectedStyle = editViewModel.defaultBandStyle
         }
-        selectedMaterial = editViewModel.defaultBandMaterial ?? .yellowGold
-
-        if let thickness = editViewModel.defaultBandThickness {
+        if let style = editViewModel.selectedBandStyle {
+            selectedStyle = style
+        } else {
+            selectedStyle = editViewModel.defaultBandStyle
+        }
+        
+        if let material = editViewModel.selectedBandMaterial {
+            selectedMaterial = material
+        } else {
+            selectedMaterial =
+            editViewModel.defaultBandMaterial ?? .yellowGold
+        }
+        
+        if let thickness = editViewModel.selectedBandThickness {
             switch thickness.lowercased() {
-            case "thin": sliderValue = 1
-            case "medium": sliderValue = 2
-            case "thick": sliderValue = 3
-            default: sliderValue = 1
+            case "thin":
+                sliderValue = 1
+            case "medium":
+                sliderValue = 2
+            case "thick":
+                sliderValue = 3
+            default:
+                sliderValue = 1
             }
+        } else {
+            sliderValue = 1
         }
     }
 }

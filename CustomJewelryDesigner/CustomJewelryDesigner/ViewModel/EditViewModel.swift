@@ -51,6 +51,10 @@ enum JewelryEditorMode: String, CaseIterable, Identifiable {
 @MainActor
 @Observable
 final class EditViewModel {
+    init(designFile: DesignFile) {
+        self.designFile = designFile
+    }
+    
     let scene = JewelrySceneController()
     
     private let persistence = DesignPersistenceService()
@@ -58,7 +62,18 @@ final class EditViewModel {
     private var modelContext: ModelContext?
 
     var mode: JewelryEditorMode = .band {
-        didSet { scene.updateVisibility(for: mode) }
+        didSet {
+            scene.updateVisibility(for: mode)
+            scene.updateGizmoTarget(for: mode)
+        }
+    }
+    
+    //attach band gem to mannequin
+    var selectedHand: Hand = .left {
+        didSet { scene.attachBandToFinger(hand: selectedHand, finger: selectedFinger) }
+    }
+    var selectedFinger: Finger = .thumb {
+        didSet { scene.attachBandToFinger(hand: selectedHand, finger: selectedFinger) }
     }
     
     //connecting to supabase
@@ -71,6 +86,7 @@ final class EditViewModel {
     var isLoadingAsset = false
     var errorMessage: String?
     var selectedGizmoAxis: ViewAxis?
+    var liveDragGlobalPoint: CGPoint?
     
     private(set) var currentBand: Band?
     private(set) var isGemSelected = false
@@ -90,7 +106,12 @@ final class EditViewModel {
     private let scaleDragSensitivity: Float = 0.01
     private let scaleFactorMin: Float = 0.2
     private let scaleFactorMax: Float = 5.0
-
+    
+    //selected band
+    private(set) var selectedBandStyle: BandStyle?
+    private(set) var selectedBandThickness: String?
+    private(set) var selectedBandMaterial: BandMaterialEnum?
+    
     private func distinctPreservingOrder(_ values: [String]) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
@@ -126,14 +147,17 @@ final class EditViewModel {
     private(set) var hasUnsavedChanges = false
     private(set) var selectedGemName: String?
     private(set) var pendingDeleteGemName: String?
-    var liveDragGlobalPoint: CGPoint?
     private(set) var editorFrameInGlobal: CGRect = .zero
     private(set) var trashFrameInGlobal: CGRect = .zero
+    private(set) var bottomControlsFrameInGlobal: CGRect = .zero
+    
     private var pendingBandAssetPath: String = "Flat_Band_Ring"
     private var pendingBandName: String = "plain band usd"
-
+    
     private let snapScreenRadius: CGFloat = 50
     private let tapAlignRadius: Float = 0.0025
+    
+    private let uiClampMargin: CGFloat = 12
     
     //skincolor
     var skinColor: Color {
@@ -147,10 +171,6 @@ final class EditViewModel {
 
     var design: Design? {
         designFile.design
-    }
-
-    init(designFile: DesignFile) {
-        self.designFile = designFile
     }
 
     func setDesignFile(_ file: DesignFile) {
@@ -203,6 +223,10 @@ final class EditViewModel {
         selectedGemName = name
         delete()
         pendingDeleteGemName = nil
+    }
+    
+    func setBottomControlsFrame(_ frame: CGRect) {
+        bottomControlsFrameInGlobal = frame
     }
 
     func fetchBands() async {
@@ -271,6 +295,37 @@ final class EditViewModel {
             print("BandStyle count:", bandStyles.count)
         } catch {
             print(error)
+        }
+    }
+    
+    func fetchMannequinAsset() async -> Asset3D? {
+        do {
+            let assets: [Asset3D] = try await supabase
+                .from("ms_3d_asset")
+                .select("""
+                    asset_id,
+                    storage_path,
+                    thumbnail_path
+                """)
+                .eq("storage_path", value: "realHand.usdz")
+                .limit(1)
+                .execute()
+                .value
+
+            guard let asset = assets.first else {
+                print("❌ realHand.usdz tidak ditemukan di ms_asset_3d")
+                return nil
+            }
+
+            print("✅ Mannequin asset found:")
+            print("   ID:", asset.id)
+            print("   Storage:", asset.storagePath)
+
+            return asset
+
+        } catch {
+            print("❌ Failed to fetch mannequin asset:", error)
+            return nil
         }
     }
 
@@ -363,6 +418,18 @@ final class EditViewModel {
                 useBundledFallback = true
             }
 
+            guard let mannequinAsset = await fetchMannequinAsset() else {
+                return
+            }
+            
+            guard let mannequinURL = await loadLocalModelURL(
+                path: mannequinAsset.storagePath,
+                bucket: "hand"
+            ) else {
+                return
+            }
+            print(mannequinURL.path)
+            
             var gemURLs: [String: URL] = [:]
             for gem in design.gems {
                 guard let url = await loadLocalModelURL(path: gem.assetStoragePath, bucket: "stone") else {
@@ -373,7 +440,7 @@ final class EditViewModel {
             }
 
             if useBundledFallback {
-                await scene.setup(bandURL: nil, bandSource: bandSource, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+                await scene.setup(bandURL: nil, bandSource: bandSource, mannequinURLs: mannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
                 return
             }
 
@@ -392,7 +459,7 @@ final class EditViewModel {
 
             guard let finalBandURL = bandURL else { print("Failed to download any band"); return }
 
-            await scene.setup(bandURL: finalBandURL, bandSource: bandSource, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+            await scene.setup(bandURL: finalBandURL, bandSource: bandSource, mannequinURLs: mannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
         }
     }
     
@@ -439,9 +506,9 @@ final class EditViewModel {
         await applySelectedBand(band)
     }
     
-     func selectBand(style: BandStyle, thickness: String, material: BandMaterialEnum? = nil) async {
+    func selectBand(style: BandStyle, thickness: String, material: BandMaterialEnum? = nil) async {
         let targetMaterial = material ?? defaultBandMaterial ?? .yellowGold
-
+        
         guard let match = bands.first(where: {
             $0.bandStyleID.id == style.id &&
             $0.bandThickness.caseInsensitiveCompare(thickness) == .orderedSame &&
@@ -450,7 +517,11 @@ final class EditViewModel {
             print("No band in Supabase for style '\(style.bandStyleName)' + thickness '\(thickness)' + material '\(targetMaterial.title)'")
             return
         }
-
+        
+        selectedBandStyle = match.bandStyleID
+        selectedBandThickness = match.bandThickness
+        
+        selectedBandMaterial = BandMaterialEnum.allCases.first { normalizedMaterial($0.rawValue) == normalizedMaterial(match.bandMaterial) }
         await applySelectedBand(match)
     }
     
@@ -667,7 +738,7 @@ final class EditViewModel {
             try persistence.save(
                 gemEntities: scene.allGemEntities(),
                 bandEntity: scene.bandAnchor.children.first,
-                bandPivot: scene.bandPivot,
+                bandAnchor: scene.bandAnchor,
                 ringSizeID: ringSizeID,
                 ringSizeSystem: ringSizeSystem,
                 finger: finger,
@@ -734,18 +805,43 @@ final class EditViewModel {
     }
 
     func updateSelectedGemIconPositions() {
-        guard isGemSelected, let anchor = selectedGemButtonAnchor else {
+        guard
+            isGemSelected,
+            let selectedGemName,
+            let entity = scene.allGemEntities().first(where: {
+                $0.name == selectedGemName
+            }),
+            let anchors = scene.screenAnchorPoints(for: entity)
+        else {
             selectedGemTrashPosition = nil
             selectedGemRotatePosition = nil
             selectedGemScalePosition = nil
             return
         }
 
-        let spacing: CGFloat = 70
+        let anchor = anchors.center
 
-        selectedGemTrashPosition = CGPoint(x: anchor.x - spacing, y: anchor.y)
-        selectedGemScalePosition = anchor
-        selectedGemRotatePosition = CGPoint(x: anchor.x + spacing, y: anchor.y)
+        selectedGemButtonAnchor = anchor
+
+        let horizontalSpacing: CGFloat = 70
+        let verticalOffset: CGFloat = 80
+
+        let buttonY = anchor.y - verticalOffset
+
+        selectedGemTrashPosition = CGPoint(
+            x: anchor.x - horizontalSpacing,
+            y: buttonY
+        )
+
+        selectedGemScalePosition = CGPoint(
+            x: anchor.x,
+            y: buttonY
+        )
+
+        selectedGemRotatePosition = CGPoint(
+            x: anchor.x + horizontalSpacing,
+            y: buttonY
+        )
     }
     
     func updateSelectedGemButtonPosition(for entity: Entity) {
@@ -788,6 +884,10 @@ final class EditViewModel {
         let clampedFactor = max(scaleFactorMin, min(rawFactor, scaleFactorMax))
 
         entity.scale = startScale * clampedFactor
+        
+        if SnappingService.isAttached(entity) {
+            SnappingService.reapplyFixedScale(for: entity)
+        }
         scene.gizmoController.updateGizmoTransform()
     }
 
@@ -803,6 +903,10 @@ final class EditViewModel {
             let worldScale = entity.scale(relativeTo: nil)
             attachment.targetWorldScale = (worldScale.x + worldScale.y + worldScale.z) / 3
             entity.components[AttachmentComponent.self] = attachment
+            
+            if SnappingService.isAttached(entity) {
+                        SnappingService.reapplyFixedScale(for: entity)
+                    }
         }
 
         markDirty()
@@ -823,7 +927,7 @@ final class EditViewModel {
         }
 
         let deltaDegrees = deltaAngleRadians * 180 / .pi
-        scene.rotateSelectedGemAroundViewAxis(byDegrees: deltaDegrees)
+        scene.rotateSelectedGemAroundViewXAxis(byDegrees: deltaDegrees)
         markDirty()
     }
 
@@ -839,5 +943,28 @@ final class EditViewModel {
         selectedGemTrashPosition = nil
         selectedGemRotatePosition = nil
         selectedGemScalePosition = nil
+    }
+    
+    func clampToSafeArea(_ point: CGPoint) -> CGPoint {
+        var clamped = point
+
+        if editorFrameInGlobal != .zero {
+            clamped.x = min(max(clamped.x, editorFrameInGlobal.minX), editorFrameInGlobal.maxX)
+            clamped.y = min(max(clamped.y, editorFrameInGlobal.minY), editorFrameInGlobal.maxY)
+        }
+
+        if bottomControlsFrameInGlobal != .zero {
+            let blocked = bottomControlsFrameInGlobal.insetBy(dx: -uiClampMargin, dy: -uiClampMargin)
+            if blocked.contains(clamped) {
+                clamped.y = bottomControlsFrameInGlobal.minY - uiClampMargin
+            }
+        }
+
+        if editorFrameInGlobal != .zero {
+            clamped.x = min(max(clamped.x, editorFrameInGlobal.minX), editorFrameInGlobal.maxX)
+            clamped.y = min(max(clamped.y, editorFrameInGlobal.minY), editorFrameInGlobal.maxY)
+        }
+
+        return clamped
     }
 }

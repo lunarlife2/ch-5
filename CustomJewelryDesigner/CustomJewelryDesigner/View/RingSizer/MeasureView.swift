@@ -115,7 +115,6 @@ struct MeasureView: View {
     }
     
     private struct ScreenReader: UIViewRepresentable {
-
         let onScreen: (UIScreen) -> Void
 
         func makeUIView(
@@ -159,6 +158,6 @@ struct MeasureView: View {
         }
     }
 }
-//#Preview {
-//    MeasureView(bandGemViewModel: BandGemViewModel())
-//}
+#Preview {
+    MeasureView(bandGemViewModel: BandGemViewModel())
+}

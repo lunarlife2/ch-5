@@ -11,7 +11,7 @@ import RealityKit
 
 struct DesignPersistenceService {
     
-    func save(gemEntities: [Entity], bandEntity: Entity?, bandPivot: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, finger: Finger, hand: Hand, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
+    func save(gemEntities: [Entity], bandEntity: Entity?, bandAnchor: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, finger: Finger, hand: Hand, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
         
         for gemEntity in gemEntities {
             let worldPosition = gemEntity.position(relativeTo: nil)
@@ -49,7 +49,7 @@ struct DesignPersistenceService {
             let name = source?.name ?? design.band?.name ?? "plain band usd"
             
             if let bandComponent = design.band {
-                bandComponent.orientation = bandEntity.orientation(relativeTo: bandPivot)
+                bandComponent.orientation = bandAnchor.orientation(relativeTo: nil)
                 bandComponent.scaleFactor = Double(bandEntity.scale.x)
                 bandComponent.assetStoragePath = assetPath
                 bandComponent.name = name
@@ -59,7 +59,7 @@ struct DesignPersistenceService {
                     assetStoragePath: assetPath,
                     name: name
                 )
-                newBandComponent.orientation = bandEntity.orientation(relativeTo: bandPivot)
+                newBandComponent.orientation = bandAnchor.orientation(relativeTo: nil)
                 newBandComponent.scaleFactor = Double(bandEntity.scale.x)
                 newBandComponent.design = design
                 design.band = newBandComponent

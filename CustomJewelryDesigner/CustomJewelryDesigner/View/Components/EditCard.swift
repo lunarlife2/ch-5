@@ -12,13 +12,13 @@ struct EditCard: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 10)
             .fill(
-                isSelected ? .white : .shadowSecondary
+                isSelected ? .shadowQuinary : .white
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(
-                        isSelected ? .black : .clear,
-                        lineWidth: 2
+                        isSelected ? .blue : .gray,
+                        lineWidth: isSelected ? 3 : 1
                     )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

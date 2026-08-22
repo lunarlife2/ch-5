@@ -21,7 +21,6 @@ struct GemView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-
             //shape
             VStack(alignment: .leading) {
                 Text("Shape")
@@ -79,6 +78,8 @@ struct GemView: View {
                 }
             }
             .padding(.bottom, 20)
+            
+            Divider()
 
             //material
             VStack(alignment: .leading) {
@@ -143,6 +144,8 @@ struct GemView: View {
                 }
             }
             
+            Divider()
+            
             if canAddGem {
                 Button {
                     addGem()
@@ -173,8 +176,8 @@ struct GemView: View {
                             ProgressView()
                         } else {
                             Text("Add Gem")
-                                .fontWeight(.semibold)                        }
-
+                                .fontWeight(.semibold)
+                        }
                         Spacer()
                     }
                 }
@@ -184,7 +187,8 @@ struct GemView: View {
             }
 
         }
-        .padding()
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
         .frame(maxWidth: 550)
     }
 

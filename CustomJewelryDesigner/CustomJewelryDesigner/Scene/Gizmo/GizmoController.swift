@@ -17,12 +17,17 @@ final class GizmoController {
     let selectionWireframe: SelectionWireframe
 
     weak var targetEntity: Entity?
+    weak var transformTarget: Entity?
 
     var mode: GizmoTransformMode = .translate
 
     var selectedHandle: GizmoHandle?
     
     private(set) var selectedEntity: Entity?
+    
+    var activeEntity: Entity? {
+        selectedEntity ?? transformTarget
+    }
 
     init() {
 
@@ -33,6 +38,12 @@ final class GizmoController {
         gizmo.isEnabled = false
         selectionWireframe.isEnabled = false
     }
+    
+    func setTransformTarget(_ entity: Entity?) {
+        transformTarget = entity
+        updateGizmoTransform()
+    }
+    
 
     func install(in rootEntity: Entity) {
         if gizmo.parent == nil {
@@ -48,6 +59,7 @@ final class GizmoController {
     func select(_ entity: Entity) {
         if targetEntity === entity {
             selectionWireframe.refresh()
+            updateGizmoTransform()
             return
         }
 
@@ -56,10 +68,9 @@ final class GizmoController {
         targetEntity = entity
         selectedEntity = entity
         selectedHandle = nil
+        transformTarget = entity
 
         selectionWireframe.show(for: entity)
-
-        gizmo.isEnabled = false
 
         updateGizmoTransform()
     }
@@ -118,16 +129,13 @@ final class GizmoController {
     }
     
     func updateGizmoTransform() {
-        guard let selectedEntity else {
+        guard let activeEntity else {
             gizmo.isEnabled = false
             return
         }
 
-        let worldPosition =
-            selectedEntity.position(relativeTo: nil)
-
-        let worldOrientation =
-            selectedEntity.orientation(relativeTo: nil)
+        let worldPosition = activeEntity.position(relativeTo: nil)
+        let worldOrientation = activeEntity.orientation(relativeTo: nil)
 
         gizmo.setPosition(
             worldPosition,
@@ -146,6 +154,7 @@ final class GizmoController {
             relativeTo: nil
         )
 
+        gizmo.isEnabled = true
         updateSelectionWireframeTransform()
     }
     

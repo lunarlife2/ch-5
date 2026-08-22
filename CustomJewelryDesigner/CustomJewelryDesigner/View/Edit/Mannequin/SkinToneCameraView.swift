@@ -14,7 +14,6 @@ struct SkinToneCameraView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    /// Called with the color the user finally applies from the result screen.
     var onFinish: (Color) -> Void
 
     @State private var session = SkinToneCameraSession()
@@ -70,8 +69,6 @@ struct SkinToneCameraView: View {
         }
     }
 
-    // MARK: Camera layer
-
     @ViewBuilder
     private var cameraLayer: some View {
         if session.isAuthorized {
@@ -115,8 +112,6 @@ struct SkinToneCameraView: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: Top bar
-
     private var topBar: some View {
         HStack {
             Button {
@@ -148,8 +143,6 @@ struct SkinToneCameraView: View {
         }
         .padding(.top, 12)
     }
-
-    // MARK: Tips card
 
     @ViewBuilder
     private var tipsCard: some View {
@@ -210,8 +203,6 @@ struct SkinToneCameraView: View {
             }
         }
     }
-
-    // MARK: Side controls (flash / grid, shutter, gallery)
 
     private var sideControls: some View {
         VStack(spacing: 18) {
