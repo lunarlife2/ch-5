@@ -11,19 +11,25 @@ import RealityKit
 
 struct DesignPersistenceService {
     
-    func save(gemEntities: [Entity], bandEntity: Entity?, bandAnchor: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, finger: Finger, hand: Hand, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
+    func save(gemEntities: [Entity], bandEntity: Entity?, bandAnchor: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger, skinColorHex: String, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
         
         for gemEntity in gemEntities {
             let worldPosition = gemEntity.position(relativeTo: nil)
             let worldOrientation = gemEntity.orientation(relativeTo: nil)
-            let worldScale = Double(gemEntity.scale(relativeTo: nil).x)
-            let attachedSnapID = gemEntity.components[AttachmentComponent.self]?.attachedSnapID
+            let attachment = gemEntity.components[AttachmentComponent.self]
+            let attachedSnapID = attachment?.attachedSnapID
             let source = gemEntity.components[GemSourceComponent.self]
-            
+
+            let persistedScale: Double = if let attachment {
+                Double(attachment.targetWorldScale)
+            } else {
+                Double(gemEntity.scale(relativeTo: nil).x)
+            }
+
             if let existing = design.gems.first(where: { $0.name == gemEntity.name }) {
                 existing.position = worldPosition
                 existing.orientation = worldOrientation
-                existing.scaleFactor = worldScale
+                existing.scaleFactor = persistedScale
                 existing.attachedSnapPointID = attachedSnapID
             } else {
                 let newComponent = GemComponent(
@@ -35,7 +41,7 @@ struct DesignPersistenceService {
                     position: worldPosition
                 )
                 newComponent.orientation = worldOrientation
-                newComponent.scaleFactor = worldScale
+                newComponent.scaleFactor = persistedScale
                 newComponent.attachedSnapPointID = attachedSnapID
                 newComponent.design = design
                 design.gems.append(newComponent)
@@ -70,8 +76,8 @@ struct DesignPersistenceService {
         designFile.updatedAt = .now
         design.ringSizeID = ringSizeID
         design.ringSizeSystem = ringSizeSystem
-        design.finger = finger
-        design.hand = hand
+        design.handFinger = handFinger
+        design.skinColorHex = skinColorHex
 
         try modelContext.save()
         

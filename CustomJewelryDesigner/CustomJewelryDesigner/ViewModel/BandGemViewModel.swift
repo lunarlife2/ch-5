@@ -203,53 +203,94 @@ enum Hand: String, CaseIterable, Identifiable {
     }
 }
 
+enum HandFinger: String, CaseIterable, Identifiable {
+    case leftthumb
+    case leftpointer
+    case leftmiddle
+    case leftring
+    case leftpinky
+    
+    case rightthumb
+    case rightpointer
+    case rightmiddle
+    case rightring
+    case rightpinky
+    
+    var id: String {
+        rawValue
+    }
+    
+    var title: String {
+        switch self {
+        case .leftthumb:
+            return "Left - Thumb"
+        case .leftpointer:
+            return "Left - Pointer Finger"
+        case .leftmiddle:
+            return "Left - Middle Finger"
+        case .leftring:
+            return "Left - Ring Finger"
+        case .leftpinky:
+            return "Left - Pinky Finger"
+        case .rightthumb:
+            return "Right - Thumb"
+        case .rightpointer:
+            return "Right - Pointer Finger"
+        case .rightmiddle:
+            return "Right - Middle Finger"
+        case .rightring:
+            return "Right - Ring Finger"
+        case .rightpinky:
+            return "Right - Pinky Finger"
+        }
+    }
+    
+    var hand: Hand {
+        rawValue.hasPrefix("left") ? .left : .right
+    }
+    
+    var finger: Finger {
+        switch self {
+        case .leftthumb, .rightthumb:
+            return .thumb
+        case .leftpointer, .rightpointer:
+            return .index
+        case .leftmiddle, .rightmiddle:
+            return .middle
+        case .leftring, .rightring:
+            return .ring
+        case .leftpinky, .rightpinky:
+            return .pinky
+        }
+    }
+    
+    static func from(hand: Hand, finger: Finger) -> HandFinger {
+        allCases.first { $0.hand == hand && $0.finger == finger }!
+    }
+}
+
 @Observable
 final class BandGemViewModel {
     private(set) var _mode: BandGemSize = .band
     
     var mode: BandGemSize {
-        get {
-            _mode
-        }
-        set {
-            _mode = newValue
-        }
+        get { _mode }
+        set { _mode = newValue }
     }
     
-    var selectedFinger: Finger = .thumb
-    var selectedHand: Hand = .right
     var selectedRingSizeSystem: RingSizeSystem = .usCanada
     var selectedRingSizeID: Int = 20
     var selectedRingSize: RingSizeOption? {
-        ringSizeOptions.first {
-            $0.id == selectedRingSizeID
-        }
+        ringSizeOptions.first { $0.id == selectedRingSizeID }
     }
     
-    func loadRingSize(
-        id: Int?,
-        system: RingSizeSystem?
-    ) {
+    func loadRingSize(id: Int?, system: RingSizeSystem?) {
         if let system {
             selectedRingSizeSystem = system
         }
-        
-        guard let id else {
-            return
-        }
-        
-        guard let ring = ringSizeOptions.first(where: {
-            $0.id == id
-        }) else {
-            return
-        }
-        
-        // Pastikan size tersebut memang tersedia
-        // pada system yang tersimpan.
-        guard ring.size(for: selectedRingSizeSystem) != nil else {
-            return
-        }
-        
+        guard let id else { return }
+        guard let ring = ringSizeOptions.first(where: { $0.id == id }) else { return }
+        guard ring.size(for: selectedRingSizeSystem) != nil else { return }
         selectedRingSizeID = id
     }
 }

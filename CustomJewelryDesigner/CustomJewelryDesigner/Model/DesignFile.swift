@@ -68,8 +68,7 @@ final class DesignFile {
 final class Design {
     var materialPreset: String
     
-    var fingerRawValue: String?
-    var handRawValue: String?
+    var handFingerRawValue: String?
     
     var ringSizeID: Int?
     var ringSizeSystemRawValue: String?
@@ -83,6 +82,7 @@ final class Design {
     // optional inverse, useful if you ever need to go Design -> DesignFile
     @Relationship(inverse: \DesignFile.design)
     var file: DesignFile?
+    var skinColorHex: String?
     
     init(
         materialPreset: String,
@@ -90,17 +90,14 @@ final class Design {
         gems: [GemComponent],
         ringSizeID: Int? = nil,
         ringSizeSystem: RingSizeSystem? = nil,
-        finger: Finger? = nil,
-        hand: Hand? = nil
-        
+        handFinger: HandFinger? = nil,
     ) {
         self.materialPreset = materialPreset
         self.band = band
         self.gems = gems
         self.ringSizeID = ringSizeID
         self.ringSizeSystemRawValue = ringSizeSystem?.rawValue
-        self.fingerRawValue = finger?.rawValue
-        self.handRawValue = hand?.rawValue
+        self.handFinger = handFinger
     }
     
     var ringSizeSystem: RingSizeSystem? {
@@ -125,31 +122,15 @@ final class Design {
         }
     }
     
-    var finger: Finger? {
+    var handFinger: HandFinger? {
         get {
-            guard let rawValue = fingerRawValue else {
+            guard let rawValue = handFingerRawValue else {
                 return nil
             }
-
-            return Finger(rawValue: rawValue)
+            return HandFinger(rawValue: rawValue)
         }
-
         set {
-            fingerRawValue = newValue?.rawValue
-        }
-    }
-
-    var hand: Hand? {
-        get {
-            guard let rawValue = handRawValue else {
-                return nil
-            }
-
-            return Hand(rawValue: rawValue)
-        }
-
-        set {
-            handRawValue = newValue?.rawValue
+            handFingerRawValue = newValue?.rawValue
         }
     }
 }

@@ -187,6 +187,7 @@ struct SkinToneCameraResultView: View {
         }
     }
 
+
     private var footer: some View {
         HStack {
             Button {

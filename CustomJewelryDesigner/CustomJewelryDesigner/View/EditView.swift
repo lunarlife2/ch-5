@@ -18,7 +18,8 @@ struct EditView: View {
  
     @State private var editViewModel: EditViewModel
     @State private var bandGemViewModel = BandGemViewModel()
-    @State private var selectedPanelType = 0
+    @State private var selectedPanelTypeBand = 0
+    @State private var selectedPanelTypeMannequin = 0
     @State private var showUnsavedChangesAlert = false
  
     init(designFile: DesignFile) {
@@ -151,17 +152,11 @@ struct EditView: View {
             Group {
                 switch editViewModel.mode {
                 case .band:
-                    SelectBandGemView(
-                        selectedType: $selectedPanelType,
-                        bandGemViewModel: bandGemViewModel,
-                        viewModel: editViewModel
-                    )
-                    
+                    SelectBandGemView(selectedType: $selectedPanelTypeBand, bandGemViewModel: bandGemViewModel, viewModel: editViewModel)
                 case .handMannequin:
-                    MannequinView(viewModel: editViewModel)
+                    SelectSkinSizeView(selectedType: $selectedPanelTypeMannequin, bandGemViewModel: bandGemViewModel, viewModel: editViewModel)
                 }
             }
-            .padding(.trailing, 50)
             .frame(width: Layout.expandedWidth, alignment: .topLeading)
         }
         .frame(width: Layout.expandedWidth, alignment: .leading)
@@ -316,8 +311,7 @@ struct EditView: View {
             editViewModel.save(
                 ringSizeID: bandGemViewModel.selectedRingSizeID,
                 ringSizeSystem: bandGemViewModel.selectedRingSizeSystem,
-                finger: bandGemViewModel.selectedFinger,
-                hand: bandGemViewModel.selectedHand
+                handFinger: editViewModel.selectedHandFinger
             )
             vm.moveScreenState(to: .home)
         } label: {

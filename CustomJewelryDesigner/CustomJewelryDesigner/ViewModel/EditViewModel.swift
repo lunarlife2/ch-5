@@ -69,11 +69,8 @@ final class EditViewModel {
     }
     
     //attach band gem to mannequin
-    var selectedHand: Hand = .left {
-        didSet { scene.attachBandToFinger(hand: selectedHand, finger: selectedFinger) }
-    }
-    var selectedFinger: Finger = .thumb {
-        didSet { scene.attachBandToFinger(hand: selectedHand, finger: selectedFinger) }
+    var selectedHandFinger: HandFinger = .rightthumb {
+        didSet { scene.attachBandToFinger(selectedHandFinger) }
     }
     
     //connecting to supabase
@@ -111,6 +108,14 @@ final class EditViewModel {
     private(set) var selectedBandStyle: BandStyle?
     private(set) var selectedBandThickness: String?
     private(set) var selectedBandMaterial: BandMaterialEnum?
+    
+    //attach band gem to mannequin
+//    func restoreLastFingerSelection() {
+//        if let saved = design?.handFinger, saved.isAvailable {
+//            selectedHandFinger = saved
+//        }
+//    }
+
     
     private func distinctPreservingOrder(_ values: [String]) -> [String] {
         var seen = Set<String>()
@@ -298,7 +303,11 @@ final class EditViewModel {
         }
     }
     
-    func fetchMannequinAsset() async -> Asset3D? {
+    func fetchMannequinAsset(for hand: Hand) async -> Asset3D? {
+        let path = hand == .left
+            ? "realHand.usdz"
+            : "rightHand.usdz"
+
         do {
             let assets: [Asset3D] = try await supabase
                 .from("ms_3d_asset")
@@ -307,28 +316,28 @@ final class EditViewModel {
                     storage_path,
                     thumbnail_path
                 """)
-                .eq("storage_path", value: "realHand.usdz")
+                .eq("storage_path", value: path)
                 .limit(1)
                 .execute()
                 .value
 
             guard let asset = assets.first else {
-                print("❌ realHand.usdz tidak ditemukan di ms_asset_3d")
+                print("❌ \(path) tidak ditemukan di ms_3d_asset")
                 return nil
             }
 
-            print("✅ Mannequin asset found:")
+            print("✅ \(hand) mannequin found:")
             print("   ID:", asset.id)
             print("   Storage:", asset.storagePath)
 
             return asset
 
         } catch {
-            print("❌ Failed to fetch mannequin asset:", error)
+            print("❌ Failed to fetch \(hand) mannequin asset:", error)
             return nil
         }
     }
-
+    
     func fetchAllData() async {
         isLoading = true
         errorMessage = nil
@@ -418,17 +427,27 @@ final class EditViewModel {
                 useBundledFallback = true
             }
 
-            guard let mannequinAsset = await fetchMannequinAsset() else {
-                return
+            let leftMannequinURL: URL?
+
+            if let leftAsset = await fetchMannequinAsset(for: .left) {
+                leftMannequinURL = await loadLocalModelURL(
+                    path: leftAsset.storagePath,
+                    bucket: "hand"
+                )
+            } else {
+                leftMannequinURL = nil
             }
-            
-            guard let mannequinURL = await loadLocalModelURL(
-                path: mannequinAsset.storagePath,
-                bucket: "hand"
-            ) else {
-                return
+
+            let rightMannequinURL: URL?
+
+            if let rightAsset = await fetchMannequinAsset(for: .right) {
+                rightMannequinURL = await loadLocalModelURL(
+                    path: rightAsset.storagePath,
+                    bucket: "hand"
+                )
+            } else {
+                rightMannequinURL = nil
             }
-            print(mannequinURL.path)
             
             var gemURLs: [String: URL] = [:]
             for gem in design.gems {
@@ -440,8 +459,12 @@ final class EditViewModel {
             }
 
             if useBundledFallback {
-                await scene.setup(bandURL: nil, bandSource: bandSource, mannequinURLs: mannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+                await scene.setup(bandURL: nil, bandSource: bandSource, leftMannequinURL: leftMannequinURL, rightMannequinURL: rightMannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
                 return
+            }
+            
+            if let hex = design.skinColorHex {
+                scene.applySkinColor(UIColor(Color(hex: hex)))
             }
 
             if bandURL == nil {
@@ -459,7 +482,7 @@ final class EditViewModel {
 
             guard let finalBandURL = bandURL else { print("Failed to download any band"); return }
 
-            await scene.setup(bandURL: finalBandURL, bandSource: bandSource, mannequinURLs: mannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+            await scene.setup(bandURL: finalBandURL, bandSource: bandSource, leftMannequinURL: leftMannequinURL, rightMannequinURL: rightMannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
         }
     }
     
@@ -526,7 +549,7 @@ final class EditViewModel {
     }
     
     private func normalizedMaterial(_ raw: String) -> String {
-        raw.lowercased().replacingOccurrences(of: " ", with: "")
+        raw.lowercased().filter { $0.isLetter || $0.isNumber }
     }
     
     var defaultBandMaterial: BandMaterialEnum? {
@@ -732,7 +755,7 @@ final class EditViewModel {
         hasUnsavedChanges = true
     }
 
-    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, finger: Finger, hand: Hand) {
+    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) {
         guard let modelContext, let design = designFile.design else { return }
         do {
             try persistence.save(
@@ -741,8 +764,8 @@ final class EditViewModel {
                 bandAnchor: scene.bandAnchor,
                 ringSizeID: ringSizeID,
                 ringSizeSystem: ringSizeSystem,
-                finger: finger,
-                hand: hand,
+                handFinger: handFinger,
+                skinColorHex: skinColor.hexString,
                 designFile: designFile,
                 design: design,
                 modelContext: modelContext

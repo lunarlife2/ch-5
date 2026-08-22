@@ -36,22 +36,42 @@ final class JewelrySceneController {
         gemAnchor
     }
     
-    let mannequinAnchor = Entity()
+    let mannequinAnchorLeft = Entity()
+    let mannequinAnchorRight = Entity()
+
     let mannequinPivot = Entity()
     
     var mannequin: Entity {
-        mannequinAnchor
+        activeHand == .left ? mannequinAnchorLeft : mannequinAnchorRight
     }
+    
+    private var activeHand: Hand = .right
     
     var bandOrientation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
     var mannequinOrientation: simd_quatf = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
+    
+    private let mannequinVerticalAnchor: Float = 0.5
     private var rotateBandStartOrientation: simd_quatf?
     private var rotateGemAnchorStartOrientation: simd_quatf?
     private var rotateMannequinStartOrientation: simd_quatf?
     
     //attach band gem to mannequin
-    private var fingerAnchors: [String: Entity] = [:]
+    private var fingerAnchors: [HandFinger: Entity] = [:]
+    private let fingerRingScale: [HandFinger: Float] = [
+        .rightthumb: 1.30,
+        .rightpointer: 1.30,
+        .rightmiddle: 1.22,
+        .rightring: 1.20,
+        .rightpinky: 1.00,
+
+        .leftthumb: 1.20,
+        .leftpointer: 1.10,
+        .leftmiddle: 1.10,
+        .leftring: 1.10,
+        .leftpinky: 1.00
+    ]
     
+    private(set) var bandScale: Float = 1.0
     private let targetBandDiameter: Float = 0.2
     private let targetGemstoneDiameter: Float = 0.1
     private let targetMannequinDiameter: Float = 0.5
@@ -66,12 +86,18 @@ final class JewelrySceneController {
     private(set) var skinColor: UIColor = UIColor(red: 0.79, green: 0.59, blue: 0.41, alpha: 1)
     func applySkinColor(_ color: UIColor) {
         skinColor = color
-        for child in mannequinAnchor.children {
+        for child in mannequinAnchorLeft.children {
+            tintMaterials(of: child, with: color)
+        }
+
+        for child in mannequinAnchorRight.children {
             tintMaterials(of: child, with: color)
         }
     }
     
     private func tintMaterials(of entity: Entity, with color: UIColor) {
+        guard entity !== bandAnchor else { return }
+        
         if var model = entity.components[ModelComponent.self] {
             model.materials = model.materials.map { material in
                 tinted(material: material, with: color)
@@ -85,15 +111,15 @@ final class JewelrySceneController {
     
     private func tinted(material: RealityKit.Material, with color: UIColor) -> RealityKit.Material {
         if var pbr = material as? PhysicallyBasedMaterial {
-            pbr.baseColor = .init(tint: color, texture: pbr.baseColor.texture)
+            pbr.baseColor = .init(tint: color)
             return pbr
         }
         if var simple = material as? SimpleMaterial {
-            simple.color = .init(tint: color, texture: simple.color.texture)
+            simple.color = .init(tint: color)
             return simple
         }
         if var unlit = material as? UnlitMaterial {
-            unlit.color = .init(tint: color, texture: unlit.color.texture)
+            unlit.color = .init(tint: color) //, texture: unlit.color.texture
             return unlit
         }
         return material
@@ -103,13 +129,24 @@ final class JewelrySceneController {
     func setRealityContent(_ content: RealityViewCameraContent) { realityContent = content }
     func isInsideEditorFrame(_ globalPoint: CGPoint) -> Bool { editorFrameInGlobal.contains(globalPoint) }
     
-    func setup(bandURL: URL?, bandSource: BandSourceComponent, mannequinURLs: URL?, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
+    private func returnBandToPivot() {
+        guard bandAnchor.parent !== bandPivot else { return }
+        bandAnchor.setParent(bandPivot, preservingWorldTransform: false)
+        bandAnchor.position = .zero
+        bandAnchor.orientation = bandOrientation
+        bandAnchor.scale = .one
+        gizmoController.updateGizmoTransform()
+    }
+    
+    func setup(bandURL: URL?, bandSource: BandSourceComponent, leftMannequinURL: URL?,
+               rightMannequinURL: URL?, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
         guard !isSetup else { return }
         isSetup = true
         
         bandPivot.addChild(bandAnchor)
         rootEntity.addChild(bandPivot)
-        mannequinPivot.addChild(mannequinAnchor)
+        mannequinPivot.addChild(mannequinAnchorLeft)
+        mannequinPivot.addChild(mannequinAnchorRight)
         
         rootEntity.addChild(cameraController.pivot)
         rootEntity.addChild(mannequinPivot)
@@ -143,10 +180,22 @@ final class JewelrySceneController {
             await loadBundledBand(named: bandSource.assetStoragePath, saved: savedBand)
         }
         
-        if let mannequinURLs {
-            await loadMannequin(from: mannequinURLs)
+        if let leftMannequinURL {
+            await loadMannequin(
+                from: leftMannequinURL,
+                hand: .left
+            )
         } else {
-            print("❌ No mannequin URL")
+            print("❌ No left mannequin URL")
+        }
+
+        if let rightMannequinURL {
+            await loadMannequin(
+                from: rightMannequinURL,
+                hand: .right
+            )
+        } else {
+            print("❌ No right mannequin URL")
         }
         
         await loadSavedGems(gems: savedGems, urls: gemURLs)
@@ -242,10 +291,12 @@ final class JewelrySceneController {
     func updateVisibility(for mode: JewelryEditorMode) {
         switch mode {
         case .band:
+            returnBandToPivot()
             bandPivot.isEnabled = true
             gemAnchor.isEnabled = true
             mannequinPivot.isEnabled = false
-            setSnapPointVisualsVisible(true)
+            mannequinAnchorLeft.isEnabled = false
+            mannequinAnchorRight.isEnabled = false
 
         case .handMannequin:
             bandPivot.isEnabled = false
@@ -253,8 +304,15 @@ final class JewelrySceneController {
             mannequinPivot.isEnabled = true
             setSnapPointVisualsVisible(false)
             gizmoController.deselect()
-            gizmoController.setTransformTarget(mannequinAnchor)
+            gizmoController.setTransformTarget(mannequin)
         }
+    }
+    
+    private func updateVisibleHand(for handFinger: HandFinger) {
+        activeHand = handFinger.hand
+
+        mannequinAnchorLeft.isEnabled = handFinger.hand == .left
+        mannequinAnchorRight.isEnabled = handFinger.hand == .right
     }
     
     func loadBand(from localURL: URL, source: BandSourceComponent, saved: BandComponent? = nil) async {
@@ -341,10 +399,7 @@ final class JewelrySceneController {
         band.position = -correctedCenter * normalizedScale
         band.generateCollisionShapes(recursive: true)
         band.components.set(InputTargetComponent())
-//        band.components.set(
-//            GestureComponent(typeJewelry: .band, canDrag: false, canScale: true, canRotate: true)
-//        )
-//        
+    
         SnappingService.addSnapPoints(
             to: band,
             correction: correction,
@@ -416,38 +471,71 @@ final class JewelrySceneController {
         }
     }
     
-    
-    func loadMannequin(from localURL: URL) async -> Entity? {
+    func loadMannequin(from localURL: URL, hand: Hand) async -> Entity? {
         do {
             let mannequin = try await Entity(contentsOf: localURL)
+
             let bounds = mannequin.visualBounds(relativeTo: mannequin)
             let center = bounds.center
             let extents = bounds.extents
-
             let maxDimension = max(extents.x, max(extents.y, extents.z))
+
+            guard maxDimension > 0, maxDimension.isFinite else {
+                print("❌ Invalid mannequin bounds")
+                return nil
+            }
 
             let initialScale = targetMannequinDiameter / maxDimension
 
             mannequin.transform = .identity
             mannequin.scale = .init(repeating: initialScale)
 
-            mannequin.position = -center * initialScale
-            mannequin.generateCollisionShapes(recursive: true, static: true)
+            let anchorLocalY =
+                bounds.min.y
+                + (bounds.max.y - bounds.min.y) * mannequinVerticalAnchor
+
+            let scaledAnchorY = anchorLocalY * initialScale
+
+            mannequin.position = SIMD3<Float>(
+                -center.x * initialScale,
+                -scaledAnchorY,
+                -center.z * initialScale
+            )
+
+            mannequin.generateCollisionShapes(
+                recursive: true,
+                static: true
+            )
 
             mannequin.components.set(InputTargetComponent())
 
-            mannequin.components.set(GestureComponent(typeJewelry: .handMannequin, canDrag: false, canScale: true, canRotate: true))
+            mannequin.components.set(
+                GestureComponent(
+                    typeJewelry: .handMannequin,
+                    canDrag: false,
+                    canScale: true,
+                    canRotate: true
+                )
+            )
 
-            mannequinAnchor.addChild(mannequin)
+            let targetAnchor =
+                hand == .left
+                    ? mannequinAnchorLeft
+                    : mannequinAnchorRight
 
+            targetAnchor.children.removeAll()
+            targetAnchor.addChild(mannequin)
+
+            indexFingerAnchors(
+                in: mannequin,
+                hand: hand
+            )
             applySkinColor(skinColor)
-
-            gizmoController.setTransformTarget(mannequinAnchor)
 
             return mannequin
 
         } catch {
-            print(error)
+            print("❌ Failed to load \(hand) mannequin:", error)
             return nil
         }
     }
@@ -601,15 +689,7 @@ final class JewelrySceneController {
     
     private func debugEntityHierarchy(_ entity: Entity, level: Int = 0) {
         let indent = String(repeating: "  ", count: level)
-        
-        print(
-            "\(indent)- \(entity.name.isEmpty ? "Unnamed" : entity.name)",
-            "ModelComponent:",
-            entity.components[ModelComponent.self] != nil,
-            "children:",
-            entity.children.count
-        )
-        
+        print("\(indent)- \(entity.name)", entity.components[ModelComponent.self] != nil ? "[mesh]" : "")
         for child in entity.children {
             debugEntityHierarchy(child, level: level + 1)
         }
@@ -743,36 +823,45 @@ final class JewelrySceneController {
             gizmoController.setTransformTarget(bandAnchor)
 
         case .handMannequin:
-            gizmoController.setTransformTarget(mannequinAnchor)
+            gizmoController.setTransformTarget(mannequin)
         }
     }
     
     func beginRotateMannequin() {
-        rotateMannequinStartOrientation = mannequinAnchor.orientation(relativeTo: nil)
+        rotateMannequinStartOrientation = mannequinPivot.orientation(relativeTo: nil)
     }
 
     func rotateMannequin(deltaX: Float, deltaY: Float) {
         guard let startOrientation = rotateMannequinStartOrientation else {
-            rotateMannequinStartOrientation = mannequinAnchor.orientation(relativeTo: nil)
+            rotateMannequinStartOrientation =
+                mannequinPivot.orientation(relativeTo: nil)
             return
         }
 
         let rotationY = deltaX * 0.01
         let rotationX = deltaY * 0.01
 
-        let qY = simd_quatf(angle: rotationY, axis: SIMD3<Float>(0, 1, 0))
-        let qX = simd_quatf(angle: rotationX, axis: SIMD3<Float>(1, 0, 0))
+        let qY = simd_quatf(
+            angle: rotationY,
+            axis: SIMD3<Float>(0, 1, 0)
+        )
+
+        let qX = simd_quatf(
+            angle: rotationX,
+            axis: SIMD3<Float>(1, 0, 0)
+        )
+
         let delta = qY * qX
 
-        mannequinAnchor.orientation = delta * startOrientation
-        mannequinOrientation = mannequinAnchor.orientation(relativeTo: nil)
+        mannequinPivot.orientation = delta * startOrientation
+        mannequinOrientation = mannequinPivot.orientation(relativeTo: nil)
 
         gizmoController.updateGizmoTransform()
     }
 
     func snapMannequin(to targetOrientation: simd_quatf) {
-        mannequinAnchor.orientation = targetOrientation
-        mannequinOrientation = mannequinAnchor.orientation(relativeTo: nil)
+        mannequinPivot.orientation = targetOrientation
+        mannequinOrientation = mannequinPivot.orientation(relativeTo: nil)
         gizmoController.updateGizmoTransform()
     }
 
@@ -780,39 +869,58 @@ final class JewelrySceneController {
         rotateMannequinStartOrientation = nil
     }
     
-    private func indexFingerAnchors(in mannequin: Entity) {
-        fingerAnchors.removeAll()
-        for hand in Hand.allCases {
-            for finger in Finger.allCases {
-                let name = "anchor-\(hand.rawValue)-\(finger.rawValue)"
-                if let anchor = mannequin.findEntity(named: name) {
-                    fingerAnchors[name] = anchor
-                } else {
-                    print("⚠️ Missing finger anchor:", name)
-                }
+    private func indexFingerAnchors(in mannequin: Entity, hand: Hand) {
+        for finger in Finger.allCases {
+            let handFinger = HandFinger.from(
+                hand: hand,
+                finger: finger
+            )
+
+            let anchorName = "anchor_\(handFinger.rawValue)"
+
+            if let anchor = mannequin.findEntity(named: anchorName) {
+                fingerAnchors[handFinger] = anchor
+                print(
+                    "✅ Indexed:",
+                    handFinger.rawValue,
+                    "→",
+                    anchor.name
+                )
+            } else {
+                print(
+                    "⚠️ Missing finger anchor:",
+                    anchorName
+                )
             }
         }
     }
-
-    func fingerAnchor(for hand: Hand, finger: Finger) -> Entity? {
-        fingerAnchors["anchor-\(hand.rawValue)-\(finger.rawValue)"]
+    
+    func isPlacementAvailable(for handFinger: HandFinger) -> Bool {
+        fingerAnchors[handFinger] != nil
     }
 
-    func attachBandToFinger(hand: Hand, finger: Finger) {
-        guard let anchor = fingerAnchor(for: hand, finger: finger) else {
-            print("❌ No anchor for \(hand)-\(finger)")
+    func attachBandToFinger(_ handFinger: HandFinger) {
+        guard let anchor = fingerAnchors[handFinger] else {
+            print("⚠️ \(handFinger.title) belum memiliki placement anchor")
             return
         }
+
+        if bandAnchor.parent === bandPivot {
+            bandOrientation = bandAnchor.orientation(relativeTo: nil)
+            bandScale = bandAnchor.scale.x
+        }
+
+        updateVisibleHand(for: handFinger)
+
         bandAnchor.setParent(anchor, preservingWorldTransform: false)
         bandAnchor.position = .zero
-        bandAnchor.orientation = simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0)) // canonical "duduk di jari"
-        gizmoController.updateGizmoTransform()
-    }
+        bandAnchor.orientation = simd_quatf(angle: 0, axis: [0, 1, 0])
 
-    func returnBandToPivot() {
-        bandAnchor.setParent(bandPivot, preservingWorldTransform: false)
-        bandAnchor.orientation = bandOrientation // balikin orientasi terakhir waktu edit band
-        gizmoController.updateGizmoTransform()
-    }
+        let fingerFactor = fingerRingScale[handFinger] ?? 1.0
+        bandAnchor.scale = .init(repeating: bandScale * fingerFactor)
 
+        gizmoController.updateGizmoTransform()
+
+        print("✅ Band placed on:", handFinger.rawValue)
+    }
 }

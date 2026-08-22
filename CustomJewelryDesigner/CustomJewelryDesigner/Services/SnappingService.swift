@@ -149,34 +149,34 @@ enum SnappingService {
         let ringRadius = max(canonicalExtents.x, canonicalExtents.y) / 2
         let inverseCorrection = correction.inverse
         let visualRadius = max(canonicalExtents.x, canonicalExtents.y, canonicalExtents.z) * 0.04
-
+        
         let angles: [(id: String, degrees: Float)] = [
             ("band-snap-0", -25),
             ("band-snap-1", 0),
             ("band-snap-2", 25)
         ]
-
+        
         for (index, entry) in angles.enumerated() {
             let radians = entry.degrees * .pi / 180
-
+            
             let canonicalPos = SIMD3<Float>(canonicalCenter.x + sin(radians) * ringRadius, canonicalCenter.y + cos(radians) * ringRadius, canonicalCenter.z)
-
+            
             let canonicalRadialDir = normalize(SIMD3<Float>(sin(radians), cos(radians), 0))
-
+            
             let snap = Entity()
             snap.name = entry.id
-
+            
             snap.position = inverseCorrection.act(canonicalPos)
             snap.orientation = inverseCorrection * simd_quatf(from: [0, 0, 1], to: canonicalRadialDir)
             snap.components.set(SnapPointComponent(snapID: entry.id, index: index))
-
+            
             let visual = ModelEntity(
                 mesh: .generateSphere(radius: visualRadius),
                 materials: [
                     SimpleMaterial(color: .blue.withAlphaComponent(0.3), isMetallic: false)
                 ]
             )
-
+            
             visual.name = "snap-visual"
             let visualOffset = max(canonicalExtents.x, canonicalExtents.y, canonicalExtents.z) * 0.02
             visual.position = SIMD3<Float>(0, 0, visualOffset)

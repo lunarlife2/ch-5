@@ -12,112 +12,54 @@ struct SizeView: View {
     
     @State private var ringSizeIndex = 0
     @Bindable var bandGemViewModel: BandGemViewModel
+    var editViewModel: EditViewModel
     
     var body: some View {
         
         VStack(alignment: .leading, spacing: 20) {
-            
-            VStack(alignment: .leading) {
-                //finger
-                HStack {
-                    Text("Finger")
-                    
-                    Spacer()
-                    
-                    Picker("", selection: $bandGemViewModel.selectedFinger) {
-                        ForEach(Finger.allCases) { finger in
-                            Text(finger.title)
-                                .tag(finger)
-                        }
-                    }
-                    .labelsHidden()
-                    .tint(.secondary)
+            Picker("", selection: bindingToHandFinger) {
+                ForEach(HandFinger.allCases) { hf in
+                    Text(hf.title)
+                        .tag(hf)
+                        .foregroundStyle(editViewModel.scene.isPlacementAvailable(for: hf) ? .primary : .secondary)
                 }
-                .padding(.horizontal, 30)
-                
-                Divider()
-                    .frame(maxWidth: .infinity, maxHeight: 1)
-                    .background(Color.black)
-                    .padding(.horizontal, 30)
-                
-                //hand
-                HStack {
-                    Text("Hand")
-                    
-                    Spacer()
-                    
-                    Picker("", selection: $bandGemViewModel.selectedHand) {
-                        ForEach(Hand.allCases) { hand in
-                            Text(hand.title)
-                                .tag(hand)
-                        }
-                    }
-                    .tint(.secondary)
-                    .labelsHidden()
-                }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 30)
             }
             
-            
-            //ring size
-            VStack(alignment: .leading) {
-                Text("Ring Size")
-                    .font(.system(size: 16, weight: .semibold))
-                    .padding(.horizontal, 10)
-                
-                //stepper
-                Stepper("\(bandGemViewModel.selectedRingSizeSystem.title) \(bandGemViewModel.selectedRingSizeID)", value: $ringSizeIndex, in: 0...max(0, availableRingSizes.count - 1))
-                    .padding(.horizontal, 30)
-                    .padding(.top, 20)
-                
-                Divider()
-                    .frame(maxWidth: .infinity, maxHeight: 1)
-                    .background(Color.black)
-                    .padding(.horizontal, 30)
-
-                //system
-                HStack {
-                    Text("System")
-                    
-                    Spacer()
-                    
-                    Picker("", selection: $bandGemViewModel.selectedRingSizeSystem) {
-                        ForEach(RingSizeSystem.allCases) { system in
-                            Text(system.title)
-                                .tag(system)
-                        }
-                    }
-                    .tint(.secondary)
-                    .labelsHidden()
-                }
-                .padding(.horizontal, 30)
-                
-                Divider()
-                    .frame(maxWidth: .infinity, maxHeight: 1)
-                    .background(Color.black)
-                    .padding(.horizontal, 30)
-
-            }
-            .onChange(of: bandGemViewModel.selectedRingSizeSystem) {
-                ringSizeIndex = 0
-                updateSelectedRingSize()
-            }
-            .onChange(of: ringSizeIndex) {
-                updateSelectedRingSize()
-            }
-            
-            //measure finger
+            //if the finger at the hand not measured yet
             VStack{
-                Button {
-                    vm.moveScreenState(to: .measure)
-                } label: {
-                    Text("Measure Finger")
-                }
-                .padding(.vertical, 20)
-
+                Text("Not Measured yet")
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.gray)
+            )
+            
+            //if measured
+            VStack {
+                HStack {
+                    Text("6.5")
+                        .font(.system(size: 34, weight: .black))
+                    
+                    Button {
+                        //edit measure (go to measure view)
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+
+                }
+                Picker("", selection: $bandGemViewModel.selectedRingSizeSystem) {
+                    ForEach(RingSizeSystem.allCases) { system in
+                        Text(system.title)
+                            .tag(system)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.gray)
+            )
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
@@ -136,5 +78,15 @@ struct SizeView: View {
         }
         
         bandGemViewModel.selectedRingSizeID = availableRingSizes[ringSizeIndex].id
+    }
+    
+    private var bindingToHandFinger: Binding<HandFinger> {
+        Binding(
+            get: { editViewModel.selectedHandFinger },
+            set: { newValue in
+                guard editViewModel.scene.isPlacementAvailable(for: newValue) else { return }
+                editViewModel.selectedHandFinger = newValue
+            }
+        )
     }
 }

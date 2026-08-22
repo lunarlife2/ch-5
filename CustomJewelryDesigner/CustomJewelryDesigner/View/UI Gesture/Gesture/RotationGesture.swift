@@ -39,7 +39,7 @@ struct RingRotationGesture {
                     target = scene.bandAnchor
 
                 case .handMannequin:
-                    target = scene.mannequinAnchor
+                    target = scene.mannequin
 
                 default:
                     return
@@ -121,7 +121,7 @@ struct RingRotationGesture {
                     target = scene.bandAnchor
 
                 case .handMannequin:
-                    target = scene.mannequinAnchor
+                    target = scene.mannequin
 
                 default:
                     return

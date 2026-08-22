@@ -57,11 +57,14 @@ struct SkinColorPickerView: View {
                 }
             }
             .fullScreenCover(isPresented: $showCamera) {
-                SkinToneCameraView(onFinish: { matched in
+                SkinToneCameraView(
+                    onFinish: { matched in
                     color = matched
                     hexText = matched.hexString
                     onPreview(matched)
-                })
+                }
+                
+                )
             }
         }
     }

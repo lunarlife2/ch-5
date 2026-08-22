@@ -10,7 +10,6 @@ import SwiftUI
 struct SelectBandGemView: View {
 
     @Binding var selectedType: Int
-
     @Bindable var bandGemViewModel: BandGemViewModel
     var viewModel: EditViewModel
 
