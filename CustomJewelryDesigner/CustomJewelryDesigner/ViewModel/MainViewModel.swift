@@ -24,8 +24,9 @@ enum SceneState {
 
 	case home
 	case edit(DesignFile)
-	case detail
+	//case detail(DesignFile)
 	case folder(_ :DesignFolder)
+	case handSize
 
 	@ViewBuilder func viewAssociated() -> some View {
 
@@ -34,10 +35,12 @@ enum SceneState {
 			HomeView()
 		case .edit(let designFile):
             EditView(designFile: designFile)
-		case .detail:
-			DetailView()
+		//case .detail(let designFile):
+			//DetailView(designFile: designFile)
 		case .folder(let folder):
 			FolderView(folder: folder)
+		case .handSize:
+			HandSizeView()
 		}
 
 	}

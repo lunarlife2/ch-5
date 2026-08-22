@@ -115,7 +115,7 @@ struct FolderView: View {
 				selectedItemIDs.insert(file.id)
 			}
 		} else {
-			vm.moveScreenState(to: .edit)
+			vm.moveScreenState(to: .edit(file))
 		}
 	}
 	
@@ -134,4 +134,9 @@ struct FolderView: View {
 		DesignFileStore(modelContext: modelContext)
 	}
 
+}
+
+#Preview {
+	FolderView(folder: DesignFolder(id: UUID(), name: "folder test"))
+		.environment(ViewModel())
 }
