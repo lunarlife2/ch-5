@@ -65,6 +65,10 @@ final class EditViewModel {
         didSet {
             scene.updateVisibility(for: mode)
             scene.updateGizmoTarget(for: mode)
+            
+            if mode == .handMannequin {
+                scene.attachBandToFinger(selectedHandFinger)
+            }
         }
     }
     
@@ -761,8 +765,11 @@ final class EditViewModel {
         hasUnsavedChanges = true
     }
 
-    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) {
+    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) async {
         guard let modelContext, let design = designFile.design else { return }
+
+        let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
+
         do {
             try persistence.save(
                 gemEntities: scene.allGemEntities(),
@@ -771,7 +778,10 @@ final class EditViewModel {
                 ringSizeID: ringSizeID,
                 ringSizeSystem: ringSizeSystem,
                 handFinger: handFinger,
+                bandThickness: selectedBandThickness ?? currentBand?.bandThickness,
+                bandMaterial: selectedBandMaterial?.title,
                 skinColorHex: skinColor.hexString,
+                capturedAngles: capturedAngles,
                 designFile: designFile,
                 design: design,
                 modelContext: modelContext

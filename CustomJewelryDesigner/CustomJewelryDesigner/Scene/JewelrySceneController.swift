@@ -62,13 +62,13 @@ final class JewelrySceneController {
         .rightpointer: 1.30,
         .rightmiddle: 1.22,
         .rightring: 1.20,
-        .rightpinky: 1.00,
+        .rightpinky: 1.10,
 
-        .leftthumb: 1.20,
-        .leftpointer: 1.10,
-        .leftmiddle: 1.10,
-        .leftring: 1.10,
-        .leftpinky: 1.00
+        .leftthumb: 1.30,
+        .leftpointer: 1.30,
+        .leftmiddle: 1.22,
+        .leftring: 1.20,
+        .leftpinky: 1.10
     ]
     
     private(set) var bandScale: Float = 1.0
