@@ -304,7 +304,6 @@ struct EditView: View {
             }
         )
     }
- 
     private var saveButton: some View {
         Button {
             guard editViewModel.hasUnsavedChanges else { return }
@@ -322,7 +321,37 @@ struct EditView: View {
         .disabled(!editViewModel.hasUnsavedChanges)
         .frame(minWidth: 100)
     }
+
  
+    @State private var isSaving = false
+    
+    private var saveButton: some View {
+        Button {
+            guard editViewModel.hasUnsavedChanges, !isSaving else { return }
+            isSaving = true
+            Task {
+                await editViewModel.save(
+                    ringSizeID: bandGemViewModel.selectedRingSizeID,
+                    ringSizeSystem: bandGemViewModel.selectedRingSizeSystem,
+                    handFinger: editViewModel.selectedHandFinger
+                )
+                isSaving = false
+                vm.moveScreenState(to: .detail(editViewModel.designFile))
+            }
+        } label: {
+            if isSaving {
+                ProgressView()
+                    .frame(maxWidth: Layout.saveButtonWidth)
+            } else {
+                Text("Save")
+                    .frame(maxWidth: Layout.saveButtonWidth)
+            }
+        }
+        .buttonStyle(.glassProminent)
+        .disabled(!editViewModel.hasUnsavedChanges || isSaving)
+        .frame(minWidth: 100)
+    }
+    
     private var liveDragOverlay: some View {
         GeometryReader { proxy in
             if let globalPoint = editViewModel.liveDragGlobalPoint {
