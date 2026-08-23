@@ -11,39 +11,39 @@ import SwiftUI
 @Observable
 @MainActor
 class ViewModel {
-	private(set) var sceneState: SceneState = .home
-	func moveScreenState(to new: SceneState) {
-		self.sceneState = new
+    private(set) var sceneState: SceneState = .home
+    func moveScreenState(to new: SceneState) {
+        self.sceneState = new
 
-	}
+    }
 }
 
 // Programmatically move scene
 enum SceneState {
 
-	case home
-	case edit(DesignFile)
-	case detail
-	case folder(_ :DesignFolder)
+    case home
+    case edit(DesignFile)
+    case detail(DesignFile)
+    case folder(_ :DesignFolder)
     case measure
 
-	@ViewBuilder func viewAssociated() -> some View {
+    @ViewBuilder func viewAssociated() -> some View {
 
-		switch self {
-		case .home:
-			HomeView()
-		case .edit(let designFile):
+        switch self {
+        case .home:
+            HomeView()
+        case .edit(let designFile):
             EditView(designFile: designFile)
-		case .detail:
-			DetailView()
-		case .folder(let folder):
-			FolderView(folder: folder)
+        case .detail(let designFile):
+            DetailView(designFile: designFile)
+        case .folder(let folder):
+            FolderView(folder: folder)
         case .measure:
             MeasureView(
                 bandGemViewModel: BandGemViewModel(),
                 
             )
-		}
+        }
 
-	}
+    }
 }
