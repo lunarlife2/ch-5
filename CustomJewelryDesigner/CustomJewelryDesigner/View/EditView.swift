@@ -308,12 +308,15 @@ struct EditView: View {
     private var saveButton: some View {
         Button {
             guard editViewModel.hasUnsavedChanges else { return }
-            editViewModel.save(
-                ringSizeID: bandGemViewModel.selectedRingSizeID,
-                ringSizeSystem: bandGemViewModel.selectedRingSizeSystem,
-                handFinger: editViewModel.selectedHandFinger
-            )
-            vm.moveScreenState(to: .home)
+			Task {
+				await editViewModel.save(
+					ringSizeID: bandGemViewModel.selectedRingSizeID,
+					 ringSizeSystem: bandGemViewModel.selectedRingSizeSystem,
+					 handFinger: editViewModel.selectedHandFinger
+				 )
+				vm.moveScreenState(to: .home)
+			}
+            
         } label: {
             Text("Save")
                 .frame(maxWidth: Layout.saveButtonWidth)

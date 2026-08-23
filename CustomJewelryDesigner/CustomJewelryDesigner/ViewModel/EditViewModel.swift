@@ -755,8 +755,18 @@ final class EditViewModel {
         hasUnsavedChanges = true
     }
 
-    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) {
+    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) async {
         guard let modelContext, let design = designFile.design else { return }
+
+			let bandEntity = scene.bandAnchor.children.first
+			let gemEntities = scene.allGemEntities()
+
+			let thumbnails = await generateThumbnails(bandEntity: bandEntity, gemEntities: gemEntities)
+			designFile.thumbnailData = thumbnails[.front]
+			designFile.backThumbnailData = thumbnails[.back]
+			designFile.rightThumbnailData = thumbnails[.right]
+			designFile.leftThumbnailData = thumbnails[.left]
+		
         do {
             try persistence.save(
                 gemEntities: scene.allGemEntities(),
