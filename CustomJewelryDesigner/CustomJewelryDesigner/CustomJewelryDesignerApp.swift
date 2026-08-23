@@ -18,7 +18,8 @@ struct CustomJewelryDesignerApp: App {
 			Design.self,
 			BandComponent.self,
 			GemComponent.self,
-            SnapPointRecord.self
+            SnapPointRecord.self,
+            FingerMeasurement.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, allowsSave: true)
 

@@ -305,7 +305,7 @@ final class EditViewModel {
     
     func fetchMannequinAsset(for hand: Hand) async -> Asset3D? {
         let path = hand == .left
-            ? "realHand.usdz"
+            ? "leftHand.usdz"
             : "rightHand.usdz"
 
         do {
@@ -336,6 +336,12 @@ final class EditViewModel {
             print("❌ Failed to fetch \(hand) mannequin asset:", error)
             return nil
         }
+    }
+    
+    func refreshData() async {
+        await fetchBands()
+        await fetchGems()
+        await fetchBandStyles()
     }
     
     func fetchAllData() async {

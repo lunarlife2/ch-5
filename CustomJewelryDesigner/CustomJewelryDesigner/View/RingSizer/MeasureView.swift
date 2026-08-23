@@ -9,155 +9,243 @@ import SwiftUI
 
 struct MeasureView: View {
     @Bindable var bandGemViewModel: BandGemViewModel
-    @State private var viewModel: RingSizerViewModel?
-    
-//    let onBack: () -> Void
-    
+    @State private var ringSizeViewModel: RingSizerViewModel?
+
+    let hand: Hand
+    var initialMeasurement: FingerMeasurement? = nil
+
+    var onBack: () -> Void = {}
+    var onApply: (RingSizeOption) -> Void = { _ in }
+
     var body: some View {
         Group {
-            if let viewModel {
-                caliperContent(viewModel)
+            if let ringSizeViewModel {
+                content(ringSizeViewModel)
             } else {
                 ProgressView("Preparing measurement...")
             }
         }
         .background {
             ScreenReader { screen in
-                if viewModel == nil,
-                   let pointsPerMM = DeviceCalibration.pointsPerMM(
-                    for: screen
-                   ) {
-                    viewModel = RingSizerViewModel(
-                        pointsPerMM: pointsPerMM
+                if ringSizeViewModel == nil,
+                   let pointsPerMM = DeviceCalibration.pointsPerMM(for: screen) {
+
+                    let startSystem = initialMeasurement?.ringSizeSystem
+                        ?? bandGemViewModel.selectedRingSizeSystem
+
+                    let newViewModel = RingSizerViewModel(
+                        pointsPerMM: pointsPerMM,
+                        ringSizeSystem: startSystem
                     )
+
+                    bandGemViewModel.selectedRingSizeSystem = startSystem
+
+                    if let initialMeasurement,
+                       let option = initialMeasurement.ringSizeOption {
+                        newViewModel.setSeparation(CGFloat(option.diameterMM) * pointsPerMM)
+                    } else if let existing = bandGemViewModel.selectedRingSize {
+                        newViewModel.setSeparation(CGFloat(existing.diameterMM) * pointsPerMM)
+                    } else {
+                        newViewModel.reset()
+                    }
+
+                    ringSizeViewModel = newViewModel
                 }
             }
         }
     }
-    
-    @ViewBuilder
-    private func caliperContent(
-        _ viewModel: RingSizerViewModel
-    ) -> some View {
-        
-        VStack(spacing: 24) {
-            
-            GlassButton {
-//                onBack()
-            } label: {
-                Image(systemName: "chevron.left")
-            }
 
-            
-            Text("Ukur Diameter Jari")
-                .font(.title2.bold())
-            
-            Text("Tempelkan jari pada layar")
-                .foregroundStyle(.secondary)
-            
+    @ViewBuilder
+    private func content(_ viewModel: RingSizerViewModel) -> some View {
+        VStack(spacing: 20) {
             ZStack {
-                
-                FingerGuide()
-                    .frame(
-                        width: 100,
-                        height: 260
-                    )
-                
-                CaliperJaws(
-                    separation: Binding(
-                        get: {
-                            viewModel.separationPoints
-                        },
-                        set: {
-                            viewModel.setSeparation($0)
-                        }
-                    ),
-                    trackWidth: 280,
-                    minSeparation: viewModel.minSeparation,
-                    maxSeparation: viewModel.maxSeparation
-                )
-            }
-            .frame(height: 280)
-            
-            VStack(spacing: 6) {
-                
-                Text(
-                    String(
-                        format: "%.1f mm",
-                        viewModel.diameterMM
-                    )
-                )
-                .font(
-                    .system(
-                        .title,
-                        design: .rounded
-                    )
-                    .monospacedDigit()
-                )
-                
-                if let ring = viewModel.closestRingSize,
-                   let size = ring.size(
-                    for: bandGemViewModel.selectedRingSizeSystem
-                   ) {
-                    
-                    Text(
-                        "\(bandGemViewModel.selectedRingSizeSystem.title) \(size)"
-                    )
-                    .font(.headline)
+                Text("Measure My Ring Size")
+                    .font(.title3.bold())
+
+                HStack {
+                    GlassButton {
+                        onBack()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                    }
+                    Spacer()
                 }
             }
             
-            Button("Reset") {
-                viewModel.reset()
+            Menu {
+                ForEach(RingSizeSystem.allCases) { system in
+                    Button {
+                        bandGemViewModel.selectedRingSizeSystem = system
+                    } label: {
+                        HStack {
+                            Text(system.title)
+
+                            if system == bandGemViewModel.selectedRingSizeSystem {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            } label: {
+                HStack {
+                    Text(bandGemViewModel.selectedRingSizeSystem.title)
+                        .foregroundStyle(.black)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                }
             }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            HStack(spacing: 20) {
+                Button {
+                    stepRingSize(by: -1, viewModel: viewModel)
+                } label: {
+                    Image(systemName: "minus")
+                        .frame(minWidth: 34, minHeight: 34)
+                }
+                
+                .buttonStyle(.glass)
+                .disabled(!canStep(by: -1, viewModel: viewModel))
+
+                Text(currentSizeLabel(viewModel))
+                    .font(.system(size: 34, weight: .black, design: .rounded))
+                    .monospacedDigit()
+                    .frame(minWidth: 70)
+
+                Button {
+                    stepRingSize(by: 1, viewModel: viewModel)
+                } label: {
+                    Image(systemName: "plus")
+                        .frame(minWidth: 34, minHeight: 34)
+                }
+                
+                .buttonStyle(.glass)
+                .disabled(!canStep(by: 1, viewModel: viewModel))
+            }
+
+            HStack(spacing: 24) {
+                metricBadge(
+                    label: "Diameter",
+                    value: String(format: "%.1f mm", viewModel.diameterMM)
+                )
+                metricBadge(
+                    label: "Circumference",
+                    value: String(
+                        format: "%.1f mm",
+                        viewModel.closestRingSize?.circumferenceMM
+                            ?? viewModel.diameterMM * .pi
+                    )
+                )
+            }
+
+            CaliperTrack(
+                hand: hand,
+                separationPoints: viewModel.separationPoints,
+                minSeparation: viewModel.minSeparation,
+                maxSeparation: viewModel.maxSeparation,
+                onDrag: { newSeparation in
+                    viewModel.setSeparation(newSeparation)
+                }
+            )
+            .frame(width: 350, height: 313)
+            .padding(hand == .right ? .trailing : .leading, 300)
+
+            Spacer(minLength: 0)
+
+            HStack {
+                if initialMeasurement != nil {
+                    Button {
+                        snapToNearestSize(viewModel)
+                    } label: {
+                        Text("Update Size")
+                            .font(.system(size: 19, weight: .semibold))
+                            .padding(10)
+                    }
+                    .buttonStyle(.glass)
+                    
+                }
+
+                Spacer()
+
+                Button {
+                    if let closest = viewModel.closestRingSize {
+                        onApply(closest)
+                    }
+                    onBack()
+                } label: {
+                    Text("Apply")
+                        .font(.system(size: 19, weight: .semibold))
+                        .padding(10)
+                }
+                .buttonStyle(.glassProminent)
+            }
+            .padding(.horizontal, 20)
         }
         .padding()
     }
-    
+
+    private func currentIndex(_ viewModel: RingSizerViewModel) -> Int? {
+        guard let closest = viewModel.closestRingSize else { return nil }
+        return viewModel.availableOptions.firstIndex { $0.id == closest.id }
+    }
+
+    private func canStep(by delta: Int, viewModel: RingSizerViewModel) -> Bool {
+        guard let index = currentIndex(viewModel) else { return false }
+        let target = index + delta
+        return viewModel.availableOptions.indices.contains(target)
+    }
+
+    private func stepRingSize(by delta: Int, viewModel: RingSizerViewModel) {
+        guard let index = currentIndex(viewModel) else { return }
+        let target = index + delta
+        guard viewModel.availableOptions.indices.contains(target) else { return }
+
+        let option = viewModel.availableOptions[target]
+        viewModel.setSeparation(CGFloat(option.diameterMM) * viewModel.pointsPerMM)
+    }
+
+    private func snapToNearestSize(_ viewModel: RingSizerViewModel) {
+        guard let closest = viewModel.closestRingSize else { return }
+        viewModel.setSeparation(CGFloat(closest.diameterMM) * viewModel.pointsPerMM)
+    }
+
+    private func currentSizeLabel(_ viewModel: RingSizerViewModel) -> String {
+        viewModel.closestRingSize?.size(for: bandGemViewModel.selectedRingSizeSystem) ?? "–"
+    }
+
+    @ViewBuilder
+    private func metricBadge(label: String, value: String) -> some View {
+        HStack(spacing: 6) {
+            Text(label)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .fontWeight(.semibold)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Capsule().fill(Color(uiColor: .systemGray6)))
+        }
+        .font(.subheadline)
+    }
+
     private struct ScreenReader: UIViewRepresentable {
         let onScreen: (UIScreen) -> Void
 
-        func makeUIView(
-            context: Context
-        ) -> UIView {
+        func makeUIView(context: Context) -> UIView {
             let view = UIView()
             view.backgroundColor = .clear
             return view
         }
 
-        func updateUIView(
-            _ uiView: UIView,
-            context: Context
-        ) {
+        func updateUIView(_ uiView: UIView, context: Context) {
             DispatchQueue.main.async {
-                guard let screen = uiView.window?.windowScene?.screen else {
-                    return
-                }
-
+                guard let screen = uiView.window?.windowScene?.screen else { return }
                 onScreen(screen)
             }
         }
     }
-    struct FingerGuide: View {
-
-        var body: some View {
-
-            RoundedRectangle(cornerRadius: 50)
-                .stroke(
-                    .secondary.opacity(0.4),
-                    style: StrokeStyle(
-                        lineWidth: 2,
-                        dash: [8, 6]
-                    )
-                )
-                .overlay {
-                    Text("Letakkan jari di sini")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-        }
-    }
 }
+
 #Preview {
-    MeasureView(bandGemViewModel: BandGemViewModel())
+    MeasureView(bandGemViewModel: BandGemViewModel(), hand: .right)
 }

@@ -81,7 +81,7 @@ struct JewelryEditorView: View {
                 modelContext.autosaveEnabled = false
                 
                 viewModel.setModelContext(modelContext)
-                
+                await viewModel.refreshData()
                 await viewModel.fetchAllData()
                 await viewModel.loadScene()
             }
