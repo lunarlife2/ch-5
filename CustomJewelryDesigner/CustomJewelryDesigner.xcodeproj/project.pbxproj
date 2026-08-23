@@ -306,28 +306,34 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CustomJewelryDesigner/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Kilau;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs camera access so you can choose a hand photo to pick a matching skin color for your ring design";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = "";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationLandscapeLeft;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yimei.CustomJewelryDesigner;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yimei.tes.kilau;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Debug;
 		};
@@ -344,28 +350,34 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CustomJewelryDesigner/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Kilau;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs camera access so you can choose a hand photo to pick a matching skin color for your ring design";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.\nThis app needs photo library access so you can choose a hand photo to pick a matching skin color for your ring design.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = "";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationLandscapeLeft;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yimei.CustomJewelryDesigner;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yimei.tes.kilau;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Release;
 		};

@@ -89,6 +89,8 @@ extension DesignFile {
 final class Design {
     var materialPreset: String
     
+    var handFingerRawValue: String?
+    
     var ringSizeID: Int?
     var ringSizeSystemRawValue: String?
     
@@ -101,20 +103,22 @@ final class Design {
     // optional inverse, useful if you ever need to go Design -> DesignFile
     @Relationship(inverse: \DesignFile.design)
     var file: DesignFile?
+    var skinColorHex: String?
     
     init(
         materialPreset: String,
         band: BandComponent? = nil,
         gems: [GemComponent],
         ringSizeID: Int? = nil,
-        ringSizeSystem: RingSizeSystem? = nil
-        
+        ringSizeSystem: RingSizeSystem? = nil,
+        handFinger: HandFinger? = nil,
     ) {
         self.materialPreset = materialPreset
         self.band = band
         self.gems = gems
         self.ringSizeID = ringSizeID
         self.ringSizeSystemRawValue = ringSizeSystem?.rawValue
+        self.handFinger = handFinger
     }
     
     var ringSizeSystem: RingSizeSystem? {
@@ -136,6 +140,18 @@ final class Design {
         
         return ringSizeOptions.first {
             $0.id == ringSizeID
+        }
+    }
+    
+    var handFinger: HandFinger? {
+        get {
+            guard let rawValue = handFingerRawValue else {
+                return nil
+            }
+            return HandFinger(rawValue: rawValue)
+        }
+        set {
+            handFingerRawValue = newValue?.rawValue
         }
     }
 }

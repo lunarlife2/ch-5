@@ -15,7 +15,7 @@ public struct SnapPointComponent: Component, Codable {
     public var standoffDistance: Float
     public var occupiedByGemName: String?
 
-    public init(snapID: String, index: Int, localOrientationCorrection: simd_quatf = simd_quatf(angle: .pi/2, axis: SIMD3<Float>(1, 0, 0)), standoffDistance: Float = 0.0003) {
+    public init(snapID: String, index: Int, localOrientationCorrection: simd_quatf = simd_quatf(angle: .pi/2, axis: SIMD3<Float>(1, 0, 0)), standoffDistance: Float = 0.0001) {
         self.snapID = snapID
         self.index = index
         self.localOrientationCorrection = localOrientationCorrection

@@ -29,3 +29,16 @@ public struct GestureComponent: Component, Codable {
     }
     
 }
+
+struct GemSourceComponent: Component {
+    var libraryAssetID: UUID
+    var assetStoragePath: String
+    var cut: String?
+    var color: String?
+}
+
+struct BandSourceComponent: Component {
+    var libraryAssetID: UUID
+    var assetStoragePath: String
+    var name: String
+}
