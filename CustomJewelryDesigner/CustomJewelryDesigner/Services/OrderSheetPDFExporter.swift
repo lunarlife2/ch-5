@@ -79,7 +79,7 @@ enum OrderSheetPDFExporter {
                 cursorY += 22
 
                 let rows: [(String, String)] = [
-                    ("Metal", designFile.design?.materialPreset ?? "-"),
+                    ("Metal", designFile.design?.band?.material ?? "-"),
                     ("Gem", gemText(for: designFile)),
                     ("Band Thickness", designFile.design?.band?.thickness?.capitalized ?? "-"),
                     ("Ring Size", ringSizeText(for: designFile))

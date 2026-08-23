@@ -91,8 +91,13 @@ struct ColorSquarePickerView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(AngularGradient(gradient: Gradient(colors: rainbowColors),
-                                               center: .center, startAngle: .degrees(0), endAngle: .degrees(360)))
+                        .fill(
+                            LinearGradient(
+                                colors: rainbowColors,
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .frame(height: 14)
 
                     Circle()
@@ -121,7 +126,7 @@ struct ColorSquarePickerView: View {
     }
 
     private var rainbowColors: [Color] {
-        stride(from: 0.0, through: 1.0, by: 1.0 / 12.0).map {
+        stride(from: 0.0, through: 1.0, by: 1.0 / 36.0).map {
             Color(hue: $0, saturation: 1, brightness: 1)
         }
     }

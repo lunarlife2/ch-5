@@ -113,7 +113,6 @@ final class Design {
     @Relationship(deleteRule: .cascade, inverse: \GemComponent.design)
     var gems: [GemComponent] = []
     
-    // optional inverse, useful if you ever need to go Design -> DesignFile
     @Relationship(inverse: \DesignFile.design)
     var file: DesignFile?
     var skinColorHex: String?
@@ -175,8 +174,9 @@ final class BandComponent {
     var assetStoragePath: String  // cached, so no extra Supabase round-trip
     var name: String
     var style: String?  // e.g. "Twist", "Plain"
-    var design: Design?
     var thickness: String?
+    var material: String?
+    var design: Design?
     
     var rotationX: Double?
     var rotationY: Double?
@@ -191,12 +191,16 @@ final class BandComponent {
         libraryAssetID: UUID,
         assetStoragePath: String,
         name: String,
-        style: String? = nil
+        style: String? = nil,
+        thickness: String? = nil,
+        material: String? = nil
     ) {
         self.libraryAssetID = libraryAssetID
         self.assetStoragePath = assetStoragePath
         self.name = name
         self.style = style
+        self.thickness = thickness
+        self.material = material
     }
     
     var orientation: simd_quatf? {

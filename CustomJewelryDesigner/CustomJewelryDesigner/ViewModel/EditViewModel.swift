@@ -421,7 +421,9 @@ final class EditViewModel {
                 bandSource = BandSourceComponent(
                     libraryAssetID: savedBand.libraryAssetID,
                     assetStoragePath: savedBand.assetStoragePath,
-                    name: savedBand.name
+                    name: savedBand.name,
+                    thickness: savedBand.thickness,
+                    material: savedBand.material
                 )
 
                 if savedBand.assetStoragePath == "Flat_Band_Ring" {
@@ -485,7 +487,9 @@ final class EditViewModel {
                 bandSource = BandSourceComponent(
                     libraryAssetID: firstBand.id,
                     assetStoragePath: firstBand.assetId.storagePath,
-                    name: firstBand.description
+                    name: firstBand.description,
+                    thickness: firstBand.bandThickness,
+                    material: firstBand.bandMaterial
                 )
                 savedBandForSetup = nil
             }
@@ -519,7 +523,9 @@ final class EditViewModel {
             let source = BandSourceComponent(
                 libraryAssetID: band.id,
                 assetStoragePath: band.assetId.storagePath,
-                name: band.description
+                name: band.description,
+                thickness: band.bandThickness,
+                material: band.bandMaterial
             )
             await scene.replaceBand(from: localURL, source: source, saved: design?.band)
             markDirty()
