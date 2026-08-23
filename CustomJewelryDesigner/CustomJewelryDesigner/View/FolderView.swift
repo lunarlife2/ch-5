@@ -58,10 +58,13 @@ struct FolderView: View {
 				Button {
 					vm.moveScreenState(to: .home)
 				} label: {
-					Text("Back")
+					Image(systemName: "chevron.left")
 				}
+				.clipShape(.circle)
+				.buttonStyle(.bordered)
 
-				Text("Projects")
+				Text(folder.name)
+				
 				Button(isSelecting ? "Cancel" : "Select") {
 					isSelecting.toggle()
 					if !isSelecting {

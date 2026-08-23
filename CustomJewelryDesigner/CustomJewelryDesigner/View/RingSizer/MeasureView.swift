@@ -6,10 +6,21 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MeasureView: View {
     @Bindable var bandGemViewModel: BandGemViewModel
     @State private var viewModel: RingSizerViewModel?
+	
+	let handFinger: HandFinger                     // NEW
+
+		@Environment(\.modelContext) private var modelContext   // NEW
+		@Environment(\.dismiss) private var dismiss              // NEW
+		@Query private var savedSizes: [SavedRingSize]           // NEW
+
+		private var existing: SavedRingSize? {                   // NEW
+			savedSizes.first { $0.handFinger == handFinger }
+		}
     
 //    let onBack: () -> Void
     
@@ -43,7 +54,7 @@ struct MeasureView: View {
         VStack(spacing: 24) {
             
             GlassButton {
-//                onBack()
+				saveAndDismiss(viewModel)
             } label: {
                 Image(systemName: "chevron.left")
             }
@@ -138,6 +149,24 @@ struct MeasureView: View {
             }
         }
     }
+	
+	private func saveAndDismiss(_ viewModel: RingSizerViewModel) {
+		if let ring = viewModel.closestRingSize {
+			if let existing {
+				existing.sizeID = ring.id
+				existing.system = bandGemViewModel.selectedRingSizeSystem
+				existing.updatedAt = Date()
+			} else {
+				modelContext.insert(SavedRingSize(
+					handFinger: handFinger,
+					system: bandGemViewModel.selectedRingSizeSystem,
+					sizeID: ring.id
+				))
+			}
+		}
+		dismiss()
+	}
+	
     struct FingerGuide: View {
 
         var body: some View {
@@ -159,5 +188,5 @@ struct MeasureView: View {
     }
 }
 #Preview {
-    MeasureView(bandGemViewModel: BandGemViewModel())
+	MeasureView(bandGemViewModel: BandGemViewModel(), handFinger: .leftpinky)
 }
