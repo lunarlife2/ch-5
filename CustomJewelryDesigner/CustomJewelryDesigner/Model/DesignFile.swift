@@ -41,6 +41,16 @@ final class DesignFile {
 
 	@Attribute(.externalStorage)
 	var thumbnailData: Data?
+	
+	// new — detail gallery only
+	@Attribute(.externalStorage)
+	var backThumbnailData: Data?
+
+	@Attribute(.externalStorage)
+	var rightThumbnailData: Data?
+
+	@Attribute(.externalStorage)
+	var leftThumbnailData: Data?
 
 	@Relationship(deleteRule: .cascade)
 	var design: Design?
@@ -61,6 +71,17 @@ final class DesignFile {
 		self.ringPosition = ringPosition
 		self.design = design
 		self.folder = nil
+	}
+}
+
+extension DesignFile {
+	var galleryImages: [(label: String, data: Data?)] {
+		[
+			("Front", thumbnailData),
+			("Back", backThumbnailData),
+			("Right", rightThumbnailData),
+			("Left", leftThumbnailData)
+		]
 	}
 }
 
