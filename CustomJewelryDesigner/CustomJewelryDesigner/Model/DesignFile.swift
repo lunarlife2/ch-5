@@ -41,6 +41,14 @@ final class DesignFile {
 
 	@Attribute(.externalStorage)
 	var thumbnailData: Data?
+    @Attribute(.externalStorage)
+    var backImageData: Data?
+    @Attribute(.externalStorage)
+    var leftImageData: Data?
+    @Attribute(.externalStorage)
+    var rightImageData: Data?
+    
+    var notes: String?
 
 	@Relationship(deleteRule: .cascade)
 	var design: Design?
@@ -52,7 +60,8 @@ final class DesignFile {
 		name: String,
 		updatedAt: Date,
 		ringPosition: RingPosition,
-		design: Design?
+		design: Design?,
+        notes: String? = nil
 	) {
 		self.id = id
 		self.name = name
@@ -61,6 +70,7 @@ final class DesignFile {
 		self.ringPosition = ringPosition
 		self.design = design
 		self.folder = nil
+        self.notes = notes
 	}
 }
 
@@ -161,6 +171,7 @@ final class BandComponent {
     var name: String
     var style: String?  // e.g. "Twist", "Plain"
     var design: Design?
+    var thickness: String?
     
     var rotationX: Double?
     var rotationY: Double?

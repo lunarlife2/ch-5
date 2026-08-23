@@ -661,8 +661,15 @@ final class EditViewModel {
         hasUnsavedChanges = true
     }
 
+<<<<<<< Updated upstream
     func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, finger: Finger, hand: Hand) {
+=======
+    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) async {
+>>>>>>> Stashed changes
         guard let modelContext, let design = designFile.design else { return }
+
+        let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
+
         do {
             try persistence.save(
                 gemEntities: scene.allGemEntities(),
@@ -670,8 +677,16 @@ final class EditViewModel {
                 bandPivot: scene.bandPivot,
                 ringSizeID: ringSizeID,
                 ringSizeSystem: ringSizeSystem,
+<<<<<<< Updated upstream
                 finger: finger,
                 hand: hand,
+=======
+                handFinger: handFinger,
+                bandThickness: selectedBandThickness ?? currentBand?.bandThickness,
+                bandMaterial: selectedBandMaterial?.title,
+                skinColorHex: skinColor.hexString,
+                capturedAngles: capturedAngles,
+>>>>>>> Stashed changes
                 designFile: designFile,
                 design: design,
                 modelContext: modelContext

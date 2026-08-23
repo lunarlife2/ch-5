@@ -23,7 +23,7 @@ enum SceneState {
 
 	case home
 	case edit(DesignFile)
-	case detail
+    case detail(DesignFile)
 	case folder(_ :DesignFolder)
     case measure
 
@@ -34,9 +34,9 @@ enum SceneState {
 			HomeView()
 		case .edit(let designFile):
             EditView(designFile: designFile)
-		case .detail:
-			DetailView()
-		case .folder(let folder):
+        case .detail(let designFile):
+            DetailView(designFile: designFile)
+        case .folder(let folder):
 			FolderView(folder: folder)
         case .measure:
             MeasureView(

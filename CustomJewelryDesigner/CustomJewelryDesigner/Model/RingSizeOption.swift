@@ -19,6 +19,16 @@ enum RingSizeSystem: String, CaseIterable, Identifiable {
         rawValue
     }
     
+    var shortLabel: String {
+        switch self {
+        case .usCanada: return "US"
+        case .ukAustralia: return "UK"
+        case .hongkong: return "HK"
+        case .eu: return "EU"
+        case .japan: return "JP"
+        }
+    }
+    
     var title: String {
         switch self {
         case .usCanada:
