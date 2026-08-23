@@ -25,48 +25,48 @@ struct BandView: View {
                 Text("Style")
                     .font(.system(size: 16, weight: .semibold))
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ForEach(editViewModel.uniqueBandsByStyle, id: \.id) { band in
-                            VStack {
-                                AsyncImage(url: editViewModel.thumbnailURL(for: band.assetId)) { phase in
-                                    switch phase {
-                                    case .success(let image):
-                                        image.resizable().scaledToFit()
-                                    case .failure:
-                                        Image(systemName: "exclamationmark.triangle")
-                                            .foregroundStyle(.secondary)
-                                    case .empty:
-                                        ProgressView()
-                                    @unknown default:
-                                        ProgressView()
-                                    }
+                HStack {
+                    ForEach(editViewModel.uniqueBandsByStyle, id: \.id) { band in
+                        VStack {
+                            AsyncImage(url: editViewModel.thumbnailURL(for: band.assetId)) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable().scaledToFit()
+                                case .failure:
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .foregroundStyle(.secondary)
+                                case .empty:
+                                    ProgressView()
+                                @unknown default:
+                                    ProgressView()
                                 }
-                                .frame(width: 60, height: 60)
-                                .padding()
-                                .background(
-                                    EditCard(isSelected: selectedStyle?.id == band.bandStyleID.id)
-                                )
-
-                                Text(band.bandStyleID.bandStyleName)
-                                    .font(.system(size: 12))
                             }
-                            .padding(.trailing, 10)
-                            .onTapGesture {
-                                selectedStyle = band.bandStyleID
-                                Task {
-                                    await editViewModel.selectBand(
-                                        style: band.bandStyleID,
-                                        thickness: currentThicknessLabel,
-                                        material: selectedMaterial
-                                    )
-                                }
+                            .frame(width: 40, height: 40)
+                            .padding()
+                            .background(
+                                EditCard(isSelected: selectedStyle?.id == band.bandStyleID.id)
+                            )
+
+                            Text(band.bandStyleID.bandStyleName)
+                                .font(.system(size: 12))
+                        }
+                        .padding(.trailing, 17)
+                        .onTapGesture {
+                            selectedStyle = band.bandStyleID
+                            Task {
+                                await editViewModel.selectBand(
+                                    style: band.bandStyleID,
+                                    thickness: currentThicknessLabel,
+                                    material: selectedMaterial
+                                )
                             }
                         }
                     }
                 }
             }
-
+            
+            Divider()
+            
             // thickness
             VStack(alignment: .leading, spacing: 10) {
                 Text("Thickness")
@@ -79,12 +79,10 @@ struct BandView: View {
                 } maximumValueLabel: {
                     Text("Thick").font(.system(size: 12))
                 }
-
-                Text(currentThicknessLabel.capitalized)
-                    .font(.caption)
             }
-            .frame(maxWidth: 550)
 
+            Divider()
+            
             // material
             VStack(alignment: .leading, spacing: 10) {
                 Text("Materials")
@@ -117,7 +115,7 @@ struct BandView: View {
                                     ProgressView()
                                 }
                             }
-                            .frame(width: 60, height: 60)
+                            .frame(width: 40, height: 40)
                             .padding()
                             .background(EditCard(isSelected: selectedMaterial == material))
                             .opacity(isAvailable ? 1 : 0.4)
@@ -125,7 +123,7 @@ struct BandView: View {
                             Text(material.title)
                                 .font(.system(size: 12))
                         }
-                        .padding(.trailing, 10)
+                        .padding(.trailing, 17)
                         .onTapGesture {
                             guard isAvailable, let style = selectedStyle else { return }
                             selectedMaterial = material
@@ -141,7 +139,8 @@ struct BandView: View {
                 }
             }
         }
-        .padding()
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
         .frame(maxWidth: 550)
         .disabled(editViewModel.isBandUpdating)
         .opacity(editViewModel.isBandUpdating ? 0.5 : 1)
@@ -169,15 +168,32 @@ struct BandView: View {
         if selectedStyle == nil {
             selectedStyle = editViewModel.defaultBandStyle
         }
-        selectedMaterial = editViewModel.defaultBandMaterial ?? .yellowGold
-
-        if let thickness = editViewModel.defaultBandThickness {
+        if let style = editViewModel.selectedBandStyle {
+            selectedStyle = style
+        } else {
+            selectedStyle = editViewModel.defaultBandStyle
+        }
+        
+        if let material = editViewModel.selectedBandMaterial {
+            selectedMaterial = material
+        } else {
+            selectedMaterial =
+            editViewModel.defaultBandMaterial ?? .yellowGold
+        }
+        
+        if let thickness = editViewModel.selectedBandThickness {
             switch thickness.lowercased() {
-            case "thin": sliderValue = 1
-            case "medium": sliderValue = 2
-            case "thick": sliderValue = 3
-            default: sliderValue = 1
+            case "thin":
+                sliderValue = 1
+            case "medium":
+                sliderValue = 2
+            case "thick":
+                sliderValue = 3
+            default:
+                sliderValue = 1
             }
+        } else {
+            sliderValue = 1
         }
     }
 }

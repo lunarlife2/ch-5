@@ -11,19 +11,25 @@ import RealityKit
 
 struct DesignPersistenceService {
     
-    func save(gemEntities: [Entity], bandEntity: Entity?, bandPivot: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
+    func save(gemEntities: [Entity], bandEntity: Entity?, bandAnchor: Entity, ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger, bandThickness: String? = nil, bandMaterial: String? = nil, skinColorHex: String, capturedAngles: SceneSnapshotService.CapturedAngles? = nil, designFile: DesignFile, design: Design, modelContext: ModelContext) throws {
         
         for gemEntity in gemEntities {
             let worldPosition = gemEntity.position(relativeTo: nil)
             let worldOrientation = gemEntity.orientation(relativeTo: nil)
-            let worldScale = Double(gemEntity.scale(relativeTo: nil).x)
-            let attachedSnapID = gemEntity.components[AttachmentComponent.self]?.attachedSnapID
+            let attachment = gemEntity.components[AttachmentComponent.self]
+            let attachedSnapID = attachment?.attachedSnapID
             let source = gemEntity.components[GemSourceComponent.self]
-            
+
+            let persistedScale: Double = if let attachment {
+                Double(attachment.targetWorldScale)
+            } else {
+                Double(gemEntity.scale(relativeTo: nil).x)
+            }
+
             if let existing = design.gems.first(where: { $0.name == gemEntity.name }) {
                 existing.position = worldPosition
                 existing.orientation = worldOrientation
-                existing.scaleFactor = worldScale
+                existing.scaleFactor = persistedScale
                 existing.attachedSnapPointID = attachedSnapID
             } else {
                 let newComponent = GemComponent(
@@ -35,7 +41,7 @@ struct DesignPersistenceService {
                     position: worldPosition
                 )
                 newComponent.orientation = worldOrientation
-                newComponent.scaleFactor = worldScale
+                newComponent.scaleFactor = persistedScale
                 newComponent.attachedSnapPointID = attachedSnapID
                 newComponent.design = design
                 design.gems.append(newComponent)
@@ -49,7 +55,7 @@ struct DesignPersistenceService {
             let name = source?.name ?? design.band?.name ?? "plain band usd"
             
             if let bandComponent = design.band {
-                bandComponent.orientation = bandEntity.orientation(relativeTo: bandPivot)
+                bandComponent.orientation = bandAnchor.orientation(relativeTo: nil)
                 bandComponent.scaleFactor = Double(bandEntity.scale.x)
                 bandComponent.assetStoragePath = assetPath
                 bandComponent.name = name
@@ -59,7 +65,7 @@ struct DesignPersistenceService {
                     assetStoragePath: assetPath,
                     name: name
                 )
-                newBandComponent.orientation = bandEntity.orientation(relativeTo: bandPivot)
+                newBandComponent.orientation = bandAnchor.orientation(relativeTo: nil)
                 newBandComponent.scaleFactor = Double(bandEntity.scale.x)
                 newBandComponent.design = design
                 design.band = newBandComponent
@@ -70,6 +76,16 @@ struct DesignPersistenceService {
         designFile.updatedAt = .now
         design.ringSizeID = ringSizeID
         design.ringSizeSystem = ringSizeSystem
+        design.handFinger = handFinger
+        design.skinColorHex = skinColorHex
+
+        if let capturedAngles {
+            designFile.thumbnailData = capturedAngles.front ?? designFile.thumbnailData
+            designFile.backImageData = capturedAngles.back ?? designFile.backImageData
+            designFile.leftImageData = capturedAngles.left ?? designFile.leftImageData
+            designFile.rightImageData = capturedAngles.right ?? designFile.rightImageData
+        }
+        
         try modelContext.save()
         
     }

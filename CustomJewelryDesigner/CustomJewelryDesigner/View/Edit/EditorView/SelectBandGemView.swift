@@ -8,58 +8,41 @@
 import SwiftUI
 
 struct SelectBandGemView: View {
-    @State private var selectedType = 0
-    @Bindable var bandGemViewModel: BandGemViewModel
-    
-    var viewModel: EditViewModel
-    let panelWidth: CGFloat
-    let expandedWidth: CGFloat
-    let collapsedWidth: CGFloat
-    
-    private var collapseOffset: CGFloat {
-        expandedWidth - panelWidth
-    }
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.shadowTertiary)
-                .frame(width: expandedWidth)
 
-            VStack(alignment: .leading, spacing: 0) {
+    @Binding var selectedType: Int
+    @Bindable var bandGemViewModel: BandGemViewModel
+    var viewModel: EditViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if viewModel.mode != .handMannequin {
                 Picker("", selection: $selectedType) {
                     Text("Band").tag(0)
                     Text("Gem").tag(1)
-                    Text("Size").tag(2)
                 }
                 .pickerStyle(.segmented)
-                .padding(20)
-                .padding(.top, 10)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 10)
+            }
 
-                Group {
-                    if selectedType == 0 {
+            Group {
+                if viewModel.mode == .handMannequin {
+                    MannequinView(viewModel: viewModel)
+                } else {
+                    switch selectedType {
+                    case 0:
                         BandView()
-                    } else if selectedType == 1 {
+                    case 1:
                         GemView()
-                    } else {
-                        SizeView(bandGemViewModel: bandGemViewModel)
+                    default:
+                        BandView()
                     }
                 }
-                .padding()
-                .frame(
-                    maxWidth: .infinity,
-                    alignment: .topLeading
-                )
             }
-            .frame(
-                width: expandedWidth,
-                alignment: .topLeading
-            )
-            .offset(x: collapseOffset)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(
-            width: panelWidth,
-            alignment: .topLeading
-        )
-        .clipped()
+        .padding(.trailing, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }

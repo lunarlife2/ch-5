@@ -64,20 +64,20 @@ struct ContentView: View {
     @Environment(ViewModel.self) private var vm
 
     var body: some View {
-        switch vm.sceneState {
-
-        case .home:
-            HomeView()
-
-        case .edit(let file):
-            EditView(designFile: file)
-            
-        case .detail:
-            DetailView()
-            
-        default:
-            HomeView()
-        }
+//        switch vm.sceneState {
+//
+//        case .home:
+//            HomeView()
+//
+//        case .edit(let file):
+//            EditView(designFile: file)
+//            
+//        case .detail(let file):
+//            DetailView(designFile: file)
+//            
+//        default:
+//            HomeView()
+//        }
     }
 }
 

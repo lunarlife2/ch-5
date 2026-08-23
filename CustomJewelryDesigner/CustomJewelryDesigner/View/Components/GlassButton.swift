@@ -23,7 +23,7 @@ struct GlassButton<Label: View>: View {
             label()
                 .foregroundStyle(Color.black)
                 .font(.system(size: 27, weight: .medium))
-                .frame(width: 30, height: 40)
+                .frame(width: 20, height: 30)
         }
         .buttonStyle(.glassProminent)
         .tint(.white)
@@ -31,32 +31,5 @@ struct GlassButton<Label: View>: View {
         .shadow(color: Color.shadowSecondary, radius: 0.25, x: -1.25)
         .shadow(color: Color.shadowTertiary, radius: 0.5)
         .shadow(color: .black.opacity(0.02), radius: 15, y: 8)
-        .overlay {
-            Capsule()
-                .stroke(Color.shadowQuarternary,lineWidth: 1)
-            .padding(1)
-            .blur(radius: 1)
-            .opacity(0.15)
-            .offset(x: 0, y: 0.4)
-            .allowsHitTesting(false)
-        }
-        .overlay {
-            Capsule()
-                .stroke(Color.shadowQuarternary,lineWidth: 1)
-            .padding(1)
-            .blur(radius: 1)
-            .opacity(0.15)
-            .offset(x: 0, y: -0.4)
-            .allowsHitTesting(false)
-        }
-        .overlay {
-            Capsule()
-                .stroke(Color.shadowQuinary,lineWidth: 1)
-            .padding(1)
-            .blur(radius: 1)
-            .opacity(0.3)
-            .offset(x: 0, y: 0.4)
-            .allowsHitTesting(false)
-        }
     }
 }

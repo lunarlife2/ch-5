@@ -125,7 +125,19 @@ struct DesignFileStore {
 		}
 	}
 
-	//open a design file & load the design
+	//duplicate design file
+	func duplicateDesignFile(_ file: DesignFile) {
+		let newFile = createDesignFile(name: file.name)
+		addDesign(to: newFile, name: file.name, materialPreset: file.design?.materialPreset ?? "Yellow Gold", bandComponent: (file.design?.band ?? .none)!)
+		
+		modelContext.insert(newFile)
+		do {
+			try modelContext.save()
+			print("berhasil duplicate file design \(newFile.name)")
+		} catch {
+			print("Failed to duplicate file: \(error)")
+		}
+	}
 
 	//save updated design
 	func saveUpdatedDesign(

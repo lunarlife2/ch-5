@@ -11,7 +11,7 @@ struct ResizeHandle: View {
         Circle()
             .trim(from: 0.0, to: 0.25)
             .stroke(
-                Color.black,
+                Color.handlerPrimary,
                 style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
             )
             .frame(width: 20, height: 20)
