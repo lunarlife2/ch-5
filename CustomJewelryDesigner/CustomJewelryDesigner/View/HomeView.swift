@@ -174,7 +174,7 @@ struct HomeView: View {
 						LazyVGrid(columns: columns, spacing: 50) {
 							ForEach(designFolders) { folder in
 								FolderCard(
-									preview: Image(.detailBottom),
+									preview: Image(thumbnailData: folder.designs.first?.thumbnailData),
 									title: folder.name
 								)  //previewImage(for: folder)
 								.onTapGesture {
@@ -184,7 +184,7 @@ struct HomeView: View {
 
 							ForEach(standaloneFiles) { file in
 								HomeCard(
-									preview: Image(.detail34),
+									preview: Image(thumbnailData: file.thumbnailData),
 									title: file.name,
 									updatedAt: file.updatedAt,
 									isSelecting: isSelecting,

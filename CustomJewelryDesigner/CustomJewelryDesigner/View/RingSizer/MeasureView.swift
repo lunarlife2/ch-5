@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MeasureView: View {
     @Bindable var bandGemViewModel: BandGemViewModel
@@ -17,6 +18,20 @@ struct MeasureView: View {
     var onBack: () -> Void = {}
     var onApply: (RingSizeOption) -> Void = { _ in }
 
+    @State private var viewModel: RingSizerViewModel?
+	
+	let handFinger: HandFinger                     // NEW
+
+		@Environment(\.modelContext) private var modelContext   // NEW
+		@Environment(\.dismiss) private var dismiss              // NEW
+		@Query private var savedSizes: [SavedRingSize]           // NEW
+
+		private var existing: SavedRingSize? {                   // NEW
+			savedSizes.first { $0.handFinger == handFinger }
+		}
+    
+//    let onBack: () -> Void
+    
     var body: some View {
         Group {
             if let ringSizeViewModel {
@@ -54,6 +69,19 @@ struct MeasureView: View {
             }
         }
     }
+    
+    @ViewBuilder
+    private func caliperContent(
+        _ viewModel: RingSizerViewModel
+    ) -> some View {
+        
+        VStack(spacing: 24) {
+            
+            GlassButton {
+				saveAndDismiss(viewModel)
+            } label: {
+                Image(systemName: "chevron.left")
+            }
 
     @ViewBuilder
     private func content(_ viewModel: RingSizerViewModel) -> some View {
@@ -242,6 +270,43 @@ struct MeasureView: View {
                 guard let screen = uiView.window?.windowScene?.screen else { return }
                 onScreen(screen)
             }
+        }
+    }
+	
+	private func saveAndDismiss(_ viewModel: RingSizerViewModel) {
+		if let ring = viewModel.closestRingSize {
+			if let existing {
+				existing.sizeID = ring.id
+				existing.system = bandGemViewModel.selectedRingSizeSystem
+				existing.updatedAt = Date()
+			} else {
+				modelContext.insert(SavedRingSize(
+					handFinger: handFinger,
+					system: bandGemViewModel.selectedRingSizeSystem,
+					sizeID: ring.id
+				))
+			}
+		}
+		dismiss()
+	}
+	
+    struct FingerGuide: View {
+
+        var body: some View {
+
+            RoundedRectangle(cornerRadius: 50)
+                .stroke(
+                    .secondary.opacity(0.4),
+                    style: StrokeStyle(
+                        lineWidth: 2,
+                        dash: [8, 6]
+                    )
+                )
+                .overlay {
+                    Text("Letakkan jari di sini")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
         }
     }
 }

@@ -770,6 +770,15 @@ final class EditViewModel {
 
         let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
 
+			let bandEntity = scene.bandAnchor.children.first
+			let gemEntities = scene.allGemEntities()
+
+			let thumbnails = await generateThumbnails(bandEntity: bandEntity, gemEntities: gemEntities)
+			designFile.thumbnailData = thumbnails[.front]
+			designFile.backThumbnailData = thumbnails[.back]
+			designFile.rightThumbnailData = thumbnails[.right]
+			designFile.leftThumbnailData = thumbnails[.left]
+		
         do {
             try persistence.save(
                 gemEntities: scene.allGemEntities(),

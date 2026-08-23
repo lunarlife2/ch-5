@@ -21,15 +21,12 @@ class ViewModel {
 // Programmatically move scene
 enum SceneState {
 
-//	case home
-//	case edit(DesignFile)
-//	case detail(DesignFile)
-//	case folder(_ :DesignFolder)
-    case home
-    case edit(DesignFile)
-    case detail(DesignFile)
-    case folder(_ :DesignFolder)
-    case handSize
+	case home
+	case edit(DesignFile)
+	//case detail(DesignFile)
+	case folder(_ :DesignFolder)
+    case measure(HandFinger)
+	case handSize
 
     @ViewBuilder func viewAssociated() -> some View {
         switch self {
@@ -41,6 +38,12 @@ enum SceneState {
 			//DetailView(designFile: designFile)
 		case .folder(let folder):
 			FolderView(folder: folder)
+    
+      case .measure(let handFinger):
+            MeasureView(
+				bandGemViewModel: BandGemViewModel(), handFinger: handFinger,
+                
+            )
 		case .handSize:
             HandSizeView()
         case .detail(let designFile):
