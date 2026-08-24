@@ -299,7 +299,7 @@ struct MeasureView: View {
     }
 }
 
-#Preview {
-// 	MeasureView(bandGemViewModel: BandGemViewModel(), handFinger: .leftpinky)
-    MeasureView(bandGemViewModel: BandGemViewModel(), hand: .right)
-}
+//#Preview {
+//// 	MeasureView(bandGemViewModel: BandGemViewModel(), handFinger: .leftpinky)
+//    MeasureView(bandGemViewModel: BandGemViewModel(), hand: .right)
+//}
