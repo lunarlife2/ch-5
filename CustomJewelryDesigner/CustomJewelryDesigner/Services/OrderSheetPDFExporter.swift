@@ -45,7 +45,8 @@ enum OrderSheetPDFExporter {
                 cursorY += 30
 
                 let mainImageSize = CGSize(width: 200, height: 200)
-                if let mainImage = image(from: designFile.thumbnailData) {
+                let heroData = designFile.leftImageData ?? designFile.thumbnailData
+                if let mainImage = image(from: heroData) {
                     mainImage.draw(in: CGRect(origin: CGPoint(x: margin, y: cursorY), size: mainImageSize))
                 }
 

@@ -23,23 +23,6 @@ enum SceneSnapshotService {
         var right: Data?
     }
 
-    /// Captures four studio-style shots (front / back / left / right) of just the jewelry —
-    /// the band plus any gems, attached or loose — with the design automatically centered
-    /// and framed in every shot.
-    ///
-    /// This deliberately does NOT take the whole editor `rootEntity`. That entity also
-    /// contains the mannequin hand, the camera rig, and the gizmo, and (when the ring is
-    /// being worn) the band itself is parented onto a finger anchor far from world origin.
-    /// Orbiting a camera around a fixed `.zero` in that scene is what made snapshots come
-    /// out off-center or with the hand in frame. Instead we clone only the jewelry into an
-    /// isolated group, measure its real bounding box, and orbit/look at that box's actual
-    /// center — so the ring ends up centered no matter where it sits in the live editor
-    /// (on the pivot, worn on a finger, rotated, or scaled).
-    /// - Parameters:
-    ///   - bandEntity: the band model (e.g. `scene.bandAnchor.children.first`). Any gems
-    ///     snapped onto the band's snap points are its descendants and come along for free.
-    ///   - looseGemEntities: gems not attached to the band (e.g. `scene.gemAnchor.children`).
-    ///   - padding: how much breathing room to leave around the design in frame. Higher = smaller/more margin.
     static func captureAngles(
         bandEntity: Entity?,
         looseGemEntities: [Entity] = [],
@@ -51,13 +34,16 @@ enum SceneSnapshotService {
             return CapturedAngles()
         }
 
-        // Isolated "product" group — only the jewelry, nothing else from the live editor scene.
         let productRoot = Entity()
         if let bandEntity {
             productRoot.addChild(bandEntity.clone(recursive: true))
         }
         for gem in looseGemEntities {
             productRoot.addChild(gem.clone(recursive: true))
+            productRoot.transform.rotation = simd_quatf(
+                angle: .pi / 2,
+                axis: SIMD3<Float>(1, 0, 0)
+            )
         }
 
         guard !productRoot.children.isEmpty else {
@@ -78,8 +64,6 @@ enum SceneSnapshotService {
             print("SceneSnapshotService: continuing without IBL — colors may look flat")
         }
 
-        // Where the ring actually is, and how big it is, in the product group's own
-        // local space — this is what makes the centering automatic and size-independent.
         let bounds = productRoot.visualBounds(relativeTo: productRoot)
         let center = bounds.center
         let boundingRadius = max(simd_length(bounds.extents) / 2, 0.01)
@@ -134,14 +118,14 @@ enum SceneSnapshotService {
 
         let ciContext = CIContext(mtlDevice: device)
 
-        // Camera distance derived from the ring's own bounding radius, so a dainty band
-        // and a chunky statement ring both fill the frame the same way instead of one
-        // looking tiny and the other getting clipped.
         let fovRadians = Double(camera.camera.fieldOfViewInDegrees) * .pi / 180
         let distance = (boundingRadius * padding) / Float(tan(fovRadians / 2))
 
-        func snapshot(yaw: Float) async -> Data? {
-            let orientation = simd_quatf(angle: yaw, axis: SIMD3<Float>(0, 1, 0))
+        func snapshot(yaw: Float, pitch: Float = -0.35) async -> Data? {
+            let yawQuat = simd_quatf(angle: yaw, axis: SIMD3<Float>(0, 1, 0))
+            let pitchQuat = simd_quatf(angle: pitch, axis: SIMD3<Float>(1, 0, 0))
+            let orientation = yawQuat * pitchQuat
+
             camera.position = center + orientation.act(SIMD3<Float>(0, 0, distance))
             camera.look(at: center, from: camera.position, relativeTo: productRoot)
 
@@ -176,11 +160,18 @@ enum SceneSnapshotService {
             }
         }
 
-        // Front / back / left / right, all orbiting the ring's real, measured center.
-        let front = await snapshot(yaw: 0)
-        let back = await snapshot(yaw: .pi)
-        let left = await snapshot(yaw: -.pi / 2)
-        let right = await snapshot(yaw: .pi / 2)
+        let front = await snapshot(
+            yaw: 0,
+            pitch: -1.05
+        )
+
+        let back = await snapshot(
+            yaw: .pi,
+            pitch: -0.20
+        )
+        
+        let right = await snapshot(yaw: .pi / 2, pitch: 0.12)
+        let left  = await snapshot(yaw: -.pi / 4, pitch: 0.20)
 
         return CapturedAngles(front: front, back: back, left: left, right: right)
     }

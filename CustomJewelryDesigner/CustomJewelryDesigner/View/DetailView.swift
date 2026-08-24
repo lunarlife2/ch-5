@@ -17,7 +17,7 @@ struct DetailView: View {
     @State private var notes: String
     @State private var size: Double
     @State private var showSizeGuide = false
-    @State private var selectedAngle: RingAngle = .front
+    @State private var selectedAngle: RingAngle = .left
     @State private var showShareSheet = false
     @State private var shareURL: URL?
     @State private var isPreparingShare = false
