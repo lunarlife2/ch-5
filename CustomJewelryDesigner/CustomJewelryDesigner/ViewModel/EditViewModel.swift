@@ -1006,20 +1006,4 @@ final class EditViewModel {
         
         return clamped
     }
-    
-    func renameDesign(_ name: String) {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        guard !trimmed.isEmpty else {
-            return
-        }
-        
-        guard trimmed != designFile.name else {
-            return
-        }
-        
-        designFile.name = trimmed
-        designFile.updatedAt = .now
-        markDirty()
-    }
 }

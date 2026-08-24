@@ -123,16 +123,7 @@ struct EditView: View {
                 .frame(minWidth: 120, maxWidth: 250)
 
                 Button {
-                    let trimmed = editedFileName.trimmingCharacters(
-                        in: .whitespacesAndNewlines
-                    )
-
-                    guard !trimmed.isEmpty else {
-                        return
-                    }
-
-                    editViewModel.renameDesign(trimmed)
-                    isEditingName = false
+                    commitFileName()
                 } label: {
                     Image(systemName: "checkmark")
                 }
@@ -150,6 +141,33 @@ struct EditView: View {
             }
         }
         .padding(.leading, 30)
+    }
+    
+    private func commitFileName() {
+        let trimmed = editedFileName.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !trimmed.isEmpty else {
+            editedFileName = editViewModel.designFile.name
+            isEditingName = false
+            return
+        }
+
+        guard trimmed != editViewModel.designFile.name else {
+            isEditingName = false
+            return
+        }
+
+        let store = DesignFileStore(modelContext: modelContext)
+
+        store.renameDesignFile(
+            design: editViewModel.designFile,
+            to: trimmed
+        )
+
+        editViewModel.clearDirty()
+        isEditingName = false
     }
  
     private var topRightControls: some View {
