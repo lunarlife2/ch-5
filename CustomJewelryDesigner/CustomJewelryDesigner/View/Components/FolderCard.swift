@@ -33,3 +33,13 @@ struct FolderCard: View {
 		.frame(width: 160)
 	}
 }
+
+extension Image {
+	init(thumbnailData: Data?, placeholder: String = "photo") {
+		if let thumbnailData, let uiImage = UIImage(data: thumbnailData) {
+			self = Image(uiImage: uiImage)
+		} else {
+			self = Image(systemName: placeholder)
+		}
+	}
+}
