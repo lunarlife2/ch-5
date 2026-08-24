@@ -774,15 +774,15 @@ final class EditViewModel {
 //    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) async {
 //        guard let modelContext, let design = designFile.design else { return }
 //
-//			let bandEntity = scene.bandAnchor.children.first
-//			let gemEntities = scene.allGemEntities()
+//            let bandEntity = scene.bandAnchor.children.first
+//            let gemEntities = scene.allGemEntities()
 //
-//			let thumbnails = await generateThumbnails(bandEntity: bandEntity, gemEntities: gemEntities)
-//			designFile.thumbnailData = thumbnails[.front]
-//			designFile.backThumbnailData = thumbnails[.back]
-//			designFile.rightThumbnailData = thumbnails[.right]
-//			designFile.leftThumbnailData = thumbnails[.left]
-//		
+//            let thumbnails = await generateThumbnails(bandEntity: bandEntity, gemEntities: gemEntities)
+//            designFile.thumbnailData = thumbnails[.front]
+//            designFile.backThumbnailData = thumbnails[.back]
+//            designFile.rightThumbnailData = thumbnails[.right]
+//            designFile.leftThumbnailData = thumbnails[.left]
+//
 //        let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
 //
 //        do {
@@ -811,7 +811,10 @@ final class EditViewModel {
     func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) async {
         guard let modelContext, let design = designFile.design else { return }
 
-        let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
+        let capturedAngles = await SceneSnapshotService.captureAngles(
+            bandEntity: scene.bandAnchor.children.first,
+            looseGemEntities: Array(scene.gemAnchor.children)
+        )
 
         do {
             try persistence.save(

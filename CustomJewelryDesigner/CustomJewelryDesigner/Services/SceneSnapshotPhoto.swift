@@ -23,18 +23,49 @@ enum SceneSnapshotService {
         var right: Data?
     }
 
+    /// Captures four studio-style shots (front / back / left / right) of just the jewelry —
+    /// the band plus any gems, attached or loose — with the design automatically centered
+    /// and framed in every shot.
+    ///
+    /// This deliberately does NOT take the whole editor `rootEntity`. That entity also
+    /// contains the mannequin hand, the camera rig, and the gizmo, and (when the ring is
+    /// being worn) the band itself is parented onto a finger anchor far from world origin.
+    /// Orbiting a camera around a fixed `.zero` in that scene is what made snapshots come
+    /// out off-center or with the hand in frame. Instead we clone only the jewelry into an
+    /// isolated group, measure its real bounding box, and orbit/look at that box's actual
+    /// center — so the ring ends up centered no matter where it sits in the live editor
+    /// (on the pivot, worn on a finger, rotated, or scaled).
+    /// - Parameters:
+    ///   - bandEntity: the band model (e.g. `scene.bandAnchor.children.first`). Any gems
+    ///     snapped onto the band's snap points are its descendants and come along for free.
+    ///   - looseGemEntities: gems not attached to the band (e.g. `scene.gemAnchor.children`).
+    ///   - padding: how much breathing room to leave around the design in frame. Higher = smaller/more margin.
     static func captureAngles(
-        rootEntity: Entity,
-        distance: Float = 0.35,
-        imageSize: CGSize = CGSize(width: 600, height: 600)
+        bandEntity: Entity?,
+        looseGemEntities: [Entity] = [],
+        imageSize: CGSize = CGSize(width: 600, height: 600),
+        padding: Float = 1.6
     ) async -> CapturedAngles {
         guard let renderer = try? await RealityRenderer() else {
             print("SceneSnapshotService: failed to create RealityRenderer")
             return CapturedAngles()
         }
 
-        let sceneClone = rootEntity.clone(recursive: true)
-        renderer.entities.append(sceneClone)
+        // Isolated "product" group — only the jewelry, nothing else from the live editor scene.
+        let productRoot = Entity()
+        if let bandEntity {
+            productRoot.addChild(bandEntity.clone(recursive: true))
+        }
+        for gem in looseGemEntities {
+            productRoot.addChild(gem.clone(recursive: true))
+        }
+
+        guard !productRoot.children.isEmpty else {
+            print("SceneSnapshotService: nothing to capture (no band or gems)")
+            return CapturedAngles()
+        }
+
+        renderer.entities.append(productRoot)
 
         if let environment = await makeStudioEnvironmentResource() {
             let iblSource = Entity()
@@ -42,34 +73,39 @@ enum SceneSnapshotService {
                 ImageBasedLightComponent(source: .single(environment), intensityExponent: 1.5)
             )
             renderer.entities.append(iblSource)
-            sceneClone.components.set(ImageBasedLightReceiverComponent(imageBasedLight: iblSource))
+            productRoot.components.set(ImageBasedLightReceiverComponent(imageBasedLight: iblSource))
         } else {
             print("SceneSnapshotService: continuing without IBL — colors may look flat")
         }
 
+        // Where the ring actually is, and how big it is, in the product group's own
+        // local space — this is what makes the centering automatic and size-independent.
+        let bounds = productRoot.visualBounds(relativeTo: productRoot)
+        let center = bounds.center
+        let boundingRadius = max(simd_length(bounds.extents) / 2, 0.01)
+
         let camera = PerspectiveCamera()
         camera.camera.near = 0.001
         camera.camera.far = 10
-        sceneClone.addChild(camera)
+        camera.camera.fieldOfViewInDegrees = 60
+        productRoot.addChild(camera)
         renderer.entities.append(camera)
         renderer.activeCamera = camera
-
 
         let keyLight = DirectionalLight()
         keyLight.light.intensity = 3000
         keyLight.orientation = simd_quatf(angle: -.pi / 3, axis: SIMD3<Float>(1, 0, 0))
-        sceneClone.addChild(keyLight)
+        productRoot.addChild(keyLight)
 
         let fillLight = PointLight()
         fillLight.light.intensity = 4000
-        fillLight.position = SIMD3<Float>(0, 0.2, 0.3)
-        sceneClone.addChild(fillLight)
-
+        fillLight.position = center + SIMD3<Float>(0, 0.2, 0.3)
+        productRoot.addChild(fillLight)
 
         let rimLight = PointLight()
         rimLight.light.intensity = 3500
-        rimLight.position = SIMD3<Float>(0, 0.15, -0.3)
-        sceneClone.addChild(rimLight)
+        rimLight.position = center + SIMD3<Float>(0, 0.15, -0.3)
+        productRoot.addChild(rimLight)
 
         let orbitLight = PointLight()
         orbitLight.light.intensity = 3000
@@ -98,11 +134,16 @@ enum SceneSnapshotService {
 
         let ciContext = CIContext(mtlDevice: device)
 
+        // Camera distance derived from the ring's own bounding radius, so a dainty band
+        // and a chunky statement ring both fill the frame the same way instead of one
+        // looking tiny and the other getting clipped.
+        let fovRadians = Double(camera.camera.fieldOfViewInDegrees) * .pi / 180
+        let distance = (boundingRadius * padding) / Float(tan(fovRadians / 2))
 
         func snapshot(yaw: Float) async -> Data? {
             let orientation = simd_quatf(angle: yaw, axis: SIMD3<Float>(0, 1, 0))
-            camera.position = orientation.act(SIMD3<Float>(0, 0, distance))
-            camera.look(at: .zero, from: camera.position, relativeTo: sceneClone)
+            camera.position = center + orientation.act(SIMD3<Float>(0, 0, distance))
+            camera.look(at: center, from: camera.position, relativeTo: productRoot)
 
             do {
                 let outputDescriptor = RealityRenderer.CameraOutput.Descriptor.singleProjection(
@@ -135,6 +176,7 @@ enum SceneSnapshotService {
             }
         }
 
+        // Front / back / left / right, all orbiting the ring's real, measured center.
         let front = await snapshot(yaw: 0)
         let back = await snapshot(yaw: .pi)
         let left = await snapshot(yaw: -.pi / 2)
