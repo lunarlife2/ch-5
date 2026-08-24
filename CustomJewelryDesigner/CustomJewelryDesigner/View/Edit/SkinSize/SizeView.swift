@@ -11,16 +11,16 @@ import SwiftData
 struct SizeView: View {
     @Environment(ViewModel.self) private var vm
     @Environment(\.modelContext) private var modelContext
-    
+
     @State private var currentMeasurement: FingerMeasurement?
     @State private var showMeasureView = false
     @State private var showHandProfile = false
-    
+
     @Bindable var bandGemViewModel: BandGemViewModel
     var editViewModel: EditViewModel
-    
+
     private var store: HandProfileStore { HandProfileStore(modelContext: modelContext) }
-    
+
     var body: some View {
         VStack(spacing: 20) {
             Menu {
@@ -30,7 +30,7 @@ struct SizeView: View {
                     } label: {
                         HStack {
                             Text(hf.title)
-                            
+
                             if hf == bindingToHandFinger.wrappedValue {
                                 Image(systemName: "checkmark")
                             }
@@ -42,9 +42,9 @@ struct SizeView: View {
                 HStack {
                     Text(bindingToHandFinger.wrappedValue.title)
                         .foregroundStyle(Color.black)
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "chevron.up.chevron.down")
                 }
                 .foregroundStyle(Color.handFingerPrimary)
@@ -61,13 +61,13 @@ struct SizeView: View {
                     .stroke(Color.handFingerPrimary.opacity(0.35), lineWidth: 1)
             }
             .glassEffect()
-            
+
             if let m = currentMeasurement {
                 measuredCard(m)
             } else {
                 notMeasuredCard
             }
-            
+
             Button {
                 showHandProfile = true
             } label: {
@@ -89,8 +89,7 @@ struct SizeView: View {
             }
         }
     }
-    
-    
+
     private func measuredCard(_ m: FingerMeasurement) -> some View {
         VStack {
             HStack {
@@ -105,7 +104,7 @@ struct SizeView: View {
                 }
                 .buttonStyle(.glass)
             }
-            
+
             Picker("", selection: $bandGemViewModel.selectedRingSizeSystem) {
                 ForEach(RingSizeSystem.allCases) { system in
                     Text(system.title)
@@ -135,6 +134,7 @@ struct SizeView: View {
         .fullScreenCover(isPresented: $showMeasureView) {
             MeasureView(
                 bandGemViewModel: bandGemViewModel,
+                handFinger: m.handFinger,
                 hand: editViewModel.selectedHandFinger.hand,
                 initialMeasurement: m,
                 onBack: { showMeasureView = false },
@@ -144,7 +144,7 @@ struct SizeView: View {
             )
         }
     }
-    
+
     private var notMeasuredCard: some View {
         VStack {
             Text("Not Measured yet")
@@ -166,10 +166,10 @@ struct SizeView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .center)
-
         .fullScreenCover(isPresented: $showMeasureView) {
             MeasureView(
                 bandGemViewModel: bandGemViewModel,
+                handFinger: editViewModel.selectedHandFinger,
                 hand: editViewModel.selectedHandFinger.hand,
                 initialMeasurement: nil,
                 onBack: { showMeasureView = false },
@@ -179,7 +179,7 @@ struct SizeView: View {
             )
         }
     }
-        
+
     private func applyMeasurement(_ ringSize: RingSizeOption) {
         store.save(
             handFinger: editViewModel.selectedHandFinger,
@@ -193,14 +193,14 @@ struct SizeView: View {
         )
         reload()
     }
-    
+
     private func reload() {
         currentMeasurement = store.measurement(for: editViewModel.selectedHandFinger)
         if let m = currentMeasurement {
             bandGemViewModel.loadRingSize(id: m.ringSizeID, system: m.ringSizeSystem)
         }
     }
-    
+
     private var bindingToHandFinger: Binding<HandFinger> {
         Binding(
             get: { editViewModel.selectedHandFinger },

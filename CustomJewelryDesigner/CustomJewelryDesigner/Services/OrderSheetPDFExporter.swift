@@ -40,12 +40,13 @@ enum OrderSheetPDFExporter {
 
                 drawText(designFile.name, at: CGPoint(x: margin, y: cursorY), font: .boldSystemFont(ofSize: 18))
                 cursorY += 22
-                let subtitle = "Custom Engagement Ring . Created Date: \(designFile.createdAt.formatted(date: .long, time: .omitted))"
+                let subtitle = "Created Date: \(designFile.createdAt.formatted(date: .long, time: .omitted))"
                 drawText(subtitle, at: CGPoint(x: margin, y: cursorY), font: .systemFont(ofSize: 11), color: .secondaryLabel)
                 cursorY += 30
 
                 let mainImageSize = CGSize(width: 200, height: 200)
-                if let mainImage = image(from: designFile.thumbnailData) {
+                let heroData = designFile.leftImageData ?? designFile.thumbnailData
+                if let mainImage = image(from: heroData) {
                     mainImage.draw(in: CGRect(origin: CGPoint(x: margin, y: cursorY), size: mainImageSize))
                 }
 
@@ -79,7 +80,7 @@ enum OrderSheetPDFExporter {
                 cursorY += 22
 
                 let rows: [(String, String)] = [
-                    ("Metal", designFile.design?.materialPreset ?? "-"),
+                    ("Metal", designFile.design?.band?.material ?? "-"),
                     ("Gem", gemText(for: designFile)),
                     ("Band Thickness", designFile.design?.band?.thickness?.capitalized ?? "-"),
                     ("Ring Size", ringSizeText(for: designFile))
@@ -103,7 +104,7 @@ enum OrderSheetPDFExporter {
                 }
 
                 let footerY = pageHeight - margin
-                drawText("Ring jewelry. Confidential Specification", at: CGPoint(x: margin, y: footerY - 12), font: .systemFont(ofSize: 8), color: .secondaryLabel)
+                drawText("Kilau - Create Your Own Boundless Shine", at: CGPoint(x: margin, y: footerY - 12), font: .systemFont(ofSize: 8), color: .secondaryLabel)
                 drawText("Page 1 of 1", at: CGPoint(x: pageWidth - margin - 60, y: footerY - 12), font: .systemFont(ofSize: 8), color: .secondaryLabel)
             }
             return url

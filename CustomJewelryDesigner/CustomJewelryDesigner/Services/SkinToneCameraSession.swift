@@ -73,9 +73,10 @@ extension SkinToneCameraSession: AVCapturePhotoCaptureDelegate {
         guard error == nil, let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else {
             captureCompletion?(nil); captureCompletion = nil; return
         }
+        let normalized = image.normalizedOrientation()
         DispatchQueue.main.async { [weak self] in
-            self?.capturedImage = image
-            self?.captureCompletion?(image)
+            self?.capturedImage = normalized
+            self?.captureCompletion?(normalized)
             self?.captureCompletion = nil
         }
     }

@@ -421,7 +421,9 @@ final class EditViewModel {
                 bandSource = BandSourceComponent(
                     libraryAssetID: savedBand.libraryAssetID,
                     assetStoragePath: savedBand.assetStoragePath,
-                    name: savedBand.name
+                    name: savedBand.name,
+                    thickness: savedBand.thickness,
+                    material: savedBand.material
                 )
                 
                 if savedBand.assetStoragePath == "Flat_Band_Ring" {
@@ -485,7 +487,9 @@ final class EditViewModel {
                 bandSource = BandSourceComponent(
                     libraryAssetID: firstBand.id,
                     assetStoragePath: firstBand.assetId.storagePath,
-                    name: firstBand.description
+                    name: firstBand.description,
+                    thickness: firstBand.bandThickness,
+                    material: firstBand.bandMaterial
                 )
                 savedBandForSetup = nil
             }
@@ -519,7 +523,9 @@ final class EditViewModel {
             let source = BandSourceComponent(
                 libraryAssetID: band.id,
                 assetStoragePath: band.assetId.storagePath,
-                name: band.description
+                name: band.description,
+                thickness: band.bandThickness,
+                material: band.bandMaterial
             )
             await scene.replaceBand(from: localURL, source: source, saved: design?.band)
             markDirty()
@@ -764,12 +770,52 @@ final class EditViewModel {
         selectedGemName = nil
         hasUnsavedChanges = true
     }
+
+//    func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) async {
+//        guard let modelContext, let design = designFile.design else { return }
+//
+//            let bandEntity = scene.bandAnchor.children.first
+//            let gemEntities = scene.allGemEntities()
+//
+//            let thumbnails = await generateThumbnails(bandEntity: bandEntity, gemEntities: gemEntities)
+//            designFile.thumbnailData = thumbnails[.front]
+//            designFile.backThumbnailData = thumbnails[.back]
+//            designFile.rightThumbnailData = thumbnails[.right]
+//            designFile.leftThumbnailData = thumbnails[.left]
+//
+//        let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
+//
+//        do {
+//            try persistence.save(
+//                gemEntities: scene.allGemEntities(),
+//                bandEntity: scene.bandAnchor.children.first,
+//                bandAnchor: scene.bandAnchor,
+//                ringSizeID: ringSizeID,
+//                ringSizeSystem: ringSizeSystem,
+//                handFinger: handFinger,
+//                bandThickness: selectedBandThickness ?? currentBand?.bandThickness,
+//                bandMaterial: selectedBandMaterial?.title,
+//                skinColorHex: skinColor.hexString,
+//                capturedAngles: capturedAngles,
+//                designFile: designFile,
+//                design: design,
+//                modelContext: modelContext
+//            )
+//            scene.gizmoController.updateGizmoTransform()
+//            hasUnsavedChanges = false
+//        } catch {
+//            print("save failed: \(error)")
+//        }
+//    }
     
     func save(ringSizeID: Int?, ringSizeSystem: RingSizeSystem?, handFinger: HandFinger) async {
         guard let modelContext, let design = designFile.design else { return }
-        
-        let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
-        
+
+        let capturedAngles = await SceneSnapshotService.captureAngles(
+            bandEntity: scene.bandAnchor.children.first,
+            looseGemEntities: Array(scene.gemAnchor.children)
+        )
+
         do {
             try persistence.save(
                 gemEntities: scene.allGemEntities(),

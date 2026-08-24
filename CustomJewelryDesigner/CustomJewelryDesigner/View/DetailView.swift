@@ -11,13 +11,13 @@ import SwiftData
 struct DetailView: View {
     @Environment(ViewModel.self) private var vm
     @Environment(\.modelContext) private var modelContext
-
+    
     @Bindable var designFile: DesignFile
 
     @State private var notes: String
     @State private var size: Double
     @State private var showSizeGuide = false
-    @State private var selectedAngle: RingAngle = .front
+    @State private var selectedAngle: RingAngle = .left
     @State private var showShareSheet = false
     @State private var shareURL: URL?
     @State private var isPreparingShare = false
@@ -50,7 +50,7 @@ struct DetailView: View {
         return formatter.string(from: designFile.updatedAt)
     }
 
-    private var metalText: String { design?.materialPreset ?? "Not selected yet" }
+    private var metalText: String { design?.band?.material ?? "Not selected yet" }
 
     private func gemDisplayName(for gem: GemComponent) -> String {
         let material = gem.color?.capitalized
