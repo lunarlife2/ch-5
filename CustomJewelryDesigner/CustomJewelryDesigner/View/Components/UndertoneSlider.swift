@@ -47,9 +47,9 @@ struct UndertoneSliderView: View {
             .frame(height: 26)
 
             HStack {
-                Text("Cool").font(.caption).foregroundStyle(.secondary)
-                Spacer()
                 Text("Warm").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Text("Cool").font(.caption).foregroundStyle(.secondary)
             }
         }
         .onAppear { sync(from: color) }
