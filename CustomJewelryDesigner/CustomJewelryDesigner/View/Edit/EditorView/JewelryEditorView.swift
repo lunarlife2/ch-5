@@ -17,6 +17,7 @@ struct JewelryEditorView: View {
     
     let viewModel: EditViewModel
     let bottomInset: CGFloat
+    let tutorial: TutorialController
     
     @State private var isTargeted = false
     @State private var touchTracker = TouchCountViewModel()
@@ -147,7 +148,8 @@ struct JewelryEditorView: View {
             DragAndDropGesture(
                 touchTracker: touchTracker,
                 editViewModel: viewModel,
-                scene: viewModel.scene
+                scene: viewModel.scene,
+                tutorial: tutorial
             ).dragGesture
         )
         .simultaneousGesture(

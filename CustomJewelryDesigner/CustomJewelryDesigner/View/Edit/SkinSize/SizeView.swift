@@ -151,7 +151,7 @@ struct SizeView: View {
                 .frame(maxWidth: .infinity, minHeight: 113)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.gray.opacity(0.6))
+                        .fill(Color.notMeasure)
                 )
 
             Button {
@@ -161,6 +161,7 @@ struct SizeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(8)
             }
+            .tint(Color.appPrimary)
             .buttonStyle(.glassProminent)
         }
         .padding()
