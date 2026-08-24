@@ -6,9 +6,23 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MeasureView: View {
     @Bindable var bandGemViewModel: BandGemViewModel
+	
+	let handFinger: HandFinger                     // NEW
+
+		@Environment(\.modelContext) private var modelContext   // NEW
+		@Environment(\.dismiss) private var dismiss              // NEW
+		@Query private var savedSizes: [SavedRingSize]           // NEW
+
+		private var existing: SavedRingSize? {                   // NEW
+			savedSizes.first { $0.handFinger == handFinger }
+		}
+    
+//    let onBack: () -> Void
+    
     @State private var ringSizeViewModel: RingSizerViewModel?
 
     let hand: Hand
@@ -72,6 +86,8 @@ struct MeasureView: View {
                 }
             }
             
+//             GlassButton {
+// 				saveAndDismiss(viewModel)
             Menu {
                 ForEach(RingSizeSystem.allCases) { system in
                     Button {
@@ -244,8 +260,46 @@ struct MeasureView: View {
             }
         }
     }
+	
+// 	private func saveAndDismiss(_ viewModel: RingSizerViewModel) {
+// 		if let ring = viewModel.closestRingSize {
+// 			if let existing {
+// 				existing.sizeID = ring.id
+// 				existing.system = bandGemViewModel.selectedRingSizeSystem
+// 				existing.updatedAt = Date()
+// 			} else {
+// 				modelContext.insert(SavedRingSize(
+// 					handFinger: handFinger,
+// 					system: bandGemViewModel.selectedRingSizeSystem,
+// 					sizeID: ring.id
+// 				))
+// 			}
+// 		}
+// 		dismiss()
+// 	}
+	
+    struct FingerGuide: View {
+
+        var body: some View {
+
+            RoundedRectangle(cornerRadius: 50)
+                .stroke(
+                    .secondary.opacity(0.4),
+                    style: StrokeStyle(
+                        lineWidth: 2,
+                        dash: [8, 6]
+                    )
+                )
+                .overlay {
+                    Text("Letakkan jari di sini")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+        }
+    }
 }
 
-#Preview {
-    MeasureView(bandGemViewModel: BandGemViewModel(), hand: .right)
-}
+//#Preview {
+//// 	MeasureView(bandGemViewModel: BandGemViewModel(), handFinger: .leftpinky)
+//    MeasureView(bandGemViewModel: BandGemViewModel(), hand: .right)
+//}
