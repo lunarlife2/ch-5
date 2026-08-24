@@ -40,7 +40,7 @@ enum OrderSheetPDFExporter {
 
                 drawText(designFile.name, at: CGPoint(x: margin, y: cursorY), font: .boldSystemFont(ofSize: 18))
                 cursorY += 22
-                let subtitle = "Custom Engagement Ring . Created Date: \(designFile.createdAt.formatted(date: .long, time: .omitted))"
+                let subtitle = "Created Date: \(designFile.createdAt.formatted(date: .long, time: .omitted))"
                 drawText(subtitle, at: CGPoint(x: margin, y: cursorY), font: .systemFont(ofSize: 11), color: .secondaryLabel)
                 cursorY += 30
 
@@ -103,7 +103,7 @@ enum OrderSheetPDFExporter {
                 }
 
                 let footerY = pageHeight - margin
-                drawText("Ring jewelry. Confidential Specification", at: CGPoint(x: margin, y: footerY - 12), font: .systemFont(ofSize: 8), color: .secondaryLabel)
+                drawText("Kilau - Create Your Own Boundless Shine", at: CGPoint(x: margin, y: footerY - 12), font: .systemFont(ofSize: 8), color: .secondaryLabel)
                 drawText("Page 1 of 1", at: CGPoint(x: pageWidth - margin - 60, y: footerY - 12), font: .systemFont(ofSize: 8), color: .secondaryLabel)
             }
             return url

@@ -43,14 +43,14 @@ final class DesignFile {
 	var thumbnailData: Data?
 	
 	// new — detail gallery only
-	@Attribute(.externalStorage)
-	var backThumbnailData: Data?
-
-	@Attribute(.externalStorage)
-	var rightThumbnailData: Data?
-
-	@Attribute(.externalStorage)
-	var leftThumbnailData: Data?
+//	@Attribute(.externalStorage)
+//	var backThumbnailData: Data?
+//
+//	@Attribute(.externalStorage)
+//	var rightThumbnailData: Data?
+//
+//	@Attribute(.externalStorage)
+//	var leftThumbnailData: Data?
     
     @Attribute(.externalStorage)
     var backImageData: Data?
@@ -87,16 +87,16 @@ final class DesignFile {
     }
 }
 
-extension DesignFile {
-	var galleryImages: [(label: String, data: Data?)] {
-		[
-			("Front", thumbnailData),
-			("Back", backThumbnailData),
-			("Right", rightThumbnailData),
-			("Left", leftThumbnailData)
-		]
-	}
-}
+//extension DesignFile {
+//	var galleryImages: [(label: String, data: Data?)] {
+//		[
+//			("Front", thumbnailData),
+//			("Back", backThumbnailData),
+//			("Right", rightThumbnailData),
+//			("Left", leftThumbnailData)
+//		]
+//	}
+//}
 
 @Model
 final class Design {
