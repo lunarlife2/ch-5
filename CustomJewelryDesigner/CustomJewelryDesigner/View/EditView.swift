@@ -15,15 +15,21 @@ struct EditView: View {
     @Environment(\.modelContext) private var modelContext
  
     let designFile: DesignFile
- 
+    let tutorialController: TutorialController
+    var tutorialViewModel: TutorialViewModel? = nil
+    
     @State private var editViewModel: EditViewModel
     @State private var bandGemViewModel = BandGemViewModel()
     @State private var selectedPanelTypeBand = 0
     @State private var selectedPanelTypeMannequin = 0
     @State private var showUnsavedChangesAlert = false
+    @State private var isEditingName = false
+    @State private var editedFileName = ""
  
-    init(designFile: DesignFile) {
+    init(designFile: DesignFile, tutorialViewModel: TutorialViewModel? = nil, tutorialController: TutorialController) {
         self.designFile = designFile
+        self.tutorialViewModel = tutorialViewModel
+        self.tutorialController = tutorialController
         _editViewModel = State(initialValue: EditViewModel(designFile: designFile))
     }
  
@@ -106,13 +112,42 @@ struct EditView: View {
                 Image(systemName: "chevron.left")
             }
             .padding(.trailing, 20)
- 
-            //title
-            Text(editViewModel.designFile.name)
+
+            if isEditingName {
+                TextField(
+                    "Design name",
+                    text: $editedFileName
+                )
                 .font(.system(size: 20, weight: .semibold))
- 
-            //edit
-            Image(systemName: "pencil")
+                .textFieldStyle(.plain)
+                .frame(minWidth: 120, maxWidth: 250)
+
+                Button {
+                    let trimmed = editedFileName.trimmingCharacters(
+                        in: .whitespacesAndNewlines
+                    )
+
+                    guard !trimmed.isEmpty else {
+                        return
+                    }
+
+                    editViewModel.renameDesign(trimmed)
+                    isEditingName = false
+                } label: {
+                    Image(systemName: "checkmark")
+                }
+
+            } else {
+                Text(editViewModel.designFile.name)
+                    .font(.system(size: 20, weight: .semibold))
+
+                Button {
+                    editedFileName = editViewModel.designFile.name
+                    isEditingName = true
+                } label: {
+                    Image(systemName: "pencil")
+                }
+            }
         }
         .padding(.leading, 30)
     }
@@ -137,7 +172,8 @@ struct EditView: View {
  
             JewelryEditorView(
                 viewModel: editViewModel,
-                bottomInset: bottomControlsHeight
+                bottomInset: bottomControlsHeight,
+                tutorial: tutorialController
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
  
@@ -329,6 +365,7 @@ struct EditView: View {
                     .frame(maxWidth: Layout.saveButtonWidth)
             }
         }
+        .tint(Color.appPrimary)
         .buttonStyle(.glassProminent)
         .disabled(!editViewModel.hasUnsavedChanges || isSaving)
         .frame(minWidth: 100)
@@ -359,5 +396,15 @@ struct EditView: View {
                 }
             }
         )
+    }
+    
+    //tutorial
+    @ViewBuilder
+    private func withTutorialAnchor<V: View>(_ id: TutorialID, _ content: V) -> some View {
+        if let tutorialViewModel {
+            content.tutorialAnchor(id, viewModel: tutorialViewModel)
+        } else {
+            content
+        }
     }
 }

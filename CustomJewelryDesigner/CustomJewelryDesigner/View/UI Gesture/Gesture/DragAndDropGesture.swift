@@ -12,6 +12,7 @@ struct DragAndDropGesture {
     let touchTracker: TouchCountViewModel
     let editViewModel: EditViewModel
     let scene: JewelrySceneController
+    let tutorial: TutorialController
 
     var dragGesture: some Gesture {
         DragGesture(minimumDistance: 1, coordinateSpace: .global)
@@ -158,6 +159,7 @@ struct DragAndDropGesture {
                         maxScreenDistance: SnappingService.defaultDragScreenRadius
                     ) {
                         SnappingService.attach(gem: entity, to: snapTarget)
+                        tutorial.reportUserAction(.draggedGem)
                         
                         scene.gizmoController.deselect()
                         scene.gizmoController.updateGizmoTransform()
