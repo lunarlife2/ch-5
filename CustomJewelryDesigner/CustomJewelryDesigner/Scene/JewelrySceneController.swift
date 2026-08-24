@@ -62,13 +62,13 @@ final class JewelrySceneController {
         .rightpointer: 1.30,
         .rightmiddle: 1.22,
         .rightring: 1.20,
-        .rightpinky: 1.00,
+        .rightpinky: 1.10,
 
-        .leftthumb: 1.20,
-        .leftpointer: 1.10,
-        .leftmiddle: 1.10,
-        .leftring: 1.10,
-        .leftpinky: 1.00
+        .leftthumb: 1.30,
+        .leftpointer: 1.30,
+        .leftmiddle: 1.22,
+        .leftring: 1.20,
+        .leftpinky: 1.10
     ]
     
     private(set) var bandScale: Float = 1.0
@@ -450,15 +450,45 @@ final class JewelrySceneController {
     }
     
     private func correctiveOrientation(for extents: SIMD3<Float>) -> simd_quatf {
-        let ax = extents.x, ay = extents.y, az = extents.z
-        
+        let ax = extents.x
+        let ay = extents.y
+        let az = extents.z
+
+        let branch: String
+        let correction: simd_quatf
+
         if az <= ax && az <= ay {
-            return simd_quatf(angle: 0, axis: SIMD3<Float>(0, 1, 0))
+            branch = "Z"
+            correction = simd_quatf(
+                angle: 0,
+                axis: SIMD3<Float>(0, 1, 0)
+            )
         } else if ay <= ax && ay <= az {
-            return simd_quatf(angle: .pi / 2, axis: SIMD3<Float>(1, 0, 0))
+            branch = "Y"
+            correction = simd_quatf(
+                angle: .pi / 2,
+                axis: SIMD3<Float>(1, 0, 0)
+            )
         } else {
-            return simd_quatf(angle: .pi / 2, axis: SIMD3<Float>(0, 1, 0))
+            branch = "X"
+            correction = simd_quatf(
+                angle: .pi / 2,
+                axis: SIMD3<Float>(0, 1, 0)
+            )
         }
+
+        print("""
+        ========== CORRECTIVE ORIENTATION DEBUG ==========
+        Extents   : \(extents)
+        ax        : \(ax)
+        ay        : \(ay)
+        az        : \(az)
+        Min Axis  : \(branch)
+        Correction: \(correction)
+        ===================================================
+        """)
+
+        return correction
     }
     
     func allSnapPoints() -> [Entity] {

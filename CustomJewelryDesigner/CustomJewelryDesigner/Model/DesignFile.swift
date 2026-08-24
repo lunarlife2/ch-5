@@ -23,21 +23,21 @@ final class DesignFolder {
 
 @Model
 final class DesignFile {
-	@Attribute(.unique) var id: UUID
-	var name: String
-	var createdAt: Date
-	var updatedAt: Date
-	var ringPositionRaw: RingPosition?
-	
-	// what the rest of your app uses — behaves exactly like before
-		var ringPosition: RingPosition {
-			get { ringPositionRaw ?? .left }
-			set { ringPositionRaw = newValue }
-		}
+    @Attribute(.unique) var id: UUID
+    var name: String
+    var createdAt: Date
+    var updatedAt: Date
+    var ringPositionRaw: RingPosition?
+    
+    // what the rest of your app uses — behaves exactly like before
+        var ringPosition: RingPosition {
+            get { ringPositionRaw ?? .left }
+            set { ringPositionRaw = newValue }
+        }
 
-	enum RingPosition: String, Codable, CaseIterable {
-		case left, right
-	}
+    enum RingPosition: String, Codable, CaseIterable {
+        case left, right
+    }
 
 	@Attribute(.externalStorage)
 	var thumbnailData: Data?
@@ -51,27 +51,40 @@ final class DesignFile {
 
 	@Attribute(.externalStorage)
 	var leftThumbnailData: Data?
+    
+    @Attribute(.externalStorage)
+    var backImageData: Data?
+    
+    @Attribute(.externalStorage)
+    var leftImageData: Data?
+    
+    @Attribute(.externalStorage)
+    var rightImageData: Data?
+    
+    var notes: String?
 
-	@Relationship(deleteRule: .cascade)
-	var design: Design?
-	
-	var folder: DesignFolder?
+    @Relationship(deleteRule: .cascade)
+    var design: Design?
+    
+    var folder: DesignFolder?
 
-	init(
-		id: UUID,
-		name: String,
-		updatedAt: Date,
-		ringPosition: RingPosition,
-		design: Design?
-	) {
-		self.id = id
-		self.name = name
-		self.createdAt = .now
-		self.updatedAt = updatedAt
-		self.ringPosition = ringPosition
-		self.design = design
-		self.folder = nil
-	}
+    init(
+        id: UUID,
+        name: String,
+        updatedAt: Date,
+        ringPosition: RingPosition,
+        design: Design?,
+        notes: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.createdAt = .now
+        self.updatedAt = updatedAt
+        self.ringPosition = ringPosition
+        self.design = design
+        self.folder = nil
+        self.notes = notes
+    }
 }
 
 extension DesignFile {
@@ -163,6 +176,7 @@ final class BandComponent {
     var name: String
     var style: String?  // e.g. "Twist", "Plain"
     var design: Design?
+    var thickness: String?
     
     var rotationX: Double?
     var rotationY: Double?

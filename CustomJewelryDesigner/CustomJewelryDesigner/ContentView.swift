@@ -72,8 +72,8 @@ struct ContentView: View {
 //        case .edit(let file):
 //            EditView(designFile: file)
 //            
-//        case .detail:
-//            DetailView()
+//        case .detail(let file):
+//            DetailView(designFile: file)
 //            
 //        default:
 //            HomeView()

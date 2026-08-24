@@ -65,6 +65,10 @@ final class EditViewModel {
         didSet {
             scene.updateVisibility(for: mode)
             scene.updateGizmoTarget(for: mode)
+            
+            if mode == .handMannequin {
+                scene.attachBandToFinger(selectedHandFinger)
+            }
         }
     }
     
@@ -305,7 +309,7 @@ final class EditViewModel {
     
     func fetchMannequinAsset(for hand: Hand) async -> Asset3D? {
         let path = hand == .left
-            ? "realHand.usdz"
+            ? "leftHand.usdz"
             : "rightHand.usdz"
 
         do {
@@ -336,6 +340,12 @@ final class EditViewModel {
             print("❌ Failed to fetch \(hand) mannequin asset:", error)
             return nil
         }
+    }
+    
+    func refreshData() async {
+        await fetchBands()
+        await fetchGems()
+        await fetchBandStyles()
     }
     
     func fetchAllData() async {
@@ -767,6 +777,8 @@ final class EditViewModel {
 			designFile.rightThumbnailData = thumbnails[.right]
 			designFile.leftThumbnailData = thumbnails[.left]
 		
+        let capturedAngles = await SceneSnapshotService.captureAngles(rootEntity: scene.rootEntity)
+
         do {
             try persistence.save(
                 gemEntities: scene.allGemEntities(),
@@ -775,7 +787,10 @@ final class EditViewModel {
                 ringSizeID: ringSizeID,
                 ringSizeSystem: ringSizeSystem,
                 handFinger: handFinger,
+                bandThickness: selectedBandThickness ?? currentBand?.bandThickness,
+                bandMaterial: selectedBandMaterial?.title,
                 skinColorHex: skinColor.hexString,
+                capturedAngles: capturedAngles,
                 designFile: designFile,
                 design: design,
                 modelContext: modelContext
