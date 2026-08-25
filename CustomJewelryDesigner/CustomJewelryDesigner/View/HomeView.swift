@@ -163,7 +163,7 @@ struct HomeView: View {
 						}
 						.clipShape(.circle)
 						.buttonStyle(.borderedProminent)
-
+						.tint(Color.main)
 					}
 				}
 				.padding(.vertical)
@@ -234,7 +234,7 @@ struct HomeView: View {
 					isShowing.toggle()
 				}
 				.buttonStyle(.glassProminent)
-				.tint(Color.color)
+				.tint(Color.main)
 				.controlSize(.large)
 				.frame(
 					maxWidth: .infinity,

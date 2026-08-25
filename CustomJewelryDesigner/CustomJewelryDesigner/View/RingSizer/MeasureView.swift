@@ -24,11 +24,6 @@ struct MeasureView: View {
 
 	@Environment(\.modelContext) private var modelContext  // NEW
 	@Environment(\.dismiss) private var dismiss  // NEW
-	@Query private var savedSizes: [SavedRingSize]  // NEW
-
-	private var existing: SavedRingSize? {  // NEW
-		savedSizes.first { $0.handFinger == handFinger }
-	}
 
 	//    let onBack: () -> Void
 
@@ -42,7 +37,7 @@ struct MeasureView: View {
 		}
 		.background {
 			ScreenReader { screen in
-				print("📱 ScreenReader fired, screen: \(screen)")
+//				print("📱 ScreenReader fired, screen: \(screen)")
 				if ringSizeViewModel == nil,
 					let pointsPerMM = DeviceCalibration.pointsPerMM(for: screen)
 					
@@ -77,6 +72,7 @@ struct MeasureView: View {
 				}
 			}
 		}
+		.navigationBarBackButtonHidden(true)
 	}
 
 	//    @ViewBuilder
@@ -102,6 +98,7 @@ struct MeasureView: View {
 				HStack {
 					GlassButton {
 						onBack()
+						dismiss()
 					} label: {
 						Image(systemName: "chevron.left")
 					}
@@ -192,23 +189,24 @@ struct MeasureView: View {
 			Spacer(minLength: 0)
 
 			HStack {
-				if initialMeasurement != nil {
-					Button {
-						snapToNearestSize(viewModel)
-					} label: {
-						Text("Update Size")
-							.font(.system(size: 19, weight: .semibold))
-							.padding(10)
-					}
-					.buttonStyle(.glass)
-
-				}
+//				if initialMeasurement != nil {
+//					Button {
+//						snapToNearestSize(viewModel)
+//					} label: {
+//						Text("Update Size")
+//							.font(.system(size: 19, weight: .semibold))
+//							.padding(10)
+//					}
+//					.buttonStyle(.glass)
+//
+//				}
 
 				Spacer()
 
 				Button {
 					if let closest = viewModel.closestRingSize {
 						onApply(closest)
+						dismiss()
 					}
 					onBack()
 				} label: {
@@ -293,22 +291,31 @@ struct MeasureView: View {
 		}
 	}
 
-//	private func saveAndDismiss(_ viewModel: RingSizerViewModel) {
-//		if let ring = viewModel.closestRingSize {
-//			if let existing {
-//				existing.sizeID = ring.id
-//				existing.system = bandGemViewModel.selectedRingSizeSystem
-//				existing.updatedAt = Date()
-//			} else {
-//				modelContext.insert(
-//					SavedRingSize(
-//						handFinger: handFinger,
-//						system: bandGemViewModel.selectedRingSizeSystem,
-//						sizeID: ring.id
-//					)
+//	private func saveAndDismiss(_ ring: RingSizeOption) {
+//		if let existing {
+//			existing.sizeID = ring.id
+//			existing.system = bandGemViewModel.selectedRingSizeSystem
+//			existing.updatedAt = Date()
+//		} else {
+//			modelContext.insert(
+//				SavedRingSize(
+//					handFinger: handFinger,
+//					system: bandGemViewModel.selectedRingSizeSystem,
+//					sizeID: ring.id
 //				)
-//			}
+//			)
 //		}
+//
+//		do {
+//			try modelContext.save()
+//			print("✅ Saved. Total SavedRingSize count: \(savedSizes.count)")
+//			if let existing {
+//					print("   Existing record: \(existing.handFinger.rawValue), sizeID: \(existing.sizeID)")
+//				}
+//		} catch {
+//			print("⚠️ Failed to save ring size: \(error)")
+//		}
+//
 //		dismiss()
 //	}
 

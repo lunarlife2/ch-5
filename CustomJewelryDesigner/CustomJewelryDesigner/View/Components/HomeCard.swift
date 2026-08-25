@@ -17,6 +17,11 @@ struct HomeCard: View {
 	var body: some View {
 		VStack(alignment: .leading) {
 			ZStack(alignment: .topTrailing) {
+				Rectangle()
+					.fill(Color.preview)
+					.frame(width: 160, height: 160)
+					.cornerRadius(10)
+				
 				preview
 					.resizable()
 					.scaledToFill()
