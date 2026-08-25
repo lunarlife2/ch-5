@@ -15,9 +15,16 @@ struct FolderCard: View {
 		VStack(alignment: .leading) {
 			ZStack{
 				Rectangle()
-                    .fill(Color(.systemGray6))
+					.fill(Color.folder)
+					.rotationEffect(.degrees(-10))
 					.frame(width: 140, height: 140)
-					.rotationEffect(Angle(degrees: -10))
+				Rectangle()
+					.fill(Color.preview)
+					.frame(width: 140, height: 140)
+					.cornerRadius(10)
+					.padding(.bottom, 20)
+					.offset(y: 10)
+
 				preview
 					.resizable()
 					.scaledToFill()
@@ -25,12 +32,15 @@ struct FolderCard: View {
 					.frame(width: 140, height: 140)
 					.cornerRadius(10)
 					.padding(.bottom, 20)
+					.offset(y: 10)
                     .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
 
 			}
+			.padding(.bottom, 20)
 			
 			Text(title)
 				.font(.system(size: 12, weight: .semibold))
+				.padding(.bottom, 5)
 		}
 		.frame(width: 160)
 	}

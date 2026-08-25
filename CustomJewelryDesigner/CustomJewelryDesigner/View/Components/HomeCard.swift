@@ -14,18 +14,20 @@ struct HomeCard: View {
     var isSelecting: Bool
     var isSelected: Bool
 
-    var body: some View {
-        VStack(alignment: .leading) {
-            ZStack(alignment: .topTrailing) {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.systemGray6))
-                    .frame(width: 160, height: 160)
-
-                preview
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 160, height: 160)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+	var body: some View {
+		VStack(alignment: .leading) {
+			ZStack(alignment: .topTrailing) {
+				Rectangle()
+					.fill(Color.preview)
+					.frame(width: 160, height: 160)
+					.cornerRadius(10)
+				
+				preview
+					.resizable()
+					.scaledToFill()
+					.clipped()
+					.frame(width: 160, height: 160)
+					.cornerRadius(10)
 
                 if isSelecting {
                     Image(

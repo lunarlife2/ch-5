@@ -12,11 +12,12 @@ struct HandSizeView: View {
 	@Environment(ViewModel.self) private var vm
 	@Environment(\.modelContext) private var modelContext
 	@State private var bandGemViewModel = BandGemViewModel()  // owned here, passed down
-	@Query private var savedSizes: [SavedRingSize]
 
-	private func saved(for handFinger: HandFinger) -> SavedRingSize? {
-		savedSizes.first { $0.handFinger == handFinger }
-	}
+	private var store: HandProfileStore { HandProfileStore(modelContext: modelContext) }
+	
+	
+	@Environment(\.dismiss) private var dismiss
+	@State private var measurements: [FingerMeasurement] = []
 
 	var body: some View {
 		NavigationStack {
@@ -59,16 +60,19 @@ struct HandSizeView: View {
 
 				VStack {
 					HStack(spacing: 180) {
-						HandView(hand: .left, sizeFor: saved(for:))
-						HandView(hand: .right, sizeFor: saved(for:))
+						HandView(hand: .left, measurement: measurements, selectedRingSize: bandGemViewModel.selectedRingSizeSystem)
+						HandView(hand: .right, measurement: measurements,selectedRingSize: bandGemViewModel.selectedRingSizeSystem)
 					}
 					.frame(maxHeight: .infinity, alignment: .bottom)
 				}
 				.navigationDestination(for: HandFinger.self) { handFinger in
 					MeasureView(
 						bandGemViewModel: bandGemViewModel,
-						handFinger: handFinger,
-                        hand: handFinger.hand 
+						handFinger: handFinger, hand: handFinger.hand,
+						initialMeasurement: store.measurement(for: handFinger),
+						onApply: { ringSize in
+							applyMeasurement(ringSize, handFinger: handFinger)
+						}
 					)
 				}
 
@@ -91,17 +95,42 @@ struct HandSizeView: View {
 				.padding(.all, 50)
 
 			}
+			.onAppear { measurements = store.allMeasurements() }
 		}
 	}
+	
+	private func applyMeasurement(_ ringSize: RingSizeOption, handFinger: HandFinger) {
+		store.save(
+			handFinger: handFinger,
+			ringSizeID: ringSize.id,
+			system: bandGemViewModel.selectedRingSizeSystem,
+			diameterMM: ringSize.diameterMM
+		)
+		bandGemViewModel.loadRingSize(
+			id: ringSize.id,
+			system: bandGemViewModel.selectedRingSizeSystem
+		)
+		reload(handFinger: handFinger)
+	}
+	
+	private func reload(handFinger: HandFinger) {
+		let currentMeasurement = store.measurement(for: handFinger)
+		if let m = currentMeasurement {
+			bandGemViewModel.loadRingSize(id: m.ringSizeID, system: m.ringSizeSystem)
+		}
+	}
+
+
 }
 
 struct HandView: View {
 	let hand: Hand
-	let sizeFor: (HandFinger) -> SavedRingSize?
+	var measurement: [FingerMeasurement]
+	let selectedRingSize: RingSizeSystem
 
-	private var fingersInDrawOrder: [Finger] {
+	private var fingersInDrawOrder: [HandFinger] {
 		hand == .left
-		? [.pinky, .ring, .middle, .index, .thumb] : [.thumb, .index, .middle, .ring, .pinky]
+		? [.leftpinky, .leftring, .leftmiddle, .leftpointer, .leftthumb] : [.rightthumb, .rightpointer, .rightmiddle, .rightring, .rightpinky]
 	}
 
 	private var handImage: ImageResource {
@@ -111,7 +140,7 @@ struct HandView: View {
 	var body: some View {
 		ZStack(alignment: .top) {
 			Image(handImage)
-				.frame(width: 450, height: 580, alignment: .bottom)
+				.frame(width: 450, height: 600, alignment: .bottom)
 				.overlay(alignment: .bottomLeading) {
 					Text(hand == .left ? "L" : "R").foregroundStyle(.secondary)
 						.font(.system(size: 32))
@@ -119,15 +148,14 @@ struct HandView: View {
 						.padding(.horizontal, hand == .left ? 180 : 210)
 				}
 			HStack(alignment: .bottom, spacing: 30) {
-				ForEach(fingersInDrawOrder, id: \.self) { finger in
-					let handFinger = HandFinger.from(hand: hand, finger: finger)
+				ForEach(fingersInDrawOrder, id: \.self) { handfinger in
 					FingerButton(
-						handFinger: handFinger,
-						saved: sizeFor(handFinger),
-						relativeHeight: relativeHeight(finger)
+						handFinger: handfinger,
+						relativeHeight: relativeHeight(handfinger), measurements: measurement,
+						selectedRingSize: selectedRingSize
 					)
-					.rotationEffect(.degrees(hand == .left ? rotation(finger) : -rotation(finger)))
-					.offset(x: hand == .left ? horizontalOffset(finger) : -horizontalOffset(finger),y: verticalOffset(finger))
+					.rotationEffect(.degrees(rotation(handfinger)))
+					.offset(x: horizontalOffset(handfinger),y: verticalOffset(handfinger))
 				}
 			}
 			.padding(.trailing, hand == .left ? 25 : -30)
@@ -136,33 +164,41 @@ struct HandView: View {
 
 	}
 
-	private func relativeHeight(_ finger: Finger) -> CGFloat {
-		switch finger {
-		case .pinky: 0.70
-		case .ring: 0.92
-		case .middle: 1.0
-		case .index: 0.85
-		case .thumb: 0.70
+	private func relativeHeight(_ handfinger: HandFinger) -> CGFloat {
+		switch handfinger {
+		case .leftpinky: 0.70
+		case .leftring: 0.92
+		case .leftmiddle: 1.0
+		case .leftpointer: 0.85
+		case .leftthumb: 0.70
+		case .rightpinky: 0.70
+		case .rightring: 0.92
+		case .rightmiddle: 1.0
+		case .rightpointer: 0.85
+		case .rightthumb: 0.70
 		}
 	}
 	
-	private func rotation(_ finger: Finger) -> CGFloat {
-		switch finger {
-		case .thumb: 35
+	private func rotation(_ handfinger: HandFinger) -> CGFloat {
+		switch handfinger {
+		case .leftthumb: 35
+		case .rightthumb: -35
 		default: 0
 		}
 	}
 	
-	private func verticalOffset(_ finger: Finger) -> CGFloat {   // NEW
-			switch finger {
-			case .thumb: 230
+	private func verticalOffset(_ handfinger: HandFinger) -> CGFloat {   // NEW
+			switch handfinger {
+			case .leftthumb: 230
+			case .rightthumb: 230
 			default: 0
 			}
 		}
 	
-	private func horizontalOffset(_ finger: Finger) -> CGFloat {   // NEW
-			switch finger {
-			case .thumb: 10
+	private func horizontalOffset(_ handfinger: HandFinger) -> CGFloat {   // NEW
+			switch handfinger {
+			case .leftthumb: 10
+			case .rightthumb: -10
 			default: 0
 			}
 		}
@@ -170,13 +206,14 @@ struct HandView: View {
 
 struct FingerButton: View {
 	let handFinger: HandFinger
-	let saved: SavedRingSize?
 	let relativeHeight: CGFloat
+	var measurements: [FingerMeasurement]
+	let selectedRingSize: RingSizeSystem
 
 	var body: some View {
 		NavigationLink(value: handFinger) {
-			VStack(spacing: 15) {
-				labelStack
+			VStack(spacing: 25) {
+				row(for: handFinger)
 				Capsule()
 					.fill(Color.clear)
 					.frame(width: 58, height: 220 * relativeHeight)
@@ -185,20 +222,26 @@ struct FingerButton: View {
 		}
 		.buttonStyle(.plain)
 	}
-
+	
 	@ViewBuilder
-	private var labelStack: some View {
-		// saved.sizeID -> display string depends on RingSizeOption.size(for:);
-		// resolve it the same way your BandGemViewModel does.
-		if let saved,
-			let option = ringSizeOptions.first(where: { $0.id == saved.sizeID })
-		{
-			Text(option.size(for: saved.system)?.description ?? "-")
-				.font(.subheadline.weight(.semibold))
-		} else {
-			Text("-").font(.subheadline.weight(.semibold))
-		}
+	private func row(for hf: HandFinger) -> some View {
+		let m = measurements.first { $0.handFinger == hf && $0.ringSizeSystem == selectedRingSize}
+
+			VStack {
+				if let m {
+					HStack{
+						Text(m.displaySize)
+							.fontWeight(.semibold)
+					}
+					Text(m.diameterMM.description)
+						.font(.caption)
+						.foregroundStyle(.secondary)
+				} else {
+					Text("-").font(.subheadline.weight(.semibold))
+				}
+			}
 	}
+
 }
 
 #Preview {

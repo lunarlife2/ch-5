@@ -144,7 +144,7 @@ struct SizeView: View {
                 onBack: { showMeasureView = false },
                 onApply: { ringSize in
                     applyMeasurement(ringSize)
-                }
+				},
             )
         }
     }
@@ -178,7 +178,7 @@ struct SizeView: View {
                 onBack: { showMeasureView = false },
                 onApply: { ringSize in
                     applyMeasurement(ringSize)
-                }
+                },
             )
         }
     }

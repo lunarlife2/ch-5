@@ -58,7 +58,7 @@ struct DeviceCalibration {
         let identifier = deviceIdentifier()
 
         guard let ppi = ppiTable[identifier] else {
-            return nil
+            return 264
         }
 
         let pointsPerInch = ppi / screen.scale
