@@ -67,6 +67,7 @@ struct HandSizeView: View {
 				.navigationDestination(for: HandFinger.self) { handFinger in
 					MeasureView(
 						bandGemViewModel: bandGemViewModel,
+						hand: handFinger.hand,
 						handFinger: handFinger
 					)
 				}

@@ -234,7 +234,7 @@ struct HomeView: View {
 					isShowing.toggle()
 				}
 				.buttonStyle(.glassProminent)
-				.tint(Color.black)
+				.tint(Color.color)
 				.controlSize(.large)
 				.frame(
 					maxWidth: .infinity,

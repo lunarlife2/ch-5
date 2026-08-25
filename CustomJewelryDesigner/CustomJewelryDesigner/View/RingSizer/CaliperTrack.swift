@@ -48,7 +48,7 @@ struct CaliperTrack: View {
                     )
 
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(Color.accentColor)
+					.fill(Color.color)
                     .frame(width: blueWidth)
                     .shadow(radius: 10, y: 10)
                     .overlay(alignment: blueOnRight ? .topTrailing : .topLeading) {
