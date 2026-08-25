@@ -340,7 +340,6 @@ struct MeasureView: View {
 
 #Preview {
 	MeasureView(
-		bandGemViewModel: BandGemViewModel(), hand: .left,
-		handFinger: .leftmiddle
+		bandGemViewModel: BandGemViewModel(), handFinger: .leftmiddle, hand: .left
 	)
 }

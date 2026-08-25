@@ -145,7 +145,6 @@ struct SizeView: View {
                 onApply: { ringSize in
                     applyMeasurement(ringSize)
 				},
-				handFinger: editViewModel.selectedHandFinger
             )
         }
     }
@@ -180,7 +179,6 @@ struct SizeView: View {
                 onApply: { ringSize in
                     applyMeasurement(ringSize)
                 },
-				handFinger: editViewModel.selectedHandFinger
             )
         }
     }

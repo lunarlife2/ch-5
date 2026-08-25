@@ -818,9 +818,9 @@ final class EditViewModel {
 
 			let thumbnails = await generateThumbnails(bandEntity: bandEntity, gemEntities: gemEntities)
 			designFile.thumbnailData = thumbnails[.front]
-			designFile.backThumbnailData = thumbnails[.back]
-			designFile.rightThumbnailData = thumbnails[.right]
-			designFile.leftThumbnailData = thumbnails[.left]
+		designFile.backImageData = thumbnails[.back]
+		designFile.backImageData = thumbnails[.right]
+		designFile.leftImageData = thumbnails[.left]
 		
         let capturedAngles = await SceneSnapshotService.captureAngles(
             bandEntity: scene.bandAnchor.children.first,

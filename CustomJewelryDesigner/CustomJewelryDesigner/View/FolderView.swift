@@ -198,7 +198,7 @@ struct FolderView: View {
 						
 						List(fileInTheFolder) { file in
 							FileListRow(
-								preview: Image(.detail34),
+								preview: Image(thumbnailData: file.thumbnailData),
 								title: file.name,
 								updatedAt: file.updatedAt,
 								isSelecting: isSelecting,
