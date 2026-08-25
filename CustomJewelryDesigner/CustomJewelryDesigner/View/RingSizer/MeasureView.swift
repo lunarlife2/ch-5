@@ -95,6 +95,7 @@ struct MeasureView: View {
                     } label: {
                         HStack {
                             Text(system.title)
+                                .foregroundStyle(Color.labelsSecondary)
 
                             if system == bandGemViewModel.selectedRingSizeSystem {
                                 Image(systemName: "checkmark")
@@ -108,6 +109,7 @@ struct MeasureView: View {
                         .foregroundStyle(.black)
 
                     Image(systemName: "chevron.up.chevron.down")
+                        .foregroundStyle(Color.labelsSecondary)
                 }
             }
             .padding(.horizontal, 14)
@@ -194,6 +196,7 @@ struct MeasureView: View {
                         .font(.system(size: 19, weight: .semibold))
                         .padding(10)
                 }
+                .tint(Color.appPrimary)
                 .buttonStyle(.glassProminent)
             }
             .padding(.horizontal, 20)

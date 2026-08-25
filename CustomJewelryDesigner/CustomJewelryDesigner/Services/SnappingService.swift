@@ -151,9 +151,9 @@ enum SnappingService {
         let visualRadius = max(canonicalExtents.x, canonicalExtents.y, canonicalExtents.z) * 0.04
         
         let angles: [(id: String, degrees: Float)] = [
-            ("band-snap-0", -25),
+            ("band-snap-0", -35),
             ("band-snap-1", 0),
-            ("band-snap-2", 25)
+            ("band-snap-2", 35)
         ]
         
         for (index, entry) in angles.enumerated() {

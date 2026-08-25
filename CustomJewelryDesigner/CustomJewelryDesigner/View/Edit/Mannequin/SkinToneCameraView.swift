@@ -63,7 +63,7 @@ struct SkinToneCameraView: View {
                         onRetake: {
                             self.capturedImage = nil
                             showResult = false
-                            session.requestAccessAndStart() // nyalakan lagi preview buat retake
+                            session.requestAccessAndStart()
                         },
                         onApply: { color in
                             onFinish(color)

@@ -87,6 +87,7 @@ struct SkinView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
         }
+        .tint(Color.appPrimary)
         .buttonStyle(.glassProminent)
     }
 

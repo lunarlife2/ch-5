@@ -169,7 +169,8 @@ struct HomeView: View {
                             Image(systemName: "xmark")
                         }
                         .clipShape(.circle)
-                        .buttonStyle(.borderedProminent)
+                        .tint(Color.appPrimary)
+                        .buttonStyle(.glassProminent)
 
                     }
                 }
@@ -241,7 +242,7 @@ struct HomeView: View {
                     isShowing.toggle()
                 }
                 .buttonStyle(.glassProminent)
-                .tint(Color.black)
+                .tint(Color.appPrimary)
                 .controlSize(.large)
                 .frame(
                     maxWidth: .infinity,
@@ -272,6 +273,7 @@ struct HomeView: View {
                             folderName = ""
                         } label: {
                             Image(systemName: "xmark")
+                                .foregroundStyle(Color.appPrimary)
                         }
                     }
 
@@ -303,7 +305,8 @@ struct HomeView: View {
                         Text("Create")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .tint(Color.appPrimary)
+                    .buttonStyle(.glassProminent)
 
                 }
                 .padding()

@@ -46,6 +46,7 @@ struct SizeView: View {
                     Spacer()
 
                     Image(systemName: "chevron.up.chevron.down")
+                        .foregroundStyle(Color.black)
                 }
                 .foregroundStyle(Color.handFingerPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -72,6 +73,7 @@ struct SizeView: View {
                 showHandProfile = true
             } label: {
                 Text("View Full Hand Profile")
+                    .foregroundStyle(Color.appPrimary)
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }
@@ -101,9 +103,11 @@ struct SizeView: View {
                     showMeasureView = true
                 } label: {
                     Image(systemName: "pencil")
+                        .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.glass)
             }
+            .padding(.horizontal, 10)
 
             Picker("", selection: $bandGemViewModel.selectedRingSizeSystem) {
                 ForEach(RingSizeSystem.allCases) { system in
@@ -111,7 +115,7 @@ struct SizeView: View {
                         .tag(system)
                 }
             }
-            .foregroundStyle(Color.white)
+            .tint(Color.appPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .onChange(of: bandGemViewModel.selectedRingSizeSystem) { _, newSystem in
                 guard let option = m.ringSizeOption,
@@ -129,7 +133,7 @@ struct SizeView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.gray).opacity(0.6)
+                .fill(Color.backgroundSecondary)
         )
         .fullScreenCover(isPresented: $showMeasureView) {
             MeasureView(
@@ -151,7 +155,7 @@ struct SizeView: View {
                 .frame(maxWidth: .infinity, minHeight: 113)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.notMeasure)
+                        .fill(Color.backgroundSecondary)
                 )
 
             Button {
@@ -164,7 +168,6 @@ struct SizeView: View {
             .tint(Color.appPrimary)
             .buttonStyle(.glassProminent)
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .center)
         .fullScreenCover(isPresented: $showMeasureView) {
             MeasureView(

@@ -216,6 +216,7 @@ struct SkinToneCameraResultView: View {
             } label: {
                 Label("Apply", systemImage: "checkmark")
             }
+            .tint(Color.appPrimary)
             .buttonStyle(.glassProminent)
         }
         .padding(.horizontal, 20)

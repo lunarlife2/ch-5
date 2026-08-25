@@ -34,7 +34,7 @@ struct HomeCard: View {
                     )
                     .font(.system(size: 22))
                     .foregroundStyle(
-                        isSelected ? Color.accentColor : Color.white
+                        isSelected ? Color.appPrimary : Color.white
                     )
                     .background(
                         Circle()
