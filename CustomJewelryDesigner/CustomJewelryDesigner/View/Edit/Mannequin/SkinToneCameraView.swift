@@ -22,6 +22,7 @@ struct SkinToneCameraView: View {
     @State private var photoPickerItem: PhotosPickerItem?
     @State private var capturedImage: UIImage?
     @State private var showResult = false
+    @State private var isProcessingGalleryImage = false
 
     @State private var torchOn = false
     @State private var gridOn = false
@@ -42,6 +43,11 @@ struct SkinToneCameraView: View {
                     .padding(.bottom, 24)
                     .padding(.horizontal, 20)
                 }
+
+                if isProcessingGalleryImage {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                    ProgressView().tint(.white)
+                }
             }
             .background(Color.black)
             .navigationBarHidden(true)
@@ -57,6 +63,7 @@ struct SkinToneCameraView: View {
                         onRetake: {
                             self.capturedImage = nil
                             showResult = false
+                            session.requestAccessAndStart()
                         },
                         onApply: { color in
                             onFinish(color)
@@ -138,7 +145,6 @@ struct SkinToneCameraView: View {
 
             Spacer()
 
-            // balances the back button so the title stays centered
             Color.clear.frame(width: 36, height: 36)
         }
         .padding(.top, 12)
@@ -221,7 +227,9 @@ struct SkinToneCameraView: View {
             Button {
                 session.capturePhoto { image in
                     guard let image else { return }
-                    capturedImage = image
+                    let normalized = image.normalizedOrientation()
+                    session.stop() // <-- matikan preview SEBELUM result muncul
+                    capturedImage = normalized
                     showResult = true
                 }
             } label: {
@@ -280,9 +288,18 @@ struct SkinToneCameraView: View {
               let image = UIImage(data: data)
         else { return }
 
+        await MainActor.run { isProcessingGalleryImage = true }
+
+        let normalized = image.normalizedOrientation()
+        session.stop()
+        
+        try? await Task.sleep(nanoseconds: 250_000_000)
+
         await MainActor.run {
-            capturedImage = image
+            capturedImage = normalized
             showResult = true
+            isProcessingGalleryImage = false
+            photoPickerItem = nil
         }
     }
 }

@@ -4,6 +4,7 @@
 //
 //  Created by Ni Komang Ayu Juliana on 21/08/26.
 //
+
 import SwiftUI
 import UIKit
 
@@ -30,13 +31,14 @@ struct SkinToneCameraResultView: View {
                             .frame(maxWidth: .infinity)
 
                         colorPanel
-                            .frame(width: 260)
+                            .frame(width: 280)
                     }
                     .padding(20)
                 }
 
                 footer
             }
+            .background(Color(.systemBackground).ignoresSafeArea())
             .navigationBarHidden(true)
             .onAppear { sample(at: samplePoint) }
         }
@@ -49,14 +51,14 @@ struct SkinToneCameraResultView: View {
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 36, height: 36)
             }
-            .frame(width: 36, height: 36)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(Circle())
+            .buttonStyle(.glass)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Match My Skin Tone")
                     .font(.system(size: 17, weight: .semibold))
+
                 Text("Drag selector to a flat, well-lit area of your skin. Avoid heavy shadows or bright highlights.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
@@ -78,11 +80,12 @@ struct SkinToneCameraResultView: View {
             let frame = imageDisplayFrame(in: geo.size)
 
             ZStack(alignment: .topLeading) {
+                Color(.secondarySystemBackground)
+
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
                     .frame(width: geo.size.width, height: geo.size.height)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 sampler
                     .position(
@@ -104,6 +107,7 @@ struct SkinToneCameraResultView: View {
                             .onEnded { _ in isDraggingSampler = false }
                     )
             }
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 
@@ -163,30 +167,37 @@ struct SkinToneCameraResultView: View {
     }
 
     private var colorPanel: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("Color")
-                .font(.system(size: 16, weight: .semibold))
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Color")
+                    .font(.system(size: 16, weight: .semibold))
 
-            ColorSquarePickerView(color: $color)
+                HStack(spacing: 10) {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(color)
+                        .frame(width: 32, height: 32)
+                        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.1)))
 
-            HStack(spacing: 10) {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(color)
-                    .frame(width: 32, height: 32)
-                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.1)))
+                    Text("#\(color.hexString)")
+                        .font(.system(size: 14, weight: .medium, design: .monospaced))
+                }
 
-                Text("#\(color.hexString)")
-                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                Text("Shade & Depth")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                ShadeDepthPickerView(color: $color)
+                    .frame(height: 150)
+
+                UndertoneSliderView(color: $color)
+
+
+                RecentlyMatchedRow(selectedColor: color) { picked in
+                    color = picked
+                }
             }
-
-            RecentlyMatchedRow(selectedColor: color) { picked in
-                color = picked
-            }
-
-            Spacer()
         }
     }
-
 
     private var footer: some View {
         HStack {
@@ -194,18 +205,19 @@ struct SkinToneCameraResultView: View {
                 onRetake()
             } label: {
                 Label("Retake", systemImage: "arrow.clockwise")
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.glass)
+
+            Spacer()
 
             Button {
                 RecentSkinColorStore.shared.record(color)
                 onApply(color)
             } label: {
                 Label("Apply", systemImage: "checkmark")
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .tint(Color.appPrimary)
+            .buttonStyle(.glassProminent)
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)

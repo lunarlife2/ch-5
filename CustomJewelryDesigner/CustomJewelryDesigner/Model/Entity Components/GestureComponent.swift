@@ -41,4 +41,6 @@ struct BandSourceComponent: Component {
     var libraryAssetID: UUID
     var assetStoragePath: String
     var name: String
+    var thickness: String?  
+    var material: String?
 }

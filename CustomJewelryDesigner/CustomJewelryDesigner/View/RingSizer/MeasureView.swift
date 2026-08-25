@@ -11,16 +11,14 @@ import SwiftUI
 struct MeasureView: View {
 	@Bindable var bandGemViewModel: BandGemViewModel
 	@State private var ringSizeViewModel: RingSizerViewModel?
+	
+	let handFinger: HandFinger                     // NEW
 
 	let hand: Hand
 	var initialMeasurement: FingerMeasurement? = nil
 
 	var onBack: () -> Void = {}
 	var onApply: (RingSizeOption) -> Void = { _ in }
-
-	@State private var viewModel: RingSizerViewModel?
-
-	let handFinger: HandFinger  // NEW
 
 	@Environment(\.modelContext) private var modelContext  // NEW
 	@Environment(\.dismiss) private var dismiss  // NEW

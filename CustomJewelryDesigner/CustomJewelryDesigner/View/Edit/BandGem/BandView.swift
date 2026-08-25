@@ -19,7 +19,6 @@ struct BandView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-
             // style
             VStack(alignment: .leading, spacing: 10) {
                 Text("Style")
@@ -66,6 +65,7 @@ struct BandView: View {
             }
             
             Divider()
+                .padding(.trailing, 20)
             
             // thickness
             VStack(alignment: .leading, spacing: 10) {
@@ -80,8 +80,10 @@ struct BandView: View {
                     Text("Thick").font(.system(size: 12))
                 }
             }
+            .padding(.trailing, 20)
 
             Divider()
+                .padding(.trailing, 20)
             
             // material
             VStack(alignment: .leading, spacing: 10) {

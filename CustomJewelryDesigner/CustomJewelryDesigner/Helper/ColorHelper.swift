@@ -40,9 +40,22 @@ extension Color {
     }
 }
 
+extension UIImage {
+    func normalizedOrientation() -> UIImage {
+        guard imageOrientation != .up else { return self }
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = scale
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        return renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+}
+
 extension UIColor {
     static func averageColor(in image: UIImage, atNormalizedPoint point: CGPoint, sampleRadius: CGFloat = 14) -> UIColor? {
-        guard let cgImage = image.cgImage else { return nil }
+        let normalized = image.normalizedOrientation()
+        guard let cgImage = normalized.cgImage else { return nil }
 
         let width = cgImage.width
         let height = cgImage.height
@@ -77,4 +90,3 @@ extension UIColor {
         )
     }
 }
-

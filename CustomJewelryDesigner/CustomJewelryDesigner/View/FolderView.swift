@@ -332,6 +332,6 @@ struct FolderView: View {
 }
 
 #Preview {
-	FolderView(folder: DesignFolder(id: UUID(), name: "folder test"))
-		.environment(ViewModel())
+    FolderView(folder: DesignFolder(id: UUID(), name: "folder test"))
+        .environment(ViewModel())
 }

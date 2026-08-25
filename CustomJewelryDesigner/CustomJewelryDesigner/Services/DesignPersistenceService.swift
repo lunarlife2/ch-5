@@ -59,11 +59,15 @@ struct DesignPersistenceService {
                 bandComponent.scaleFactor = Double(bandEntity.scale.x)
                 bandComponent.assetStoragePath = assetPath
                 bandComponent.name = name
+                bandComponent.thickness = bandThickness ?? source?.thickness ?? bandComponent.thickness
+                bandComponent.material = bandMaterial ?? source?.material ?? bandComponent.material
             } else {
                 let newBandComponent = BandComponent(
                     libraryAssetID: source?.libraryAssetID ?? UUID(),
                     assetStoragePath: assetPath,
-                    name: name
+                    name: name,
+                    thickness: bandThickness ?? source?.thickness,
+                    material: bandMaterial ?? source?.material  
                 )
                 newBandComponent.orientation = bandAnchor.orientation(relativeTo: nil)
                 newBandComponent.scaleFactor = Double(bandEntity.scale.x)

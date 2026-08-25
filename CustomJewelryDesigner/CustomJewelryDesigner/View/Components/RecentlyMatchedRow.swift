@@ -12,20 +12,34 @@ struct RecentlyMatchedRow: View {
     var selectedColor: Color
     var onSelect: (Color) -> Void
 
-    private let slotCount = 8
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Recently Matched")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.secondary)
+        let colors = store.recentColors(excluding: skinColorPresets)
+        if !colors.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Recently Matched")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    ForEach(colors, id: \.hexString) { recentColor in
+                        Button { onSelect(recentColor) } label: {
+                            Circle()
+                                .fill(recentColor)
+                                .overlay(Circle().strokeBorder(
+                                    isSelected(recentColor) ? Color.accentColor : Color.black.opacity(0.08),
+                                    lineWidth: isSelected(recentColor) ? 2 : 1
+                                ))
+                        }
+                        .buttonStyle(.plain)
+                        .frame(width: 30, height: 30)
 
-            HStack(spacing: 8) {
-                ForEach(0..<slotCount, id: \.self) { index in
-                    swatch(at: index)
+                    }
+
                 }
+
             }
+
         }
+
     }
 
     @ViewBuilder

@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct HomeCard: View {
-	var preview: Image
-	var title: String
-	var updatedAt: Date
-	var isSelecting: Bool
-	var isSelected: Bool
+    var preview: Image
+    var title: String
+    var updatedAt: Date
+    var isSelecting: Bool
+    var isSelected: Bool
 
 	var body: some View {
 		VStack(alignment: .leading) {
@@ -29,33 +29,39 @@ struct HomeCard: View {
 					.frame(width: 160, height: 160)
 					.cornerRadius(10)
 
-				if isSelecting {
-					Image(
-						systemName: isSelected
-							? "checkmark.circle.fill" : "circle"
-					)
-					.font(.system(size: 22))
-					.foregroundStyle(
-						isSelected ? Color.black : Color.black.opacity(0.5)
-					)
-					.padding(8)
-				}
-			}
-			.padding(.bottom, 20)
-			//.shadow(radius: 5)
-			Text(title)
-				.font(.system(size: 12, weight: .semibold))
-				.padding(.bottom, 5)
-			Text(
-				updatedAt.formatted(
-					.dateTime.month(.abbreviated).day(.twoDigits).year()
-				)
-			)
-			.font(.system(size: 10, weight: .regular))
-		}
-		.frame(width: 160)
-		//.background(Color.gray)
-	}
+                if isSelecting {
+                    Image(
+                        systemName: isSelected
+                            ? "checkmark.circle.fill" : "circle"
+                    )
+                    .font(.system(size: 22))
+                    .foregroundStyle(
+                        isSelected ? Color.appPrimary : Color.white
+                    )
+                    .background(
+                        Circle()
+                            .fill(isSelected ? Color.white : Color.black.opacity(0.25))
+                            .frame(width: 22, height: 22)
+                    )
+                    .padding(8)
+                }
+            }
+            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
+            .padding(.bottom, 12)
+
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .padding(.bottom, 4)
+            Text(
+                updatedAt.formatted(
+                    .dateTime.month(.abbreviated).day(.twoDigits).year()
+                )
+            )
+            .font(.system(size: 10, weight: .regular))
+            .foregroundStyle(.secondary)
+        }
+        .frame(width: 160)
+    }
 }
 
 #Preview {

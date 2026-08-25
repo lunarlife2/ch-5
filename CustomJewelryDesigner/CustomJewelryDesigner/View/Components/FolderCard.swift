@@ -4,6 +4,7 @@
 //
 //  Created by Averina on 15/08/26.
 //
+
 import SwiftUI
 
 struct FolderCard: View {
@@ -32,6 +33,7 @@ struct FolderCard: View {
 					.cornerRadius(10)
 					.padding(.bottom, 20)
 					.offset(y: 10)
+                    .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
 
 			}
 			.padding(.bottom, 20)
@@ -43,6 +45,8 @@ struct FolderCard: View {
 		.frame(width: 160)
 	}
 }
+
+
 
 extension Image {
 	init(thumbnailData: Data?, placeholder: String = "photo") {

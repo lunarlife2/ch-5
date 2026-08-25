@@ -32,8 +32,9 @@ struct CustomJewelryDesignerApp: App {
 
     var body: some Scene {
         WindowGroup {
-			vm.sceneState.viewAssociated()
-				.environment(vm)
+//			vm.sceneState.viewAssociated()
+//				.environment(vm)
+            ContentView()
         }
         .modelContainer(sharedModelContainer)
     }

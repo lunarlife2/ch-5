@@ -162,7 +162,8 @@ struct GemView: View {
                         Spacer()
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .tint(Color.appPrimary)
+                .buttonStyle(.glassProminent)
                 .controlSize(.mini)
                 .disabled(isAdding)
             } else {

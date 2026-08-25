@@ -22,6 +22,7 @@ struct ButtonOri<Label: View>: View {
         } label: {
             label()
                 .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.appPrimary)
         }
         .buttonStyle(.bordered)
     }
