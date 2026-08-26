@@ -40,15 +40,24 @@ struct JewelryEditorView: View {
         GeometryReader { geometry in
             
             ZStack {
+                Image("bgEditor")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(
+                        width: geometry.size.width,
+                        height: geometry.size.height
+                    )
+                    .clipped()
                 realityView(geometry: geometry)
                 
                 gemActionIcons
-                                
+                
                 if viewModel.isLoadingAsset {
                     loadingOverlay
                 }
                 
             }
+            .clipped()
             .onAppear {
                 safeAreaTop = geometry.safeAreaInsets.top
                 
@@ -119,7 +128,7 @@ struct JewelryEditorView: View {
     @ViewBuilder
     private func realityView(geometry: GeometryProxy) -> some View {
         ZStack{
-//            Image("BackgroundEditview")
+            //            Image("BackgroundEditview")
             RealityView { content in
                 content.add(viewModel.scene.rootEntity)
                 content.subscribe(to: SceneEvents.Update.self) { _ in
@@ -162,9 +171,9 @@ struct JewelryEditorView: View {
                     tutorial: tutorial
                 ).rotateGesture
             )
-//            .simultaneousGesture(
-//                MagnifyingGesture(touchTracker: touchTracker, editViewModel: viewModel, scene: viewModel.scene, tutorial: tutorial).zoomGesture
-//            )
+            //            .simultaneousGesture(
+            //                MagnifyingGesture(touchTracker: touchTracker, editViewModel: viewModel, scene: viewModel.scene, tutorial: tutorial).zoomGesture
+            //            )
             .gesture(
                 TwoFingerTransformGesture(
                     touchTracker: touchTracker,

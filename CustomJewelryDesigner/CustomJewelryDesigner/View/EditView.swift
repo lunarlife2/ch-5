@@ -230,6 +230,7 @@ struct EditView: View {
                 )
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
             sidePanel
         }
     }
