@@ -45,6 +45,7 @@ struct GemView: View {
                                     image
                                         .resizable()
                                         .scaledToFit()
+                                        .frame(width: 80, height: 80)
 
                                 case .failure:
                                     Image(
@@ -107,6 +108,7 @@ struct GemView: View {
                                     image
                                         .resizable()
                                         .scaledToFit()
+                                        .frame(width: 80, height: 80)
 
                                 case .failure:
                                     Image(

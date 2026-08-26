@@ -31,6 +31,8 @@ struct BandView: View {
                                 switch phase {
                                 case .success(let image):
                                     image.resizable().scaledToFit()
+                                        .frame(width: 80, height: 80) //change the size for thumbnail
+                                    
                                 case .failure:
                                     Image(systemName: "exclamationmark.triangle")
                                         .foregroundStyle(.secondary)
@@ -47,7 +49,7 @@ struct BandView: View {
                             )
 
                             Text(band.bandStyleID.bandStyleName)
-                                .font(.appFont(size: 12))
+                                .font(.appFont(size: 10))
                         }
                         .padding(.trailing, 17)
                         .onTapGesture {
@@ -104,6 +106,7 @@ struct BandView: View {
                                 switch phase {
                                 case .success(let image):
                                     image.resizable().scaledToFit()
+                                        .frame(width: 80, height: 80) //change the size for thumbnail
                                 case .failure:
                                     Image(systemName: "exclamationmark.triangle")
                                         .foregroundStyle(.secondary)
@@ -123,7 +126,7 @@ struct BandView: View {
                             .opacity(isAvailable ? 1 : 0.4)
 
                             Text(material.title)
-                                .font(.appFont(size: 12))
+                                .font(.appFont(size: 10))
                         }
                         .padding(.trailing, 17)
                         .onTapGesture {
