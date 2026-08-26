@@ -217,6 +217,11 @@ final class EditViewModel {
             isGemSelected = true
         }
     }
+    
+    func registerAddedGem(_ gem: Entity) {
+        selectedGemName = gem.name
+    }
+    
     func clearSelection() {
         selectedGemName = nil
     }
@@ -626,7 +631,7 @@ final class EditViewModel {
             
             if let entity = await scene.addStone(from: localURL, source: match) {
                 print("✅ Entity added to scene: \(entity.name), position: \(entity.position), scale: \(entity.scale)")
-                selectGem(entity)
+                registerAddedGem(entity)
                 markDirty()
             } else {
                 print("❌ scene.addStone returned nil for \(match.assetId.storagePath)")
@@ -647,7 +652,7 @@ final class EditViewModel {
             }
             
             if let entity = await scene.addStone(from: localURL, source: gem, screenLocation: screenLocation, containerSize: containerSize) {
-                selectGem(entity)
+                registerAddedGem(entity)
                 markDirty()
             }
         }
