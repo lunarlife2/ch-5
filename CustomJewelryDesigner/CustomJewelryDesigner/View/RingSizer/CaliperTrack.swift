@@ -19,7 +19,7 @@ struct CaliperTrack: View {
 	private let dragActivationDistance: CGFloat = 12
 
 	/// Fixed width of the draggable jaw — tune to match your design mockup.
-	private let jawWidth: CGFloat = 280
+	private let jawWidth: CGFloat = 250
 
 	@State private var dragStartGapWidth: CGFloat?
 
@@ -41,23 +41,25 @@ struct CaliperTrack: View {
 			ZStack(alignment: .leading) {
 				Rectangle()
 					.fill(Color(uiColor: .systemGray6))
-					.frame(height: 294)
+					.frame(width: jawWidth, height: 294)
 					.overlay(alignment: blueOnRight ? .leading : .trailing) {
-						Text("Rest your \nfinger\nagainst \nthe outer ledge")
+						Text("Rest your \nfinger\nagainst \nthe ledge")
 							.font(.appFont(size: 14))
 							.padding(.horizontal, 2)
 							.foregroundStyle(.secondary)
 							.multilineTextAlignment(.center)
 							.frame(width: max(gapWidth, 0))
 							.opacity(gapWidth > 50 ? 1 : 0)
+							.offset(x: blueOnRight ? 20 : -20)
 					}
+					.offset(x: blueOnRight ? -20 : jawWidth/2)
 					.allowsHitTesting(false)
 
 				Capsule()
 					.fill(Color(uiColor: .systemGray3))
 					.frame(width: 20, height: 313)
 					.position(
-						x: blueOnRight ? -10 : trackWidth + 10,
+						x: blueOnRight ? -20 : trackWidth + 20,
 						y: 160
 					)
 					.shadow(radius: 10)

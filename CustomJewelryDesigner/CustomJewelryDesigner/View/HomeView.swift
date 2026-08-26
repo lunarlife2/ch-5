@@ -69,15 +69,6 @@ struct HomeView: View {
     @State private var isSelecting: Bool = false
     @State private var fileOrFolder: Bool = true
 	
-	init() {
-			for family in UIFont.familyNames.sorted() {
-				print(family)
-				for name in UIFont.fontNames(forFamilyName: family) {
-					print("   \(name)")
-				}
-			}
-		}
-
     var body: some View {
         ZStack {
             VStack {

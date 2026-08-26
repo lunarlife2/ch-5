@@ -13,31 +13,34 @@ struct FolderCard: View {
 
 	var body: some View {
 		VStack(alignment: .leading) {
-			ZStack(alignment: .bottom){
+			ZStack{
 				Rectangle()
 					.fill(Color.white)
-					.frame(width: 140, height: 140)
+					.frame(width: 150, height: 150)
 					.border(Color.black, width: 1)
-					.offset(x: 10, y: -10)
 				
 				Rectangle()
 					.fill(Color.white)
-					.frame(width: 140, height: 140)
+					.frame(width: 150, height: 150)
 					.border(Color.black, width: 1)
+					.offset(x: -10, y: 10)
 
 				preview
 					.resizable()
 					.scaledToFill()
 					.clipped()
-					.frame(width: 140, height: 140)
+					.frame(width: 150, height: 150)
 					.border(Color.black, width: 1)
+					.offset(x: -10, y: 10)
 
 			}
 			.padding(.bottom, 20)
+			.frame(maxWidth: .infinity, alignment: .trailing)
 			
 			Text(title)
 				.font(.appFont(size: 12, weight: .semibold))
 				.padding(.bottom, 5)
+				.textCase(.uppercase)
 		}
 		.frame(width: 160)
 	}

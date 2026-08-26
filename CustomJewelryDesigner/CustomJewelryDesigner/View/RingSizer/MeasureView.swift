@@ -213,6 +213,7 @@ struct MeasureView: View {
 						.padding(10)
 				}
 				.buttonStyle(.glassProminent)
+				.tint(Color.main)
 			}
 			.padding(.horizontal, 20)
 		}

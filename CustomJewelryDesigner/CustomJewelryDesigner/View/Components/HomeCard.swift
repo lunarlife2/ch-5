@@ -45,11 +45,13 @@ struct HomeCard: View {
                     .padding(8)
                 }
             }
-            .padding(.bottom, 12)
+            .padding(.bottom, 20)
 
             Text(title)
                 .font(.appFont(size: 12, weight: .semibold))
                 .padding(.bottom, 4)
+				.textCase(.uppercase)
+			
             Text(
                 updatedAt.formatted(
                     .dateTime.month(.abbreviated).day(.twoDigits).year()
