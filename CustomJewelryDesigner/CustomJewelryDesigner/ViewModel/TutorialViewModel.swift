@@ -8,10 +8,11 @@
 import SwiftUI
 
 enum TutorialID: Hashable {
-    case createButton
+//    case createButton
     case gizmo
     case handButton
     case sidePanel
+    case bandArea
 }
 
 @Observable

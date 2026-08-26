@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct SelectSkinSizeView: View {
-    
     @Binding var selectedType: Int
     @Bindable var bandGemViewModel: BandGemViewModel
     var viewModel: EditViewModel
+    @Environment(TutorialController.self) private var tutorialController
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -36,6 +36,7 @@ struct SelectSkinSizeView: View {
                             initialColor: viewModel.skinColor,
                             onPreview: { color in
                                 viewModel.setSkinColor(color)
+                                tutorialController.reportUserAction(.changedHandColor)
                             },
                             editViewModel: viewModel
                         )
@@ -46,6 +47,7 @@ struct SelectSkinSizeView: View {
                             initialColor: viewModel.skinColor,
                             onPreview: { color in
                                 viewModel.setSkinColor(color)
+                                tutorialController.reportUserAction(.changedHandColor)
                             },
                             editViewModel: viewModel
                         )

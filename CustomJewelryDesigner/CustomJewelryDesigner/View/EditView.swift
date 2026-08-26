@@ -17,7 +17,9 @@ struct EditView: View {
     let designFile: DesignFile
     let tutorialController: TutorialController
     var tutorialViewModel: TutorialViewModel? = nil
+    let onLeaveEditor: () -> Void
     
+    @State private var touchTracker = TouchCountViewModel()
     @State private var editViewModel: EditViewModel
     @State private var bandGemViewModel = BandGemViewModel()
     @State private var selectedPanelTypeBand = 0
@@ -26,11 +28,20 @@ struct EditView: View {
     @State private var isEditingName = false
     @State private var editedFileName = ""
  
-    init(designFile: DesignFile, tutorialViewModel: TutorialViewModel? = nil, tutorialController: TutorialController) {
+    init(
+        designFile: DesignFile,
+        tutorialViewModel: TutorialViewModel? = nil,
+        tutorialController: TutorialController,
+        onLeaveEditor: @escaping () -> Void = {}
+    ) {
         self.designFile = designFile
         self.tutorialViewModel = tutorialViewModel
         self.tutorialController = tutorialController
-        _editViewModel = State(initialValue: EditViewModel(designFile: designFile))
+        self.onLeaveEditor = onLeaveEditor
+
+        _editViewModel = State(
+            initialValue: EditViewModel(designFile: designFile)
+        )
     }
  
     @State private var panelWidth: CGFloat = Layout.expandedWidth
@@ -62,6 +73,10 @@ struct EditView: View {
             liveDragOverlay
         }
         .environment(editViewModel)
+        .environment(tutorialController)
+        .onChange(of: tutorialController.currentStep) { _, newStep in
+            handleTutorialStepChange(newStep)
+        }
         .alert("Delete this gem?", isPresented: isPendingDeleteAlertPresented) {
             Button("Delete", role: .destructive) {
                 editViewModel.confirmPendingDelete()
@@ -94,6 +109,24 @@ struct EditView: View {
             )
         }
     }
+
+    private func handleTutorialStepChange(_ step: TutorialStep?) {
+        guard let step else { return }
+        switch step {
+        case .addGem:
+            if editViewModel.mode != .band {
+                editViewModel.mode = .band
+            }
+            selectedPanelTypeBand = 1
+        case .changeBand:
+            if editViewModel.mode != .band {
+                editViewModel.mode = .band
+            }
+            selectedPanelTypeBand = 0
+        default:
+            break
+        }
+    }
  
     private var topBar: some View {
         HStack {
@@ -118,7 +151,7 @@ struct EditView: View {
                     "Design name",
                     text: $editedFileName
                 )
-                .font(.appFont(size: 20, weight: .semibold))
+                .font(.system(size: 20, weight: .semibold))
                 .textFieldStyle(.plain)
                 .frame(minWidth: 120, maxWidth: 250)
 
@@ -130,7 +163,7 @@ struct EditView: View {
 
             } else {
                 Text(editViewModel.designFile.name)
-                    .font(.appFont(size: 20, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
 
                 Button {
                     editedFileName = editViewModel.designFile.name
@@ -187,32 +220,37 @@ struct EditView: View {
   
     private var editorAndPanel: some View {
         HStack(spacing: 0) {
- 
-            JewelryEditorView(
-                viewModel: editViewModel,
-                bottomInset: bottomControlsHeight,
-                tutorial: tutorialController
+            withTutorialAnchor(
+                .bandArea,
+                JewelryEditorView(
+                    viewModel: editViewModel,
+                    bottomInset: bottomControlsHeight,
+                    tutorial: tutorialController,
+                    touchTracker: touchTracker
+                )
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
- 
             sidePanel
         }
     }
  
     private var sidePanel: some View {
-        HStack(spacing: 0) {
-            Divider()
- 
-            Group {
-                switch editViewModel.mode {
-                case .band:
-                    SelectBandGemView(selectedType: $selectedPanelTypeBand, bandGemViewModel: bandGemViewModel, viewModel: editViewModel)
-                case .handMannequin:
-                    SelectSkinSizeView(selectedType: $selectedPanelTypeMannequin, bandGemViewModel: bandGemViewModel, viewModel: editViewModel)
+        withTutorialAnchor(
+            .sidePanel,
+            HStack(spacing: 0) {
+                Divider()
+
+                Group {
+                    switch editViewModel.mode {
+                    case .band:
+                        SelectBandGemView(selectedType: $selectedPanelTypeBand, bandGemViewModel: bandGemViewModel, viewModel: editViewModel)
+                    case .handMannequin:
+                        SelectSkinSizeView(selectedType: $selectedPanelTypeMannequin, bandGemViewModel: bandGemViewModel, viewModel: editViewModel)
+                    }
                 }
+                .frame(width: Layout.expandedWidth, alignment: .topLeading)
             }
-            .frame(width: Layout.expandedWidth, alignment: .topLeading)
-        }
+        )
         .frame(width: Layout.expandedWidth, alignment: .leading)
         .offset(x: Layout.expandedWidth - panelWidth)
         .frame(width: panelWidth, alignment: .leading)
@@ -255,42 +293,46 @@ struct EditView: View {
         )
         .frame(maxWidth: .infinity, alignment: .bottomLeading)
     }
- 
-    private var gizmo: some View {
-        Group {
-            switch editViewModel.mode {
-            case .band:
-                OrientationGizmoView(
-                    orientation: editViewModel.scene.bandOrientation,
-                    selectedAxis: $selectedGizmoAxis,
-                    onAxisSelected: { axis, targetOrientation in
-                        editViewModel.scene.snapBand(to: targetOrientation)
-                    },
-                    onRotate: { deltaX, deltaY in
-                        editViewModel.scene.rotateBand(deltaX: Float(deltaX), deltaY: Float(deltaY))
-                    },
-                    onRotateBegin: { editViewModel.scene.beginRotateBand() },
-                    onRotateEnd: { editViewModel.scene.endRotateBand() }
-                )
 
-            case .handMannequin:
-                OrientationGizmoView(
-                    orientation: editViewModel.scene.mannequinOrientation,
-                    selectedAxis: $selectedGizmoAxis,
-                    onAxisSelected: { axis, targetOrientation in
-                        editViewModel.scene.snapMannequin(to: targetOrientation)
-                    },
-                    onRotate: { deltaX, deltaY in
-                        editViewModel.scene.rotateMannequin(deltaX: Float(deltaX), deltaY: Float(deltaY))
-                    },
-                    onRotateBegin: { editViewModel.scene.beginRotateMannequin() },
-                    onRotateEnd: { editViewModel.scene.endRotateMannequin() }
-                )
+    private var gizmo: some View {
+        withTutorialAnchor(
+            .gizmo,
+            Group {
+                switch editViewModel.mode {
+                case .band:
+                    OrientationGizmoView(
+                        orientation: editViewModel.scene.bandOrientation,
+                        touchTracker: touchTracker, selectedAxis: $selectedGizmoAxis,
+                        onAxisSelected: { axis, targetOrientation in
+                            editViewModel.scene.snapBand(to: targetOrientation)
+                            tutorialController.reportUserAction(.rotatedGizmo)
+                        },
+                        onRotate: { deltaX, deltaY in
+                            editViewModel.scene.rotateBand(deltaX: Float(deltaX), deltaY: Float(deltaY))
+                            tutorialController.reportUserAction(.rotatedGizmo)
+                        },
+                        onRotateBegin: { editViewModel.scene.beginRotateBand() },
+                        onRotateEnd: { editViewModel.scene.endRotateBand() }
+                    )
+
+                case .handMannequin:
+                    OrientationGizmoView(
+                        orientation: editViewModel.scene.mannequinOrientation,
+                        touchTracker: touchTracker, selectedAxis: $selectedGizmoAxis,
+                        onAxisSelected: { axis, targetOrientation in
+                            editViewModel.scene.snapMannequin(to: targetOrientation)
+                        },
+                        onRotate: { deltaX, deltaY in
+                            editViewModel.scene.rotateMannequin(deltaX: Float(deltaX), deltaY: Float(deltaY))
+                        },
+                        onRotateBegin: { editViewModel.scene.beginRotateMannequin() },
+                        onRotateEnd: { editViewModel.scene.endRotateMannequin() }
+                    )
+                }
             }
-        }
+        )
         .frame(maxWidth: .infinity, alignment: .leading)
     }
- 
  
     private func rotateSelected(_ entity: Entity, axis: ViewAxis, step: Float = .pi / 2) {
         let axisVec: SIMD3<Float>
@@ -320,24 +362,23 @@ struct EditView: View {
     }
     
     private var handButton: some View {
-        GlassButton {
-            withAnimation {
-                editViewModel.mode =
-                editViewModel.mode == .band
-                ? .handMannequin
-                : .band
+        withTutorialAnchor(
+            .handButton,
+            GlassButton {
+                let goingToHand = editViewModel.mode == .band
+                withAnimation {
+                    editViewModel.mode = editViewModel.mode == .band ? .handMannequin : .band
+                }
+                if goingToHand {
+                    tutorialController.reportUserAction(.switchedToHand)
+                }
+            } label: {
+                Image(systemName: editViewModel.mode == .band ? "hand.raised" : "circle")
             }
-        } label: {
-            Image(
-                systemName:
-                    editViewModel.mode == .band
-                ? "hand.raised"
-                : "circle"
-            )
-        }
+        )
         .frame(maxWidth: .infinity, alignment: .leading)
     }
- 
+
     private var trashButton: some View {
         GlassButton {
             editViewModel.delete()

@@ -89,9 +89,9 @@ struct HomeView: View {
                         Spacer()
 
                         Group {
-							Button("My Sizes", systemImage: "hand.raised") {
-								vm.moveScreenState(to: .handSize)
-							}
+                            Button("My Sizes", systemImage: "hand.raised") {
+                                vm.moveScreenState( to: .handSize( initialSelectedFinger: nil))
+                            }
 							.buttonStyle(.bordered)
 							.foregroundStyle(Color.black)
 

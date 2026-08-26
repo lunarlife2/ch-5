@@ -13,6 +13,7 @@ struct MagnifyingGesture {
     let touchTracker: TouchCountViewModel
     let editViewModel: EditViewModel
     let scene: JewelrySceneController
+    let tutorial: TutorialController
 
     private let minScale: Float = 0.3
     private let maxScale: Float = 3.0
@@ -30,7 +31,8 @@ struct MagnifyingGesture {
                     return
                 }
 
-                guard let gc = entity.components[GestureComponent.self], gc.canScale else {
+                guard let gc = entity.components[GestureComponent.self],
+                      gc.canScale else {
                     return
                 }
 
@@ -49,6 +51,7 @@ struct MagnifyingGesture {
                 }
 
                 let magnification = Float(value.magnification)
+
                 let rawScale = state.startScale * magnification
 
                 let clampedScale = SIMD3<Float>(
@@ -81,6 +84,10 @@ struct MagnifyingGesture {
                 state.lastScale = entity.scale
                 state.isScaling = false
                 entity.gestureStateComponent = state
+
+                if tutorial.currentStep == .scaleGesture {
+                    tutorial.reportUserAction(.scaled)
+                }
 
                 editViewModel.markDirty()
                 TransformSession.shared.end(entity)

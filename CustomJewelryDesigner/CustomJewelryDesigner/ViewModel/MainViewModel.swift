@@ -10,30 +10,27 @@ import SwiftUI
 
 @Observable
 @MainActor
-class ViewModel {
-
+final class ViewModel {
     private(set) var sceneState: SceneState = .home
 
     let tutorialController = TutorialController()
+    let bandGemViewModel = BandGemViewModel()
 
     func moveScreenState(to new: SceneState) {
-        self.sceneState = new
+        sceneState = new
     }
 }
 
 enum SceneState {
-
     case home
     case edit(DesignFile)
     case detail(DesignFile)
     case folder(DesignFolder)
-    case handSize
+    case handSize(initialSelectedFinger: HandFinger?)
 
     @ViewBuilder
     func viewAssociated(using vm: ViewModel) -> some View {
-
         switch self {
-
         case .home:
             HomeView()
 
@@ -46,8 +43,11 @@ enum SceneState {
         case .folder(let folder):
             FolderView(folder: folder)
 
-        case .handSize:
-            HandSizeView()
+        case .handSize(let initialSelectedFinger):
+            HandSizeView(
+                bandGemViewModel: vm.bandGemViewModel,
+                initialSelectedFinger: initialSelectedFinger
+            )
 
         case .detail(let designFile):
             DetailView(designFile: designFile)

@@ -20,21 +20,21 @@ struct TutorialView: View {
         ZStack {
             homeBackground
             
-            if isReady && showsCreateCoachMark && !showCreateSheet {
-                SpotlightOverlay(targetFrame: tutorialViewModel.frame(for: .createButton)) {
-                    CoachMarkCard(
-                        title: "Start Here",
-                        subtitle: "Create your first ring",
-                        stepInfo: (1, 8),
-                        onSkip: {
-                            onboarding.hasCompletedTutorial = true
-                        },
-                        onNext: nil,
-                        width: 260,
-                        height: nil
-                    )
-                }
-            }
+//            if isReady && showsCreateCoachMark && !showCreateSheet {
+//                SpotlightOverlay(targetFrame: tutorialViewModel.frame(for: .createButton)) {
+//                    CoachMarkCard(
+//                        title: "Start Here",
+//                        subtitle: "Create your first ring",
+//                        stepInfo: (1, 8),
+//                        onSkip: {
+//                            onboarding.hasCompletedTutorial = true
+//                        },
+//                        onNext: nil,
+//                        width: 260,
+//                        height: nil
+//                    )
+//                }
+//            }
             
             if showCreateSheet {
                 Color.black.opacity(0.4)
@@ -65,7 +65,7 @@ struct TutorialView: View {
                         .buttonStyle(.bordered)
                         .foregroundStyle(Color.black)
                     Text("Projects")
-                        .font(.appFont(size: 20, weight: .semibold))
+                        .font(.system(size: 20, weight: .semibold))
                     Spacer()
                     Button("Select", systemImage: "checkmark.circle") {}
                         .foregroundStyle(Color.black).buttonStyle(.bordered).disabled(true)
@@ -83,7 +83,7 @@ struct TutorialView: View {
                 .buttonStyle(.glassProminent)
                 .tint(Color.appPrimary)
                 .controlSize(.large)
-                .tutorialAnchor(.createButton, viewModel: tutorialViewModel)
+//                .tutorialAnchor(.createButton, viewModel: tutorialViewModel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 .padding(.horizontal, 40)
                 .padding(.vertical, 20)
