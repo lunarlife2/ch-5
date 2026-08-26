@@ -85,6 +85,7 @@ final class EditViewModel {
     var isLoading = false
     var isBandUpdating = false
     var isLoadingAsset = false
+    private(set) var isSceneReady = false
     var errorMessage: String?
     var selectedGizmoAxis: ViewAxis?
     var liveDragGlobalPoint: CGPoint?
@@ -414,15 +415,34 @@ final class EditViewModel {
     }
     
     func loadScene() async {
+
+        // Tutorial sudah berhasil membuat scene.
+        // Editor normal tidak boleh melakukan loading scene kedua.
+        guard !scene.isSetup else {
+            print("✅ Scene already loaded. Skipping loadScene().")
+            return
+        }
+
+        guard !Task.isCancelled else {
+            print("⚠️ loadScene() cancelled before start.")
+            return
+        }
+
         await performAssetLoading {
-            guard let design else { print("No design found"); return }
-            
+
+            guard let design else {
+                print("❌ No design found")
+                return
+            }
+
             var bandURL: URL?
             var bandSource: BandSourceComponent
             var savedBandForSetup: BandComponent? = design.band
             var useBundledFallback = false
-            
+
+            // BAND
             if let savedBand = design.band {
+
                 bandSource = BandSourceComponent(
                     libraryAssetID: savedBand.libraryAssetID,
                     assetStoragePath: savedBand.assetStoragePath,
@@ -430,65 +450,139 @@ final class EditViewModel {
                     thickness: savedBand.thickness,
                     material: savedBand.material
                 )
-                
+
                 if savedBand.assetStoragePath == "Flat_Band_Ring" {
                     useBundledFallback = true
                 } else {
-                    bandURL = await loadLocalModelURL(path: savedBand.assetStoragePath, bucket: "band")
+                    bandURL = await loadLocalModelURL(
+                        path: savedBand.assetStoragePath,
+                        bucket: "band"
+                    )
+
                     if bandURL == nil {
-                        print("Saved band asset not found in storage (\(savedBand.assetStoragePath)), falling back to first Supabase band")
+                        print(
+                            "⚠️ Saved band asset not found:",
+                            savedBand.assetStoragePath
+                        )
                     }
                 }
+
             } else {
-                bandSource = BandSourceComponent(libraryAssetID: UUID(), assetStoragePath: "Flat_Band_Ring", name: "plain band usd")
+
+                bandSource = BandSourceComponent(
+                    libraryAssetID: UUID(),
+                    assetStoragePath: "Flat_Band_Ring",
+                    name: "plain band usd"
+                )
+
                 useBundledFallback = true
             }
-            
+
+            // LEFT MANNEQUIN
             let leftMannequinURL: URL?
-            
+
+            if Task.isCancelled {
+                print("⚠️ loadScene cancelled before left mannequin.")
+                return
+            }
+
             if let leftAsset = await fetchMannequinAsset(for: .left) {
+
                 leftMannequinURL = await loadLocalModelURL(
                     path: leftAsset.storagePath,
                     bucket: "hand"
                 )
+
             } else {
+
+                print("⚠️ Left mannequin URL unavailable")
                 leftMannequinURL = nil
             }
-            
+
+            // RIGHT MANNEQUIN
             let rightMannequinURL: URL?
-            
+
+            if Task.isCancelled {
+                print("⚠️ loadScene cancelled before right mannequin.")
+                return
+            }
+
             if let rightAsset = await fetchMannequinAsset(for: .right) {
+
                 rightMannequinURL = await loadLocalModelURL(
                     path: rightAsset.storagePath,
                     bucket: "hand"
                 )
+
             } else {
+
+                print("⚠️ Right mannequin URL unavailable")
                 rightMannequinURL = nil
             }
-            
+
+            // GEMS
             var gemURLs: [String: URL] = [:]
+
             for gem in design.gems {
-                guard let url = await loadLocalModelURL(path: gem.assetStoragePath, bucket: "stone") else {
-                    print("Failed to download stone")
+
+                if Task.isCancelled {
+                    print("⚠️ loadScene cancelled while loading gems.")
+                    return
+                }
+
+                guard let url = await loadLocalModelURL(
+                    path: gem.assetStoragePath,
+                    bucket: "stone"
+                ) else {
+                    print("⚠️ Failed to download stone:", gem.assetStoragePath)
                     continue
                 }
+
                 gemURLs[gem.name] = url
             }
-            
+
+            // BUNDLED BAND
             if useBundledFallback {
-                await scene.setup(bandURL: nil, bandSource: bandSource, leftMannequinURL: leftMannequinURL, rightMannequinURL: rightMannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+
+                await scene.setup(
+                    bandURL: nil,
+                    bandSource: bandSource,
+                    leftMannequinURL: leftMannequinURL,
+                    rightMannequinURL: rightMannequinURL,
+                    gemURLs: gemURLs,
+                    mode: mode,
+                    savedGems: design.gems,
+                    savedBand: savedBandForSetup
+                )
+
                 return
             }
-            
+
+            // FALLBACK BAND FROM SUPABASE
             if let hex = design.skinColorHex {
-                scene.applySkinColor(UIColor(Color(hex: hex)))
+                scene.applySkinColor(
+                    UIColor(Color(hex: hex))
+                )
             }
-            
+
             if bandURL == nil {
-                if bands.isEmpty { await fetchBands() }
-                guard let firstBand = bands.first else { print("No bands available from Supabase at all"); return }
+
+                if bands.isEmpty {
+                    await fetchBands()
+                }
+
+                guard let firstBand = bands.first else {
+                    print("❌ No bands available from Supabase.")
+                    return
+                }
+
                 currentBand = firstBand
-                bandURL = await loadLocalModelURL(path: firstBand.assetId.storagePath, bucket: "band")
+
+                bandURL = await loadLocalModelURL(
+                    path: firstBand.assetId.storagePath,
+                    bucket: "band"
+                )
+
                 bandSource = BandSourceComponent(
                     libraryAssetID: firstBand.id,
                     assetStoragePath: firstBand.assetId.storagePath,
@@ -496,12 +590,25 @@ final class EditViewModel {
                     thickness: firstBand.bandThickness,
                     material: firstBand.bandMaterial
                 )
+
                 savedBandForSetup = nil
             }
-            
-            guard let finalBandURL = bandURL else { print("Failed to download any band"); return }
-            
-            await scene.setup(bandURL: finalBandURL, bandSource: bandSource, leftMannequinURL: leftMannequinURL, rightMannequinURL: rightMannequinURL, gemURLs: gemURLs, mode: mode, savedGems: design.gems, savedBand: savedBandForSetup)
+
+            guard let finalBandURL = bandURL else {
+                print("❌ Failed to download any band.")
+                return
+            }
+
+            await scene.setup(
+                bandURL: finalBandURL,
+                bandSource: bandSource,
+                leftMannequinURL: leftMannequinURL,
+                rightMannequinURL: rightMannequinURL,
+                gemURLs: gemURLs,
+                mode: mode,
+                savedGems: design.gems,
+                savedBand: savedBandForSetup
+            )
         }
     }
     

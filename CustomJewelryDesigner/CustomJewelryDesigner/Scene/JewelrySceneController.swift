@@ -80,7 +80,8 @@ final class JewelrySceneController {
     
     private(set) var editorFrameInGlobal: CGRect = .zero
     private(set) var realityContent: RealityViewCameraContent?
-    private var isSetup = false
+    private(set) var isSetup = false
+    private var isSettingUp = false
     
     //skincolor
     private(set) var skinColor: UIColor = UIColor(red: 0.79, green: 0.59, blue: 0.41, alpha: 1)
@@ -138,24 +139,47 @@ final class JewelrySceneController {
         gizmoController.updateGizmoTransform()
     }
     
-    func setup(bandURL: URL?, bandSource: BandSourceComponent, leftMannequinURL: URL?,
-               rightMannequinURL: URL?, gemURLs: [String: URL], mode: JewelryEditorMode, savedGems: [GemComponent], savedBand: BandComponent?) async {
-        guard !isSetup else { return }
-        isSetup = true
-        
+    func setup(
+        bandURL: URL?,
+        bandSource: BandSourceComponent,
+        leftMannequinURL: URL?,
+        rightMannequinURL: URL?,
+        gemURLs: [String: URL],
+        mode: JewelryEditorMode,
+        savedGems: [GemComponent],
+        savedBand: BandComponent?
+    ) async {
+
+        guard !isSetup else {
+            print("⚠️ Scene already setup, skipping.")
+            return
+        }
+
+        guard !isSettingUp else {
+            print("⚠️ Scene setup already running, skipping.")
+            return
+        }
+
+        isSettingUp = true
+
+        defer {
+            isSettingUp = false
+        }
+
         bandPivot.addChild(bandAnchor)
         rootEntity.addChild(bandPivot)
+
         mannequinPivot.addChild(mannequinAnchorLeft)
         mannequinPivot.addChild(mannequinAnchorRight)
-        
+
         rootEntity.addChild(cameraController.pivot)
         rootEntity.addChild(mannequinPivot)
         rootEntity.addChild(gemAnchor)
-        
+
         gizmoController.install(
             in: rootEntity
         )
-        
+
         bandPivot.components.set(
             GestureComponent(
                 typeJewelry: .band,
@@ -164,7 +188,7 @@ final class JewelrySceneController {
                 canRotate: true
             )
         )
-        
+
         mannequinPivot.components.set(
             GestureComponent(
                 typeJewelry: .handMannequin,
@@ -173,33 +197,53 @@ final class JewelrySceneController {
                 canRotate: true
             )
         )
-        
+
+        // BAND
         if let bandURL {
-            await loadBand(from: bandURL, source: bandSource, saved: savedBand)
+            await loadBand(
+                from: bandURL,
+                source: bandSource,
+                saved: savedBand
+            )
         } else {
-            await loadBundledBand(named: bandSource.assetStoragePath, saved: savedBand)
+            await loadBundledBand(
+                named: bandSource.assetStoragePath,
+                saved: savedBand
+            )
         }
-        
+
+        // LEFT MANNEQUIN
         if let leftMannequinURL {
-            await loadMannequin(
+            _ = await loadMannequin(
                 from: leftMannequinURL,
                 hand: .left
             )
         } else {
-            print("❌ No left mannequin URL")
+            print("⚠️ No left mannequin URL")
         }
 
+        // RIGHT MANNEQUIN
         if let rightMannequinURL {
-            await loadMannequin(
+            _ = await loadMannequin(
                 from: rightMannequinURL,
                 hand: .right
             )
         } else {
-            print("❌ No right mannequin URL")
+            print("⚠️ No right mannequin URL")
         }
-        
-        await loadSavedGems(gems: savedGems, urls: gemURLs)
+
+        // SAVED GEMS
+        await loadSavedGems(
+            gems: savedGems,
+            urls: gemURLs
+        )
+
         updateVisibility(for: mode)
+
+        // BARU SEKARANG SELESAI
+        isSetup = true
+
+        print("✅ Jewelry scene setup completed.")
     }
     
     func beginRotateBand() {
@@ -352,7 +396,7 @@ final class JewelrySceneController {
     }
     
     func replaceBand(from localURL: URL, source: BandSourceComponent, saved: BandComponent? = nil) async {
-        await loadBand(from: localURL, source: source, saved: nil)
+        await loadBand(from: localURL, source: source, saved: saved)
     }
     
     private func captureAttachedGems() -> [PendingGemAttach] {

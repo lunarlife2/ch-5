@@ -31,7 +31,6 @@ struct TutorialOverlayView: View {
                 let sidePanelFrame = tutorialViewModel.frame(for: .sidePanel)
                 
                 ZStack {
-                    
                     SpotlightOverlay(
                         targetFrame: frame,
                         cardPositionOverride: { size in
@@ -46,6 +45,7 @@ struct TutorialOverlayView: View {
                     ) {
                         card(for: step)
                     }
+                    .allowsHitTesting(true)
                     
                     if let ghost = ghostKind(for: step) {
                         GhostGestureHint(
@@ -60,6 +60,7 @@ struct TutorialOverlayView: View {
                                 y: geometry.size.height / 2
                             )
                         )
+                        .allowsHitTesting(false)
                     }
                 }
                 .frame(
@@ -70,6 +71,7 @@ struct TutorialOverlayView: View {
                 .animation(.smooth, value: step)
             }
         }
+        .allowsHitTesting(controller.currentStep != nil)
         .ignoresSafeArea()
     }
     
@@ -142,10 +144,13 @@ struct TutorialOverlayView: View {
             title: content.title,
             subtitle: content.text,
             stepInfo: stepNumber(for: step).map { ($0, 8) },
-            onSkip: { onFinish() },
+            onSkip: {
+                controller.finish()
+                onFinish()
+            },
             onNext: step.requiresUserAction ? nil : {
                 if step == .outro {
-                    controller.advance()
+                    controller.finish()
                     onFinish()
                 } else {
                     controller.advance()

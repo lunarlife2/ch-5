@@ -27,7 +27,9 @@ struct CoachMarkCard: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Button { onSkip() } label: {
+                Button {
+                    onSkip()
+                } label: {
                     Image(systemName: "xmark")
                         .foregroundStyle(Color.appPrimary)
                 }

@@ -48,6 +48,7 @@ struct JewelryEditorView: View {
                         height: geometry.size.height
                     )
                     .clipped()
+                    .allowsHitTesting(false)
                 realityView(geometry: geometry)
                 
                 gemActionIcons
@@ -89,7 +90,7 @@ struct JewelryEditorView: View {
                 modelContext.autosaveEnabled = false
                 
                 viewModel.setModelContext(modelContext)
-                await viewModel.refreshData()
+//                await viewModel.refreshData()
                 await viewModel.fetchAllData()
                 await viewModel.loadScene()
             }
@@ -127,70 +128,67 @@ struct JewelryEditorView: View {
     
     @ViewBuilder
     private func realityView(geometry: GeometryProxy) -> some View {
-        ZStack{
-            //            Image("BackgroundEditview")
-            RealityView { content in
-                content.add(viewModel.scene.rootEntity)
-                content.subscribe(to: SceneEvents.Update.self) { _ in
+        RealityView { content in
+            content.add(viewModel.scene.rootEntity)
+            content.subscribe(to: SceneEvents.Update.self) { _ in
+                viewModel.updateSelectedGemIconPositions()
+            }
+            viewModel.setRealityContent(content)
+        }
+        .clipped()
+        .gesture(
+            TouchCounterView(tracker: touchTracker)
+        )
+        .gesture(
+            SpatialTapGesture()
+                .onEnded { value in
+                    let globalPoint = CGPoint(
+                        x: geometry.frame(in: .global).minX + value.location.x,
+                        y: geometry.frame(in: .global).minY + value.location.y
+                    )
+                    let clampedGlobal = viewModel.clampToSafeArea(globalPoint)
+                    let realityLocation = localPoint(fromGlobal: clampedGlobal, geometry: geometry)
+                    
+                    viewModel.scene.selectEntity(at: realityLocation)
+                    viewModel.syncSelectionFromGizmo()
                     viewModel.updateSelectedGemIconPositions()
                 }
-                viewModel.setRealityContent(content)
-            }
-            .clipped()
-            .gesture(
-                TouchCounterView(tracker: touchTracker)
+        )
+        .simultaneousGesture(
+            DragAndDropGesture(
+                touchTracker: touchTracker,
+                editViewModel: viewModel,
+                scene: viewModel.scene,
+                tutorial: tutorial
+            ).dragGesture
+        )
+        .simultaneousGesture(
+            RingRotationGesture(
+                touchTracker: touchTracker,
+                editViewModel: viewModel,
+                scene: viewModel.scene,
+                tutorial: tutorial
+            ).rotateGesture
+        )
+        //            .simultaneousGesture(
+        //                MagnifyingGesture(touchTracker: touchTracker, editViewModel: viewModel, scene: viewModel.scene, tutorial: tutorial).zoomGesture
+        //            )
+        .gesture(
+            TwoFingerTransformGesture(
+                touchTracker: touchTracker,
+                entityProvider: { location in
+                    let globalPoint = CGPoint(
+                        x: geometry.frame(in: .global).minX + location.x,
+                        y: geometry.frame(in: .global).minY + location.y - 0
+                    )
+                    let localLoc = localPoint(fromGlobal: globalPoint, geometry: geometry)
+                    return viewModel.scene.entityAtScreenLocation(localLoc)
+                },
+                editViewModel: viewModel,
+                sceneController: viewModel.scene,
+                tutorial: tutorial
             )
-            .gesture(
-                SpatialTapGesture()
-                    .onEnded { value in
-                        let globalPoint = CGPoint(
-                            x: geometry.frame(in: .global).minX + value.location.x,
-                            y: geometry.frame(in: .global).minY + value.location.y
-                        )
-                        let clampedGlobal = viewModel.clampToSafeArea(globalPoint)
-                        let realityLocation = localPoint(fromGlobal: clampedGlobal, geometry: geometry)
-                        
-                        viewModel.scene.selectEntity(at: realityLocation)
-                        viewModel.syncSelectionFromGizmo()
-                        viewModel.updateSelectedGemIconPositions()
-                    }
-            )
-            .simultaneousGesture(
-                DragAndDropGesture(
-                    touchTracker: touchTracker,
-                    editViewModel: viewModel,
-                    scene: viewModel.scene,
-                    tutorial: tutorial
-                ).dragGesture
-            )
-            .simultaneousGesture(
-                RingRotationGesture(
-                    touchTracker: touchTracker,
-                    editViewModel: viewModel,
-                    scene: viewModel.scene,
-                    tutorial: tutorial
-                ).rotateGesture
-            )
-            //            .simultaneousGesture(
-            //                MagnifyingGesture(touchTracker: touchTracker, editViewModel: viewModel, scene: viewModel.scene, tutorial: tutorial).zoomGesture
-            //            )
-            .gesture(
-                TwoFingerTransformGesture(
-                    touchTracker: touchTracker,
-                    entityProvider: { location in
-                        let globalPoint = CGPoint(
-                            x: geometry.frame(in: .global).minX + location.x,
-                            y: geometry.frame(in: .global).minY + location.y - 0
-                        )
-                        let localLoc = localPoint(fromGlobal: globalPoint, geometry: geometry)
-                        return viewModel.scene.entityAtScreenLocation(localLoc)
-                    },
-                    editViewModel: viewModel,
-                    sceneController: viewModel.scene,
-                    tutorial: tutorial
-                )
-            )
-        }
+        )
     }
     
     private func localPoint(fromGlobal point: CGPoint, geometry: GeometryProxy) -> CGPoint {

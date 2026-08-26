@@ -10,40 +10,42 @@ import SwiftData
 import RealityKit
  
 struct EditView: View {
- 
+
     @Environment(ViewModel.self) private var vm
     @Environment(\.modelContext) private var modelContext
- 
+
     let designFile: DesignFile
     let tutorialController: TutorialController
     var tutorialViewModel: TutorialViewModel? = nil
-    let onLeaveEditor: () -> Void
-    
+
     @State private var touchTracker = TouchCountViewModel()
     @State private var editViewModel: EditViewModel
+
     @State private var bandGemViewModel = BandGemViewModel()
     @State private var selectedPanelTypeBand = 0
     @State private var selectedPanelTypeMannequin = 0
+
     @State private var showUnsavedChangesAlert = false
     @State private var isEditingName = false
     @State private var editedFileName = ""
- 
+
     init(
         designFile: DesignFile,
         tutorialViewModel: TutorialViewModel? = nil,
         tutorialController: TutorialController,
-        onLeaveEditor: @escaping () -> Void = {}
+        editViewModel: EditViewModel? = nil
     ) {
         self.designFile = designFile
         self.tutorialViewModel = tutorialViewModel
         self.tutorialController = tutorialController
-        self.onLeaveEditor = onLeaveEditor
 
         _editViewModel = State(
-            initialValue: EditViewModel(designFile: designFile)
+            initialValue:
+                editViewModel
+                ?? EditViewModel(designFile: designFile)
         )
     }
- 
+    
     @State private var panelWidth: CGFloat = Layout.expandedWidth
     @State private var selectedGizmoAxis: ViewAxis?
     @State private var bottomControlsHeight: CGFloat = 0
@@ -256,19 +258,31 @@ struct EditView: View {
         .offset(x: Layout.expandedWidth - panelWidth)
         .frame(width: panelWidth, alignment: .leading)
         .clipped()
-        .task {
-            await editViewModel.fetchAllData()
-            if let design = designFile.design {
-                bandGemViewModel.loadRingSize(
-                    id: design.ringSizeID,
-                    system: design.ringSizeSystem
-                )
-            }
- 
-            print("Band:", editViewModel.bands.count)
-            print("Gem:", editViewModel.gems.count)
-            print("Style:", editViewModel.bandStyles.count)
-        }
+//        .task {
+//            await editViewModel.fetchAllData()
+//            if let design = designFile.design {
+//                bandGemViewModel.loadRingSize(
+//                    id: design.ringSizeID,
+//                    system: design.ringSizeSystem
+//                )
+//            }
+// 
+//            print("Band:", editViewModel.bands.count)
+//            print("Gem:", editViewModel.gems.count)
+//            print("Style:", editViewModel.bandStyles.count)
+//        }
+//        .task {
+//            await editViewModel.fetchAllData()
+//        }
+//
+//        .task {
+//            if let design = designFile.design {
+//                bandGemViewModel.loadRingSize(
+//                    id: design.ringSizeID,
+//                    system: design.ringSizeSystem
+//                )
+//            }
+//        }
     }
  
     private func handleBackTap() {
@@ -413,8 +427,13 @@ struct EditView: View {
                     ringSizeSystem: bandGemViewModel.selectedRingSizeSystem,
                     handFinger: editViewModel.selectedHandFinger
                 )
+
                 isSaving = false
-                vm.moveScreenState(to: .detail(editViewModel.designFile))
+
+                vm.moveScreenState(
+                    to: .detail(editViewModel.designFile)
+                )
+
             }
         } label: {
             if isSaving {
@@ -434,17 +453,16 @@ struct EditView: View {
     private var liveDragOverlay: some View {
         GeometryReader { proxy in
             if let globalPoint = editViewModel.liveDragGlobalPoint {
-                let localPoint = CGPoint(
-                    x: globalPoint.x - proxy.frame(in: .global).minX,
-                    y: globalPoint.y - proxy.frame(in: .global).minY
-                )
                 Image("gemstone-blue")
                     .resizable()
                     .frame(width: Layout.liveDragGemSize, height: Layout.liveDragGemSize)
-                    .position(localPoint)
-                    .allowsHitTesting(false)
+                    .position(
+                        x: globalPoint.x - proxy.frame(in: .global).minX,
+                        y: globalPoint.y - proxy.frame(in: .global).minY
+                    )
             }
         }
+        .allowsHitTesting(false)
     }
  
     private var isPendingDeleteAlertPresented: Binding<Bool> {

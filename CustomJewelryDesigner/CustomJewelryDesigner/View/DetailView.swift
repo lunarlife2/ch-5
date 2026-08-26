@@ -166,12 +166,13 @@ struct DetailView: View {
         } label: {
             Image(systemName: "chevron.left")
                 .font(.headline)
-                .foregroundStyle(.black)
+                .foregroundStyle(Color.appPrimary)
                 .frame(width: 36, height: 36)
                 .background(Color.white, in: Circle())
                 .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
         }
         .buttonStyle(.plain)
+        .tint(Color.appPrimary)
     }
 
     private var card: some View {
@@ -202,7 +203,7 @@ struct DetailView: View {
                     )
 
                 Text("\(selectedAngle.rawValue + 1)/\(RingAngle.allCases.count)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.appFont(size: 14, weight: .semibold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(.black.opacity(0.55), in: Capsule())
@@ -235,15 +236,16 @@ struct DetailView: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(selectedAngle == angle ? Color.black : .clear, lineWidth: 2)
+                            .stroke(selectedAngle == angle ? Color.appPrimary : .clear, lineWidth: 2)
                     )
 
                 Text(angle.label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.appFont(size: 12, weight: .regular))
+                    .foregroundStyle(Color.appPrimary)
             }
         }
         .buttonStyle(.plain)
+        .tint(Color.appPrimary)
     }
 
     private var infoPanel: some View {
@@ -251,9 +253,9 @@ struct DetailView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(designFile.name)
-                        .font(.title2.weight(.semibold))
+                        .font(.appFont(size: 22, weight: .semibold))
                     Text(dateText)
-                        .font(.subheadline)
+                        .font(.appFont(size: 15, weight: .regular))
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -262,9 +264,10 @@ struct DetailView: View {
                 } label: {
                     Image(systemName: "info.circle")
                         .font(.title3)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.appPrimary)
                 }
                 .buttonStyle(.plain)
+                .tint(Color.appPrimary)
             }
 
             VStack(spacing: 16) {
@@ -276,10 +279,11 @@ struct DetailView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Notes")
-                    .font(.subheadline.weight(.medium))
+                    .font(.appFont(size: 15, weight: .medium))
                     .foregroundStyle(.secondary)
 
                 TextField("Type your notes here", text: $notes, axis: .vertical)
+                    .font(.appFont(size: 15, weight: .regular))
                     .lineLimit(3...6)
                     .padding(12)
                     .background(
@@ -296,12 +300,12 @@ struct DetailView: View {
     private func infoRow(label: String, value: String, swatch: Color? = nil) -> some View {
         HStack {
             Text(label)
-                .font(.subheadline)
+                .font(.appFont(size: 15, weight: .regular))
                 .foregroundStyle(.secondary)
                 .frame(width: 130, alignment: .leading)
 
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(.appFont(size: 15, weight: .medium))
 
             Spacer()
 
@@ -321,12 +325,12 @@ struct DetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Size Checker")
-                    .font(.subheadline)
+                    .font(.appFont(size: 15, weight: .regular))
                     .foregroundStyle(.secondary)
                     .frame(width: 130, alignment: .leading)
 
                 Text("US \(size, format: .number.precision(.fractionLength(1)))")
-                    .font(.subheadline.weight(.medium))
+                    .font(.appFont(size: 15, weight: .medium))
 
                 Spacer()
             }
@@ -340,12 +344,13 @@ struct DetailView: View {
                 saveAndReturnHome()
             } label: {
                 Text("Save")
-                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
+                    .font(.appFont(size: 16, weight: .semibold))
                     .frame(width: 110, height: 42)
             }
             .buttonStyle(.plain)
-            .background(Color.black, in: Capsule())
+            .tint(Color.appPrimary)
+            .background(Color.appPrimary, in: Capsule())
 
             Button {
                 prepareAndShare()
@@ -355,14 +360,15 @@ struct DetailView: View {
                         ProgressView().controlSize(.small)
                     }
                     Text("Share")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.appFont(size: 16, weight: .semibold))
                 }
-                .foregroundStyle(.black)
+                .foregroundStyle(Color.appPrimary)
                 .frame(width: 110, height: 42)
             }
             .buttonStyle(.plain)
-            .background(Color(.systemGray6), in: Capsule())
-            .overlay(Capsule().stroke(Color.black.opacity(0.1), lineWidth: 1))
+            .tint(Color.appPrimary)
+            .background(Color(.systemGray5), in: Capsule())
+            .overlay(Capsule().stroke(Color.appPrimary.opacity(0.3), lineWidth: 1))
             .disabled(isPreparingShare)
         }
         .padding(.top, 4)
@@ -374,7 +380,7 @@ struct DetailView: View {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 4), spacing: 16) {
                     ForEach(ringSizes) { ringSize in
                         Text(ringSize.size)
-                            .font(.subheadline.weight(.medium))
+                            .font(.appFont(size: 15, weight: .medium))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10))
@@ -387,9 +393,11 @@ struct DetailView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { showSizeGuide = false }
+                        .tint(Color.appPrimary)
                 }
             }
         }
+        .tint(Color.appPrimary)
         .presentationDetents([.medium])
     }
 

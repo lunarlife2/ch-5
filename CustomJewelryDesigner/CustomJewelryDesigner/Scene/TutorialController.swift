@@ -57,12 +57,16 @@ final class TutorialController {
         currentStep = TutorialStep.allCases[idx + 1]
     }
 
+    // tambahin ini
+    func finish() {
+        currentStep = nil
+    }
+
     func advance(ifCurrentlyAt step: TutorialStep) {
         if currentStep == step { advance() }
     }
 
     func reportUserAction(_ action: TutorialUserAction) {
-        print("🎓 reportUserAction:", action, "| currentStep:", currentStep as Any)
         guard let step = currentStep, step.matches(action) else { return }
         advance()
     }
