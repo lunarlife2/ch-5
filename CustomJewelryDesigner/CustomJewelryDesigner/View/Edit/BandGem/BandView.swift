@@ -32,7 +32,7 @@ struct BandView: View {
                                 switch phase {
                                 case .success(let image):
                                     image.resizable().scaledToFit()
-                                        .frame(width: 70, height: 70) //change the size for thumbnail
+                                        .frame(width: 60, height: 60) //change the size for thumbnail
                                     
                                 case .failure:
                                     Image(systemName: "exclamationmark.triangle")
@@ -109,7 +109,7 @@ struct BandView: View {
                                 switch phase {
                                 case .success(let image):
                                     image.resizable().scaledToFit()
-                                        .frame(width: 80, height: 80) //change the size for thumbnail
+                                        .frame(width: 60, height: 60) //change the size for thumbnail
                                 case .failure:
                                     Image(systemName: "exclamationmark.triangle")
                                         .foregroundStyle(.secondary)
