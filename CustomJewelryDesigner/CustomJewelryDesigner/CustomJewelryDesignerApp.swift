@@ -10,7 +10,7 @@ import SwiftData
 
 @main
 struct CustomJewelryDesignerApp: App {
-	@State private var vm = ViewModel()
+//	@State private var vm = ViewModel()
 	
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([

@@ -11,10 +11,12 @@ import SwiftUI
 struct HandSizeView: View {
 	@Environment(ViewModel.self) private var vm
 	@Environment(\.modelContext) private var modelContext
-	@State private var bandGemViewModel = BandGemViewModel()  // owned here, passed down
+    @Bindable var bandGemViewModel: BandGemViewModel
 
 	private var store: HandProfileStore { HandProfileStore(modelContext: modelContext) }
 	
+    let initialSelectedFinger: HandFinger?
+    @State private var selectedHandFinger: HandFinger?
 	
 	@Environment(\.dismiss) private var dismiss
 	@State private var measurements: [FingerMeasurement] = []
@@ -95,30 +97,42 @@ struct HandSizeView: View {
 				.padding(.all, 50)
 
 			}
-			.onAppear { measurements = store.allMeasurements() }
+			.onAppear {
+                measurements = store.allMeasurements()
+                selectedHandFinger = initialSelectedFinger
+            }
 		}
 	}
 	
-	private func applyMeasurement(_ ringSize: RingSizeOption, handFinger: HandFinger) {
-		store.save(
-			handFinger: handFinger,
-			ringSizeID: ringSize.id,
-			system: bandGemViewModel.selectedRingSizeSystem,
-			diameterMM: ringSize.diameterMM
-		)
-		bandGemViewModel.loadRingSize(
-			id: ringSize.id,
-			system: bandGemViewModel.selectedRingSizeSystem
-		)
-		reload(handFinger: handFinger)
-	}
+    private func applyMeasurement(
+        _ ringSize: RingSizeOption,
+        handFinger: HandFinger
+    ) {
+        store.save(
+            handFinger: handFinger,
+            ringSizeID: ringSize.id,
+            system: bandGemViewModel.selectedRingSizeSystem,
+            diameterMM: ringSize.diameterMM
+        )
+
+        bandGemViewModel.loadRingSize(
+            id: ringSize.id,
+            system: bandGemViewModel.selectedRingSizeSystem
+        )
+
+        reload(handFinger: handFinger)
+    }
 	
-	private func reload(handFinger: HandFinger) {
-		let currentMeasurement = store.measurement(for: handFinger)
-		if let m = currentMeasurement {
-			bandGemViewModel.loadRingSize(id: m.ringSizeID, system: m.ringSizeSystem)
-		}
-	}
+    private func reload(handFinger: HandFinger) {
+        measurements = store.allMeasurements()
+
+        if let m = store.measurement(for: handFinger) {
+            bandGemViewModel.loadRingSize(
+                id: m.ringSizeID,
+                system: m.ringSizeSystem
+            )
+        }
+    }
 
 
 }
@@ -223,28 +237,34 @@ struct FingerButton: View {
 		.buttonStyle(.plain)
 	}
 	
-	@ViewBuilder
-	private func row(for hf: HandFinger) -> some View {
-		let m = measurements.first { $0.handFinger == hf && $0.ringSizeSystem == selectedRingSize}
+    @ViewBuilder
+    private func row(for hf: HandFinger) -> some View {
+        if let m = measurements.first(where: {
+            $0.handFinger == hf
+        }),
+        let option = ringSizeOptions.first(where: {
+            $0.id == m.ringSizeID
+        }),
+        let displaySize = option.size(for: selectedRingSize) {
 
-			VStack {
-				if let m {
-					HStack{
-						Text(m.displaySize)
-							.fontWeight(.semibold)
-					}
-					Text(m.diameterMM.description)
-						.font(.appFont(size: 17))
-						.foregroundStyle(.secondary)
-				} else {
-					Text("-").font(.subheadline.weight(.semibold))
-				}
-			}
-	}
+            VStack {
+                Text(displaySize)
+                    .fontWeight(.semibold)
+
+                Text(option.diameterMM.description)
+                    .font(.appFont(size: 17))
+                    .foregroundStyle(.secondary)
+            }
+
+        } else {
+            Text("-")
+                .font(.subheadline.weight(.semibold))
+        }
+    }
 
 }
 
-#Preview {
-	HandSizeView()
-		.environment(ViewModel())
-}
+//#Preview {
+//	HandSizeView()
+//		.environment(ViewModel())
+//}

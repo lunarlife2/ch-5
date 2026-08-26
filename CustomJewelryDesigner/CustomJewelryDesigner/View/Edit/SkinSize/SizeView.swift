@@ -11,16 +11,16 @@ import SwiftData
 struct SizeView: View {
     @Environment(ViewModel.self) private var vm
     @Environment(\.modelContext) private var modelContext
-
+    
     @State private var currentMeasurement: FingerMeasurement?
     @State private var showMeasureView = false
     @State private var showHandProfile = false
-
+    
     @Bindable var bandGemViewModel: BandGemViewModel
     var editViewModel: EditViewModel
-
+    
     private var store: HandProfileStore { HandProfileStore(modelContext: modelContext) }
-
+    
     var body: some View {
         VStack(spacing: 20) {
             Menu {
@@ -30,7 +30,7 @@ struct SizeView: View {
                     } label: {
                         HStack {
                             Text(hf.title)
-
+                            
                             if hf == bindingToHandFinger.wrappedValue {
                                 Image(systemName: "checkmark")
                             }
@@ -42,9 +42,9 @@ struct SizeView: View {
                 HStack {
                     Text(bindingToHandFinger.wrappedValue.title)
                         .foregroundStyle(Color.black)
-
+                    
                     Spacer()
-
+                    
                     Image(systemName: "chevron.up.chevron.down")
                         .foregroundStyle(Color.black)
                 }
@@ -62,13 +62,13 @@ struct SizeView: View {
                     .stroke(Color.handFingerPrimary.opacity(0.35), lineWidth: 1)
             }
             .glassEffect()
-
+            
             if let m = currentMeasurement {
                 measuredCard(m)
             } else {
                 notMeasuredCard
             }
-
+            
             Button {
                 showHandProfile = true
             } label: {
@@ -84,14 +84,13 @@ struct SizeView: View {
             reload()
         }
         .fullScreenCover(isPresented: $showHandProfile) {
-            HandProfileView(store: store) { tappedFinger in
-                showHandProfile = false
-                editViewModel.selectedHandFinger = tappedFinger
-                showMeasureView = true
-            }
+            HandSizeView(
+                bandGemViewModel: bandGemViewModel,
+                initialSelectedFinger: editViewModel.selectedHandFinger
+            )
         }
     }
-
+    
     private func measuredCard(_ m: FingerMeasurement) -> some View {
         VStack {
             HStack {
@@ -108,7 +107,7 @@ struct SizeView: View {
                 .buttonStyle(.glass)
             }
             .padding(.horizontal, 10)
-
+            
             Picker("", selection: $bandGemViewModel.selectedRingSizeSystem) {
                 ForEach(RingSizeSystem.allCases) { system in
                     Text(system.title)
@@ -139,16 +138,17 @@ struct SizeView: View {
             MeasureView(
                 bandGemViewModel: bandGemViewModel,
                 handFinger: m.handFinger,
-                hand: editViewModel.selectedHandFinger.hand,
+                hand: m.handFinger.hand,
                 initialMeasurement: m,
+//                hand: editViewModel.selectedHandFinger.hand,
                 onBack: { showMeasureView = false },
                 onApply: { ringSize in
                     applyMeasurement(ringSize)
-				},
+                },
             )
         }
     }
-
+    
     private var notMeasuredCard: some View {
         VStack {
             Text("Not Measured yet")
@@ -157,7 +157,7 @@ struct SizeView: View {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(Color.backgroundSecondary)
                 )
-
+            
             Button {
                 showMeasureView = true
             } label: {
@@ -182,7 +182,7 @@ struct SizeView: View {
             )
         }
     }
-
+    
     private func applyMeasurement(_ ringSize: RingSizeOption) {
         store.save(
             handFinger: editViewModel.selectedHandFinger,
@@ -196,14 +196,14 @@ struct SizeView: View {
         )
         reload()
     }
-
+    
     private func reload() {
         currentMeasurement = store.measurement(for: editViewModel.selectedHandFinger)
         if let m = currentMeasurement {
             bandGemViewModel.loadRingSize(id: m.ringSizeID, system: m.ringSizeSystem)
         }
     }
-
+    
     private var bindingToHandFinger: Binding<HandFinger> {
         Binding(
             get: { editViewModel.selectedHandFinger },

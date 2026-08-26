@@ -106,18 +106,18 @@ struct MeasureView: View {
 
 			Menu {
 				ForEach(RingSizeSystem.allCases) { system in
-					Button {
-						bandGemViewModel.selectedRingSizeSystem = system
-					} label: {
-						HStack {
-							Text(system.title)
+                    Button {
+                        bandGemViewModel.selectedRingSizeSystem = system
+                        viewModel.ringSizeSystem = system
+                    } label: {
+                        HStack {
+                            Text(system.title)
 
-							if system == bandGemViewModel.selectedRingSizeSystem
-							{
-								Image(systemName: "checkmark")
-							}
-						}
-					}
+                            if system == bandGemViewModel.selectedRingSizeSystem {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
 				}
 			} label: {
 				HStack {
