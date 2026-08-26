@@ -83,7 +83,7 @@ struct SkinView: View {
                 Image(systemName: "camera.fill")
                 Text("Match with Camera")
             }
-            .font(.system(size: 15, weight: .semibold))
+            .font(.appFont(size: 15, weight: .semibold))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
         }
@@ -94,7 +94,7 @@ struct SkinView: View {
     private var presetsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Presets")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.appFont(size: 16, weight: .semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack {

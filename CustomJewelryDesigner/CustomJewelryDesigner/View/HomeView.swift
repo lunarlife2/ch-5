@@ -68,26 +68,33 @@ struct HomeView: View {
     @State private var selectedItemIDs: Set<UUID> = []
     @State private var isSelecting: Bool = false
     @State private var fileOrFolder: Bool = true
+	
+	init() {
+			for family in UIFont.familyNames.sorted() {
+				print(family)
+				for name in UIFont.fontNames(forFamilyName: family) {
+					print("   \(name)")
+				}
+			}
+		}
 
     var body: some View {
         ZStack {
             VStack {
                 HStack {
                     if !isSelecting {
-                        Button("My Sizes", systemImage: "hand.raised") {
-                            vm.moveScreenState(to: .handSize)
-                        }
-                        .buttonStyle(.bordered)
-                        .foregroundStyle(Color.black)
-
-                        Spacer()
-
-                        Text("Projects")
-                            .font(.system(size: 20, weight: .semibold))
+						Text("Projects")
+                            .font(.appFont(size: 20, weight: .semibold))
 
                         Spacer()
 
                         Group {
+							Button("My Sizes", systemImage: "hand.raised") {
+								vm.moveScreenState(to: .handSize)
+							}
+							.buttonStyle(.bordered)
+							.foregroundStyle(Color.black)
+
                             Button("Select", systemImage: "checkmark.circle") {
                                 isSelecting.toggle()
                                 if !isSelecting {
@@ -134,7 +141,7 @@ struct HomeView: View {
                         }
                     } else {
                         Text("\(selectedItemIDs.count) Projects selected")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.appFont(size: 20, weight: .semibold))
 
                         Spacer()
 
@@ -265,7 +272,7 @@ struct HomeView: View {
                 VStack(alignment: .leading) {
                     HStack {
                         Text(fileOrFolder ? "File Name" : "Folder Name")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.appFont(size: 20, weight: .semibold))
                         Spacer()
                         Button {
                             isShowing = false
@@ -387,7 +394,7 @@ struct FileListHeader: View {
             Text("Share")
                 .frame(width: 60, alignment: .trailing)
         }
-        .font(.system(size: 13))
+        .font(.appFont(size: 13))
         .foregroundStyle(.secondary)
         .padding(.horizontal, 20)
         .padding(.vertical, 20)

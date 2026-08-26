@@ -50,24 +50,24 @@ struct SkinToneCameraResultView: View {
                 onRetake()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
                     .frame(width: 36, height: 36)
             }
             .buttonStyle(.glass)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("Match My Skin Tone")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.appFont(size: 17, weight: .semibold))
 
                 Text("Drag selector to a flat, well-lit area of your skin. Avoid heavy shadows or bright highlights.")
-                    .font(.system(size: 12))
+                    .font(.appFont(size: 12))
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
             Text(isDraggingSampler ? "Sampling…" : "Release to sample")
-                .font(.system(size: 12))
+                .font(.appFont(size: 12))
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 20)
@@ -114,7 +114,7 @@ struct SkinToneCameraResultView: View {
     private var sampler: some View {
         VStack(spacing: 6) {
             Text("#\(color.hexString)")
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .font(.appFont(size: 11, weight: .semibold, design: .monospaced))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(.black.opacity(0.6))
@@ -129,7 +129,7 @@ struct SkinToneCameraResultView: View {
                     .strokeBorder(.white, lineWidth: 3)
                     .frame(width: 44, height: 44)
                 Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.appFont(size: 12, weight: .bold))
                     .foregroundStyle(.white)
             }
             .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
@@ -170,7 +170,7 @@ struct SkinToneCameraResultView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Color")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
 
                 HStack(spacing: 10) {
                     RoundedRectangle(cornerRadius: 8)
@@ -179,11 +179,11 @@ struct SkinToneCameraResultView: View {
                         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.1)))
 
                     Text("#\(color.hexString)")
-                        .font(.system(size: 14, weight: .medium, design: .monospaced))
+                        .font(.appFont(size: 14, weight: .medium, design: .monospaced))
                 }
 
                 Text("Shade & Depth")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.appFont(size: 14, weight: .semibold))
                     .foregroundStyle(.secondary)
 
                 ShadeDepthPickerView(color: $color)

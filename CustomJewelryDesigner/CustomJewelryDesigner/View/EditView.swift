@@ -118,7 +118,7 @@ struct EditView: View {
                     "Design name",
                     text: $editedFileName
                 )
-                .font(.system(size: 20, weight: .semibold))
+                .font(.appFont(size: 20, weight: .semibold))
                 .textFieldStyle(.plain)
                 .frame(minWidth: 120, maxWidth: 250)
 
@@ -130,7 +130,7 @@ struct EditView: View {
 
             } else {
                 Text(editViewModel.designFile.name)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.appFont(size: 20, weight: .semibold))
 
                 Button {
                     editedFileName = editViewModel.designFile.name

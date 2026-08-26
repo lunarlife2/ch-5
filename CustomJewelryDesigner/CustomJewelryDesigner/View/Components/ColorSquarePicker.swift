@@ -83,7 +83,7 @@ struct ColorSquarePickerView: View {
         HStack(spacing: 10) {
             Button { showEyedropper = true } label: {
                 Image(systemName: "eyedropper")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)

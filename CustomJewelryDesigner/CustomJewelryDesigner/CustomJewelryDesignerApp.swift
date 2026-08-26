@@ -35,6 +35,7 @@ struct CustomJewelryDesignerApp: App {
 //			vm.sceneState.viewAssociated()
 //				.environment(vm)
             ContentView()
+				.environment(\.font, .appFont(size: 17, weight: .regular))
         }
         .modelContainer(sharedModelContainer)
     }

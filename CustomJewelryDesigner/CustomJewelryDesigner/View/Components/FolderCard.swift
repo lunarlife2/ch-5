@@ -13,39 +13,42 @@ struct FolderCard: View {
 
 	var body: some View {
 		VStack(alignment: .leading) {
-			ZStack{
+			ZStack(alignment: .bottom){
 				Rectangle()
-					.fill(Color.folder)
-					.rotationEffect(.degrees(-10))
+					.fill(Color.white)
 					.frame(width: 140, height: 140)
+					.border(Color.black, width: 1)
+					.offset(x: 10, y: -10)
+				
 				Rectangle()
-					.fill(Color.preview)
+					.fill(Color.white)
 					.frame(width: 140, height: 140)
-					.cornerRadius(10)
-					.padding(.bottom, 20)
-					.offset(y: 10)
+					.border(Color.black, width: 1)
 
 				preview
 					.resizable()
 					.scaledToFill()
 					.clipped()
 					.frame(width: 140, height: 140)
-					.cornerRadius(10)
-					.padding(.bottom, 20)
-					.offset(y: 10)
-                    .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+					.border(Color.black, width: 1)
 
 			}
 			.padding(.bottom, 20)
 			
 			Text(title)
-				.font(.system(size: 12, weight: .semibold))
+				.font(.appFont(size: 12, weight: .semibold))
 				.padding(.bottom, 5)
 		}
 		.frame(width: 160)
 	}
 }
 
+#Preview {
+	FolderCard(
+		preview: Image(.detail34),
+		title: "test my collection",
+	)
+}
 
 
 extension Image {

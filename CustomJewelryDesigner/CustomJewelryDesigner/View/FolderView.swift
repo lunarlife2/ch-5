@@ -75,7 +75,7 @@ struct FolderView: View {
 						Spacer()
 
 						Text(folder.name)
-							.font(.system(size: 20, weight: .semibold))
+							.font(.appFont(size: 20, weight: .semibold))
 
 						Spacer()
 
@@ -126,7 +126,7 @@ struct FolderView: View {
 						}
 					} else {
 						Text("\(selectedItemIDs.count) Projects selected")
-							.font(.system(size: 20, weight: .semibold))
+							.font(.appFont(size: 20, weight: .semibold))
 
 						Spacer()
 
@@ -247,7 +247,7 @@ struct FolderView: View {
 				VStack(alignment: .leading) {
 					HStack {
 						Text("File Name")
-							.font(.system(size: 20, weight: .semibold))
+							.font(.appFont(size: 20, weight: .semibold))
 						Spacer()
 						Button {
 							isShowing = false

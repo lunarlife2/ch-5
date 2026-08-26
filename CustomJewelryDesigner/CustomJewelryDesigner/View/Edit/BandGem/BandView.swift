@@ -22,7 +22,7 @@ struct BandView: View {
             // style
             VStack(alignment: .leading, spacing: 10) {
                 Text("Style")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
 
                 HStack {
                     ForEach(editViewModel.uniqueBandsByStyle, id: \.id) { band in
@@ -47,7 +47,7 @@ struct BandView: View {
                             )
 
                             Text(band.bandStyleID.bandStyleName)
-                                .font(.system(size: 12))
+                                .font(.appFont(size: 12))
                         }
                         .padding(.trailing, 17)
                         .onTapGesture {
@@ -70,14 +70,14 @@ struct BandView: View {
             // thickness
             VStack(alignment: .leading, spacing: 10) {
                 Text("Thickness")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
 
                 Slider(value: $sliderValue, in: 1...3, step: 1) {
                     Text("Thickness")
                 } minimumValueLabel: {
-                    Text("Thin").font(.system(size: 12))
+                    Text("Thin").font(.appFont(size: 12))
                 } maximumValueLabel: {
-                    Text("Thick").font(.system(size: 12))
+                    Text("Thick").font(.appFont(size: 12))
                 }
             }
             .padding(.trailing, 20)
@@ -88,7 +88,7 @@ struct BandView: View {
             // material
             VStack(alignment: .leading, spacing: 10) {
                 Text("Materials")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
 
                 HStack {
                     ForEach(BandMaterialEnum.allCases) { material in
@@ -123,7 +123,7 @@ struct BandView: View {
                             .opacity(isAvailable ? 1 : 0.4)
 
                             Text(material.title)
-                                .font(.system(size: 12))
+                                .font(.appFont(size: 12))
                         }
                         .padding(.trailing, 17)
                         .onTapGesture {

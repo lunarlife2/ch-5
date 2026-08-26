@@ -24,7 +24,7 @@ struct CoachMarkCard: View {
 
                 if let stepInfo {
                     Text("\(stepInfo.index) of \(stepInfo.total)")
-                        .font(.caption)
+                        .font(.appFont(size: 17))
                         .foregroundStyle(.secondary)
                 }
 
@@ -37,10 +37,10 @@ struct CoachMarkCard: View {
             }
 
             Text(title)
-                .font(.headline)
+                .font(.appFont(size: 24))
 
             Text(subtitle)
-                .font(.subheadline)
+                .font(.appFont(size: 17))
                 .foregroundStyle(.secondary)
 
             if let onNext {

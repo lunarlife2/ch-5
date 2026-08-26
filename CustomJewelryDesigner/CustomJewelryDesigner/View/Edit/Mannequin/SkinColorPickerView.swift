@@ -86,7 +86,7 @@ struct SkinColorPickerView: View {
                         if filtered.count == 6 { applyHexText() }
                     }
             }
-            .font(.system(size: 16, weight: .medium, design: .monospaced))
+            .font(.appFont(size: 16, weight: .medium, design: .monospaced))
             .padding(.horizontal, 12).padding(.vertical, 10)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -110,7 +110,7 @@ struct SkinColorPickerView: View {
                 Spacer()
                 Image(systemName: "chevron.right").foregroundStyle(.secondary)
             }
-            .font(.system(size: 15, weight: .semibold))
+            .font(.appFont(size: 15, weight: .semibold))
             .padding(.horizontal, 14).padding(.vertical, 12)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))

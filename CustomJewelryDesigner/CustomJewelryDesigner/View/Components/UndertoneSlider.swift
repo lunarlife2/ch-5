@@ -20,7 +20,7 @@ struct UndertoneSliderView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Undertone")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.appFont(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             GeometryReader { geo in
@@ -47,9 +47,9 @@ struct UndertoneSliderView: View {
             .frame(height: 26)
 
             HStack {
-                Text("Warm").font(.caption).foregroundStyle(.secondary)
+                Text("Warm").font(.appFont(size: 17)).foregroundStyle(.secondary)
                 Spacer()
-                Text("Cool").font(.caption).foregroundStyle(.secondary)
+                Text("Cool").font(.appFont(size: 17)).foregroundStyle(.secondary)
             }
         }
         .onAppear { sync(from: color) }

@@ -17,7 +17,7 @@ struct MannequinView: View {
             //choose finger
             VStack {
                 Text("Choose Finger")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
                     .padding(.horizontal, 30)
                 
                 Picker("", selection: $selectedFinger) {
@@ -32,7 +32,7 @@ struct MannequinView: View {
             //choose skin color
             VStack(alignment: .leading, spacing: 12) {
                 Text("Choose Skin Color")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
                     .padding(.horizontal, 30)
 
                 skinColorButton
@@ -65,13 +65,13 @@ struct MannequinView: View {
                     .frame(width: 32, height: 32)
 
                 Text("#\(viewModel.skinColor.hexString)")
-                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .font(.appFont(size: 14, weight: .medium, design: .monospaced))
                     .foregroundStyle(.primary)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.appFont(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 14)

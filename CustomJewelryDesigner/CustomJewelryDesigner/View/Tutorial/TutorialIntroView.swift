@@ -39,13 +39,13 @@ struct TutorialIntroView: View {
                         .frame(maxWidth: .infinity, alignment: .topTrailing)
 
                     Text("Design your first ring")
-                        .font(.system(size: 20, weight: .regular))
+                        .font(.appFont(size: 20, weight: .regular))
 
                     Button {
                         onStart()
                     } label: {
                         Text("Start Tutorial")
-                            .font(.system(size: 17))
+                            .font(.appFont(size: 17))
                             .padding(.horizontal, 44)
                             .padding(.vertical, 10)
                     }

@@ -29,7 +29,7 @@ struct GlassScaleButton<Label: View>: View {
             } label: {
                 label()
                     .foregroundStyle(Color.black)
-                    .font(.system(size: 27, weight: .medium))
+                    .font(.appFont(size: 27, weight: .medium))
                     .frame(width: 30, height: 40)
             }
             .buttonStyle(.glassProminent)

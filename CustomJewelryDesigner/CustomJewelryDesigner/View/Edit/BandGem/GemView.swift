@@ -24,7 +24,7 @@ struct GemView: View {
             //shape
             VStack(alignment: .leading) {
                 Text("Shape")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
 
                 HStack {
                     ForEach(editViewModel.gemShapeOptions, id: \.self) { shape in
@@ -67,7 +67,7 @@ struct GemView: View {
                             )
 
                             Text(shape.capitalized)
-                                .font(.system(size: 12))
+                                .font(.appFont(size: 12))
                         }
                         .padding(.trailing, 15)
                         .onTapGesture {
@@ -84,7 +84,7 @@ struct GemView: View {
             //material
             VStack(alignment: .leading) {
                 Text("Materials")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
 
                 HStack {
                     ForEach(editViewModel.gemMaterialOptions, id: \.self) { material in
@@ -133,7 +133,7 @@ struct GemView: View {
                             .opacity(isAvailable ? 1 : 0.4)
 
                             Text(material.capitalized)
-                                .font(.system(size: 12))
+                                .font(.appFont(size: 12))
                         }
                         .padding(.trailing, 15)
                         .onTapGesture {

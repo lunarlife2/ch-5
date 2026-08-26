@@ -69,7 +69,7 @@ struct GhostGestureHint: View {
 
     private var fingerprint: some View {
         Image(systemName: "hand.point.up.left.fill")
-            .font(.system(size: 44))
+            .font(.appFont(size: 44))
             .foregroundStyle(.white)
             .shadow(radius: 6)
     }

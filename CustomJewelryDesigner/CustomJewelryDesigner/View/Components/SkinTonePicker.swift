@@ -16,7 +16,7 @@ struct SkinTonePickerView: View {
         VStack(alignment: .leading, spacing: 14) {
             if showShadeDepth {
                 Text("Shade & Depth")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.appFont(size: 14, weight: .semibold))
                     .foregroundStyle(.secondary)
 
                 ShadeDepthPickerView(color: $color, onCommit: onCommit)

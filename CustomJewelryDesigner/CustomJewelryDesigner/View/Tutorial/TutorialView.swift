@@ -65,7 +65,7 @@ struct TutorialView: View {
                         .buttonStyle(.bordered)
                         .foregroundStyle(Color.black)
                     Text("Projects")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.appFont(size: 20, weight: .semibold))
                     Spacer()
                     Button("Select", systemImage: "checkmark.circle") {}
                         .foregroundStyle(Color.black).buttonStyle(.bordered).disabled(true)

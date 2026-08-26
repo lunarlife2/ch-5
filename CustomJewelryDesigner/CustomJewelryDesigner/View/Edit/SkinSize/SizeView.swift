@@ -96,7 +96,7 @@ struct SizeView: View {
         VStack {
             HStack {
                 Text(m.displaySize)
-                    .font(.system(size: 34, weight: .black))
+                    .font(.appFont(size: 34, weight: .black))
                 Spacer()
                 Button {
                     bandGemViewModel.selectedRingSizeSystem = m.ringSizeSystem

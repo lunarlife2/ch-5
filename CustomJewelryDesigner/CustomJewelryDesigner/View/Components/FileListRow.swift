@@ -24,7 +24,7 @@ struct FileListRow: View {
 		HStack(spacing: 16) {
 			if isSelecting {
 				Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-					.font(.system(size: 18))
+					.font(.appFont(size: 18))
 					.foregroundStyle(isSelected ? Color.black : Color.black.opacity(0.5))
 			}
 
@@ -35,12 +35,12 @@ struct FileListRow: View {
 				.clipShape(RoundedRectangle(cornerRadius: 8))
 
 			Text(title)
-				.font(.system(size: 16, weight: .semibold))
+				.font(.appFont(size: 16, weight: .semibold))
 				.foregroundStyle(Color.black)
 				.frame(width: ListColumns.name, alignment: .leading)
 
 			Text(updatedAtText)
-				.font(.system(size: 14))
+				.font(.appFont(size: 14))
 				.foregroundStyle(.secondary)
 				.frame(maxWidth: .infinity, alignment: .center)
 

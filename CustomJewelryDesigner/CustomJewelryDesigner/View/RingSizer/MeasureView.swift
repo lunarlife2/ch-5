@@ -91,7 +91,7 @@ struct MeasureView: View {
 		VStack(spacing: 20) {
 			ZStack {
 				Text("Measure My Ring Size")
-					.font(.title3.bold())
+					.font(.appFont(size: 24, weight: .bold))
 
 				HStack {
 					GlassButton {
@@ -142,7 +142,7 @@ struct MeasureView: View {
 				.disabled(!canStep(by: -1, viewModel: viewModel))
 
 				Text(currentSizeLabel(viewModel))
-					.font(.system(size: 34, weight: .black, design: .rounded))
+					.font(.appFont(size: 34, weight: .black, design: .rounded))
 					.monospacedDigit()
 					.frame(minWidth: 70)
 
@@ -192,7 +192,7 @@ struct MeasureView: View {
 //						snapToNearestSize(viewModel)
 //					} label: {
 //						Text("Update Size")
-//							.font(.system(size: 19, weight: .semibold))
+//							.font(.appFont(size: 19, weight: .semibold))
 //							.padding(10)
 //					}
 //					.buttonStyle(.glass)
@@ -209,7 +209,7 @@ struct MeasureView: View {
 					onBack()
 				} label: {
 					Text("Apply")
-						.font(.system(size: 19, weight: .semibold))
+						.font(.appFont(size: 19, weight: .semibold))
 						.padding(10)
 				}
 				.buttonStyle(.glassProminent)
@@ -267,7 +267,7 @@ struct MeasureView: View {
 				.padding(.vertical, 4)
 				.background(Capsule().fill(Color(uiColor: .systemGray6)))
 		}
-		.font(.subheadline)
+		.font(.appFont(size: 17))
 	}
 
 	private struct ScreenReader: UIViewRepresentable {

@@ -18,7 +18,7 @@ struct CreateFileSheet: View {
         VStack(alignment: .leading) {
             HStack {
                 Text("File Name")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.appFont(size: 20, weight: .semibold))
                 Spacer()
                 Button { onCancel() } label: {
                     Image(systemName: "xmark")

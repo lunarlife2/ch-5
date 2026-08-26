@@ -114,7 +114,7 @@ struct OrientationGizmoView: View {
                 Circle().stroke(color.opacity(isHovered ? 1.0 : max(opacity, 0.45)), lineWidth: isHovered ? 2 : 1)
                 if showLabel {
                     Text(title)
-                        .font(.system(size: title.count > 1 ? 9 : 13, weight: .bold, design: .rounded))
+                        .font(.appFont(size: title.count > 1 ? 9 : 13, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
             }

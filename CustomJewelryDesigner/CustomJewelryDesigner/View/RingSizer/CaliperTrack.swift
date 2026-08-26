@@ -44,7 +44,7 @@ struct CaliperTrack: View {
 					.frame(height: 294)
 					.overlay(alignment: blueOnRight ? .leading : .trailing) {
 						Text("Rest your \nfinger\nagainst \nthe outer ledge")
-							.font(.caption)
+							.font(.appFont(size: 14))
 							.padding(.horizontal, 2)
 							.foregroundStyle(.secondary)
 							.multilineTextAlignment(.center)
@@ -69,7 +69,7 @@ struct CaliperTrack: View {
 					.shadow(radius: 10, y: 10)
 					.overlay(alignment: blueOnRight ? .topTrailing : .topLeading) {
 						Image(systemName: "arrow.left.and.right.circle.fill")
-							.font(.title3)
+							.font(.appFont(size: 17))
 							.foregroundStyle(.white.opacity(0.9))
 							.padding(10)
 					}
@@ -78,7 +78,7 @@ struct CaliperTrack: View {
 							"Drag until it fits snugly",
 							systemImage: "arrow.left.and.right"
 						)
-						.font(.caption)
+						.font(.appFont(size: 14))
 						.foregroundStyle(.white)
 						.padding(.bottom, 16)
 					}

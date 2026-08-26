@@ -50,9 +50,9 @@ struct HandProfileView: View {
                 Spacer()
                 if let m {
                     Text(m.displaySize)
-                        .fontWeight(.semibold)
+						.font(.appFont(size: 17, weight: .bold))
                     Text(m.ringSizeSystem.title)
-                        .font(.caption)
+                        .font(.appFont(size: 17))
                         .foregroundStyle(.secondary)
                 } else {
                     Text("Not measured")

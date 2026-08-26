@@ -24,17 +24,17 @@ struct HandSizeView: View {
 			ZStack {
 				VStack {
 					Text("Hand Profile")
-						.font(.title)
+						.font(.appFont(size: 28, weight: .bold))
 					Text(
 						"Save your measurements and tone for quick virtual try-ons."
 					)
-					.font(.system(size: 17, weight: .regular))
+					.font(.appFont(size: 17, weight: .regular))
 					.foregroundStyle(Color.gray)
 
 					Spacer()
 
 					Text("Tap a finger to add or edit a size")
-						.font(.system(size: 17, weight: .regular))
+						.font(.appFont(size: 17, weight: .regular))
 						.foregroundStyle(Color.gray)
 
 					Spacer()
@@ -143,7 +143,7 @@ struct HandView: View {
 				.frame(width: 450, height: 600, alignment: .bottom)
 				.overlay(alignment: .bottomLeading) {
 					Text(hand == .left ? "L" : "R").foregroundStyle(.secondary)
-						.font(.system(size: 32))
+						.font(.appFont(size: 32))
 						.padding(.vertical, 160)
 						.padding(.horizontal, hand == .left ? 180 : 210)
 				}
@@ -234,7 +234,7 @@ struct FingerButton: View {
 							.fontWeight(.semibold)
 					}
 					Text(m.diameterMM.description)
-						.font(.caption)
+						.font(.appFont(size: 17))
 						.foregroundStyle(.secondary)
 				} else {
 					Text("-").font(.subheadline.weight(.semibold))

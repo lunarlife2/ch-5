@@ -18,46 +18,44 @@ struct HomeCard: View {
 		VStack(alignment: .leading) {
 			ZStack(alignment: .topTrailing) {
 				Rectangle()
-					.fill(Color.preview)
+					.fill(Color.white)
 					.frame(width: 160, height: 160)
-					.cornerRadius(10)
-				
+									
 				preview
 					.resizable()
 					.scaledToFill()
 					.clipped()
 					.frame(width: 160, height: 160)
-					.cornerRadius(10)
+					.border(Color.black)
 
                 if isSelecting {
                     Image(
                         systemName: isSelected
                             ? "checkmark.circle.fill" : "circle"
                     )
-                    .font(.system(size: 22))
+                    .font(.appFont(size: 22))
                     .foregroundStyle(
-                        isSelected ? Color.appPrimary : Color.white
+                        isSelected ? Color.appPrimary : Color.black
                     )
                     .background(
                         Circle()
-                            .fill(isSelected ? Color.white : Color.black.opacity(0.25))
+                            .fill(isSelected ? Color.white : Color.clear)
                             .frame(width: 22, height: 22)
                     )
                     .padding(8)
                 }
             }
-            .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
             .padding(.bottom, 12)
 
             Text(title)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.appFont(size: 12, weight: .semibold))
                 .padding(.bottom, 4)
             Text(
                 updatedAt.formatted(
                     .dateTime.month(.abbreviated).day(.twoDigits).year()
                 )
             )
-            .font(.system(size: 10, weight: .regular))
+            .font(.appFont(size: 10, weight: .regular))
             .foregroundStyle(.secondary)
         }
         .frame(width: 160)
@@ -68,6 +66,6 @@ struct HomeCard: View {
 	HomeCard(
 		preview: Image(.detail34),
 		title: "test my collection",
-		updatedAt: .now, isSelecting: true, isSelected: true
+		updatedAt: .now, isSelecting: true, isSelected: false
 	)
 }

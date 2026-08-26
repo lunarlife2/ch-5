@@ -87,7 +87,7 @@ struct SkinToneCameraView: View {
         } else {
             VStack(spacing: 12) {
                 Image(systemName: "camera.fill")
-                    .font(.system(size: 36))
+                    .font(.appFont(size: 36))
                 Text("Camera access is needed to match your skin tone.")
                     .multilineTextAlignment(.center)
                 Button("Open Settings") {
@@ -125,7 +125,7 @@ struct SkinToneCameraView: View {
                 dismiss()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.appFont(size: 16, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(.black.opacity(0.35))
@@ -136,7 +136,7 @@ struct SkinToneCameraView: View {
             Spacer()
 
             Text("Match My Skin Tone")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.appFont(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
@@ -157,9 +157,9 @@ struct SkinToneCameraView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Tips")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.appFont(size: 15, weight: .semibold))
                         Text("For the most accurate results")
-                            .font(.system(size: 12))
+                            .font(.appFont(size: 12))
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -186,7 +186,7 @@ struct SkinToneCameraView: View {
                 withAnimation { showTips = true }
             } label: {
                 Image(systemName: "info.circle.fill")
-                    .font(.system(size: 22))
+                    .font(.appFont(size: 22))
                     .foregroundStyle(.white)
                     .frame(width: 40, height: 40)
                     .background(.black.opacity(0.35))
@@ -202,9 +202,9 @@ struct SkinToneCameraView: View {
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.appFont(size: 13, weight: .medium))
                 Text(subtitle)
-                    .font(.system(size: 11))
+                    .font(.appFont(size: 11))
                     .foregroundStyle(.secondary)
             }
         }
@@ -249,7 +249,7 @@ struct SkinToneCameraView: View {
     private func controlDot(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.appFont(size: 14, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
                 .background(.white.opacity(0.18))
@@ -268,7 +268,7 @@ struct SkinToneCameraView: View {
                 .overlay(Circle().strokeBorder(.white, lineWidth: 2))
         } else {
             Image(systemName: "photo.on.rectangle")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.appFont(size: 16, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 40, height: 40)
                 .background(.white.opacity(0.18))

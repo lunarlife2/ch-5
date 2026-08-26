@@ -17,7 +17,7 @@ struct RecentlyMatchedRow: View {
         if !colors.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Recently Matched")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.appFont(size: 14, weight: .semibold))
                     .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     ForEach(colors, id: \.hexString) { recentColor in
