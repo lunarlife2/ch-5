@@ -794,17 +794,60 @@ final class JewelrySceneController {
         )
     }
     
-    func rotateSelectedGemAroundViewYAxis(byDegrees delta: Float) {
+//    func rotateSelectedGemAroundViewYAxis(byDegrees delta: Float) {
+//        guard let entity = gizmoController.selectedEntity,
+//              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+//            return
+//        }
+//        
+//        let cameraUpWorld = cameraController.pivot.orientation(relativeTo: nil).act(SIMD3<Float>(1, 0, 0))
+//        
+//        let rotation = simd_quatf(angle: delta * .pi / 180, axis: normalize(cameraUpWorld))
+//        let currentWorldOrientation = entity.orientation(relativeTo: nil)
+//        entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
+//        gizmoController.updateGizmoTransform()
+//    }
+    
+    func rotateSelectedGemAroundWorldYAxis(byDegrees delta: Float) {
         guard let entity = gizmoController.selectedEntity,
               entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
             return
         }
-        
-        let cameraUpWorld = cameraController.pivot.orientation(relativeTo: nil).act(SIMD3<Float>(1, 0, 0))
-        
-        let rotation = simd_quatf(angle: delta * .pi / 180, axis: normalize(cameraUpWorld))
+
+        let worldYAxis = SIMD3<Float>(0, 1, 0)
+
+        let rotation = simd_quatf(angle: delta * .pi / 180, axis: worldYAxis)
         let currentWorldOrientation = entity.orientation(relativeTo: nil)
         entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
+        gizmoController.updateGizmoTransform()
+    }
+    
+    func rotateSelectedGem(byDegrees delta: Float) {
+        guard let entity = gizmoController.selectedEntity,
+              entity.components[GestureComponent.self]?.typeJewelry == .gemstone else {
+            return
+        }
+
+        let snapPoint = entity.parent
+        let snapComponent = snapPoint?.components[SnapPointComponent.self]
+
+        if let snapPoint, let snapComponent {
+            let localYRotation = simd_quatf(angle: delta * .pi / 180, axis: SIMD3<Float>(0, 1, 0))
+            entity.orientation = entity.orientation * localYRotation
+            let parentWorldScale = snapPoint.scale(relativeTo: nil)
+            let standoffLocal = snapComponent.standoffDistance / parentWorldScale.z
+            let boundsInSnap = entity.visualBounds(relativeTo: snapPoint)
+            let gemHalfDepth = boundsInSnap.extents.z / 2
+            entity.position = SIMD3<Float>(0, 0, standoffLocal + gemHalfDepth)
+        } else {
+            let rotationAxis = normalize(
+                cameraController.pivot.orientation(relativeTo: nil).act(SIMD3<Float>(0, 1, 0))
+            )
+            let rotation = simd_quatf(angle: delta * .pi / 180, axis: rotationAxis)
+            let currentWorldOrientation = entity.orientation(relativeTo: nil)
+            entity.setOrientation(rotation * currentWorldOrientation, relativeTo: nil)
+        }
+
         gizmoController.updateGizmoTransform()
     }
     

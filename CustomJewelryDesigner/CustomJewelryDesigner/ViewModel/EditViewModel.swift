@@ -1023,7 +1023,7 @@ final class EditViewModel {
         }
         
         let deltaDegrees = deltaAngleRadians * 180 / .pi
-        scene.rotateSelectedGemAroundViewXAxis(byDegrees: deltaDegrees)
+        scene.rotateSelectedGem(byDegrees: deltaDegrees)
         markDirty()
     }
     
