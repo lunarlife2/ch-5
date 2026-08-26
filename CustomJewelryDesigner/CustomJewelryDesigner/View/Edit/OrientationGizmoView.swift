@@ -13,6 +13,7 @@ import simd
 struct OrientationGizmoView: View {
 
     let orientation: simd_quatf
+    let touchTracker: TouchCountViewModel
     @Binding var selectedAxis: ViewAxis?
 
     let onAxisSelected: (ViewAxis, simd_quatf) -> Void
@@ -68,21 +69,29 @@ struct OrientationGizmoView: View {
     }
 
     private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 0)
-            .onChanged { value in
-                if viewModel.dragStartLocation == nil {
-                    viewModel.dragStartLocation = value.startLocation
-                    viewModel.tapSnapOverride = nil
-                    onRotateBegin()
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    guard touchTracker.activeTouchCount <= 1 else {
+                        if viewModel.dragStartLocation != nil {
+                            viewModel.dragStartLocation = nil
+                            onRotateEnd()
+                        }
+                        return
+                    }
+
+                    if viewModel.dragStartLocation == nil {
+                        viewModel.dragStartLocation = value.startLocation
+                        viewModel.tapSnapOverride = nil
+                        onRotateBegin()
+                    }
+                    let start = viewModel.dragStartLocation ?? value.startLocation
+                    onRotate(value.location.x - start.x, value.location.y - start.y)
                 }
-                let start = viewModel.dragStartLocation ?? value.startLocation
-                onRotate(value.location.x - start.x, value.location.y - start.y)
-            }
-            .onEnded { _ in
-                viewModel.dragStartLocation = nil
-                onRotateEnd()
-            }
-    }
+                .onEnded { _ in
+                    viewModel.dragStartLocation = nil
+                    onRotateEnd()
+                }
+        }
 
     private func handleAxisTap(_ axis: ViewAxis) {
         selectedAxis = axis
@@ -114,7 +123,7 @@ struct OrientationGizmoView: View {
                 Circle().stroke(color.opacity(isHovered ? 1.0 : max(opacity, 0.45)), lineWidth: isHovered ? 2 : 1)
                 if showLabel {
                     Text(title)
-                        .font(.appFont(size: title.count > 1 ? 9 : 13, weight: .bold, design: .rounded))
+                        .font(.system(size: title.count > 1 ? 9 : 13, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
             }

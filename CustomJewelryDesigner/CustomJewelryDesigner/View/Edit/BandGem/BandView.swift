@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BandView: View {
     @Environment(EditViewModel.self) private var editViewModel
+    @Environment(TutorialController.self) private var tutorialController
     @State private var selectedStyle: BandStyle?
     @State private var sliderValue: Double = 1
     @State private var selectedMaterial: BandMaterialEnum = .yellowGold
@@ -60,6 +61,7 @@ struct BandView: View {
                                     thickness: currentThicknessLabel,
                                     material: selectedMaterial
                                 )
+                                tutorialController.reportUserAction(.changedBand)
                             }
                         }
                     }
@@ -83,6 +85,7 @@ struct BandView: View {
                 }
             }
             .padding(.trailing, 20)
+            
 
             Divider()
                 .padding(.trailing, 20)
@@ -138,6 +141,7 @@ struct BandView: View {
                                     thickness: currentThicknessLabel,
                                     material: material
                                 )
+                                tutorialController.reportUserAction(.changedBand)
                             }
                         }
                     }
@@ -165,6 +169,7 @@ struct BandView: View {
             let thickness = editViewModel.thicknessLabel(forSliderValue: newValue)
             Task {
                 await editViewModel.selectBand(style: style, thickness: thickness, material: selectedMaterial)
+                tutorialController.reportUserAction(.changedBand)
             }
         }
     }

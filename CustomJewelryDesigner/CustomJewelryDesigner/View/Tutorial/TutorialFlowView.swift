@@ -17,10 +17,9 @@ struct TutorialFlowView: View {
 
     private enum Phase {
         case intro
-        case creatingFile
         case editing(DesignFile)
     }
-
+    @State private var tutorialFinished = false
     @State private var phase: Phase = .intro
     @State private var tutorialViewModel = TutorialViewModel()
     @State private var tutorial = TutorialController()
@@ -34,41 +33,38 @@ struct TutorialFlowView: View {
                     tutorialViewModel: tutorialViewModel,
                     onCreateFile: { name in
                         let store = DesignFileStore(modelContext: modelContext)
-                        let file = store.createDesignFile(name: name)
+                        let file = store.createDesignFile(name: "Engagement Ring")
                         tutorial.start()
                         phase = .editing(file)
                     },
                     showsCreateCoachMark: false
                 )
                 TutorialIntroView {
-                    phase = .creatingFile
+                    let store = DesignFileStore(modelContext: modelContext)
+                    let file = store.createDesignFile(name: "Engagement Ring")
+                    tutorial.start()
+                    phase = .editing(file)
                 }
             }
 
-        case .creatingFile:
-            TutorialView(
-                onboarding: onboarding,
-                tutorialViewModel: tutorialViewModel,
-                onCreateFile: { name in
-                    let store = DesignFileStore(modelContext: modelContext)
-                    let file = store.createDesignFile(name: name)
-                    tutorial.start()
-                    phase = .editing(file)
-                },
-                showsCreateCoachMark: true
-            )
-
         case .editing(let file):
-            EditView(designFile: file, tutorialController: tutorial)
-                .overlay {
+            EditView(
+                designFile: file,
+                tutorialViewModel: tutorialFinished ? nil : tutorialViewModel,
+                tutorialController: tutorial
+            )
+            .overlay {
+                if !tutorialFinished {
                     TutorialOverlayView(
                         controller: tutorial,
                         tutorialViewModel: tutorialViewModel
                     ) {
-                        vm.moveScreenState(to: .edit(file))
+                        tutorial.advance()
+                        tutorialFinished = true
                         onboarding.hasCompletedTutorial = true
                     }
                 }
+            }
         }
     }
 }

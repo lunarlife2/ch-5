@@ -18,8 +18,8 @@ struct TwoFingerTransformGesture: UIGestureRecognizerRepresentable {
     let entityProvider: (CGPoint) -> Entity?
     
     let editViewModel: EditViewModel
-    
     let sceneController: JewelrySceneController
+    let tutorial: TutorialController
     
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
         Coordinator()
@@ -165,6 +165,7 @@ struct TwoFingerTransformGesture: UIGestureRecognizerRepresentable {
             sceneController
                     .gizmoController
                     .updateGizmoTransform()
+            tutorial.reportUserAction(.scaled)
             
         case .undetermined:
             break
@@ -225,7 +226,6 @@ struct TwoFingerTransformGesture: UIGestureRecognizerRepresentable {
         entity.scale = coordinator.startScale * clampedMagnification
         
         entity.gestureStateComponent = state
-        //        editViewModel.reapplyAttachedGemScales()
     }
     
     private func handleEnded(_ recognizer: TwoFingerTransformRecognizer, context: Context) {

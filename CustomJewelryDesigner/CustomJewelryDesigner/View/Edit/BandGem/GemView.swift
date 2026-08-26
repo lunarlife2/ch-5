@@ -9,7 +9,8 @@ import SwiftUI
 
 struct GemView: View {
     @Environment(EditViewModel.self) private var editViewModel
-
+    @Environment(TutorialController.self) private var tutorialController
+    
     @State private var selectedShape: String?
     @State private var selectedMaterial: String?
     
@@ -24,7 +25,7 @@ struct GemView: View {
             //shape
             VStack(alignment: .leading) {
                 Text("Shape")
-                    .font(.appFont(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
 
                 HStack {
                     ForEach(editViewModel.gemShapeOptions, id: \.self) { shape in
@@ -45,7 +46,6 @@ struct GemView: View {
                                     image
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(width: 80, height: 80)
 
                                 case .failure:
                                     Image(
@@ -68,7 +68,7 @@ struct GemView: View {
                             )
 
                             Text(shape.capitalized)
-                                .font(.appFont(size: 12))
+                                .font(.system(size: 12))
                         }
                         .padding(.trailing, 15)
                         .onTapGesture {
@@ -85,7 +85,7 @@ struct GemView: View {
             //material
             VStack(alignment: .leading) {
                 Text("Materials")
-                    .font(.appFont(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
 
                 HStack {
                     ForEach(editViewModel.gemMaterialOptions, id: \.self) { material in
@@ -108,7 +108,6 @@ struct GemView: View {
                                     image
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(width: 80, height: 80)
 
                                 case .failure:
                                     Image(
@@ -135,7 +134,7 @@ struct GemView: View {
                             .opacity(isAvailable ? 1 : 0.4)
 
                             Text(material.capitalized)
-                                .font(.appFont(size: 12))
+                                .font(.system(size: 12))
                         }
                         .padding(.trailing, 15)
                         .onTapGesture {
@@ -201,10 +200,9 @@ struct GemView: View {
         Task {
             await editViewModel.selectGem(shape: shape, material: material)
             isAdding = false
-            // reset so picking the next gem starts from a clean slate,
-            // instead of leaving a stale combo ready to be re-added
             selectedShape = nil
             selectedMaterial = nil
+            tutorialController.reportUserAction(.addedGem)
         }
     }
 }

@@ -21,8 +21,8 @@ struct TutorialIntroView: View {
         ZStack {
             Color.black.opacity(0.4).ignoresSafeArea()
             
-            HStack(spacing: 24) {
-                Text("Image snippet of workshop/ring")
+            HStack() {
+                Image("onBoardingImage")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(
                         Color.tutorialPrimary,
@@ -34,18 +34,18 @@ struct TutorialIntroView: View {
                         )
                     )
 
-                VStack(spacing: 40) {
+                VStack(spacing: 60) {
                     Image(systemName: "xmark")
                         .frame(maxWidth: .infinity, alignment: .topTrailing)
 
                     Text("Design your first ring")
-                        .font(.appFont(size: 20, weight: .regular))
+                        .font(.system(size: 20, weight: .regular))
 
                     Button {
                         onStart()
                     } label: {
                         Text("Start Tutorial")
-                            .font(.appFont(size: 17))
+                            .font(.system(size: 17))
                             .padding(.horizontal, 44)
                             .padding(.vertical, 10)
                     }

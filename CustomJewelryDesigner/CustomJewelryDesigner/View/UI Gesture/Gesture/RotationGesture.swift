@@ -16,7 +16,8 @@ struct RingRotationGesture {
     let editViewModel: EditViewModel
     let scene: JewelrySceneController
     private let rotationSensitivity: Float = 0.01
-
+    let tutorial: TutorialController
+    
     var rotateGesture: some Gesture {
         DragGesture(minimumDistance: 1, coordinateSpace: .global)
             .targetedToAnyEntity()
@@ -119,9 +120,11 @@ struct RingRotationGesture {
                 switch gc.typeJewelry {
                 case .band:
                     target = scene.bandAnchor
+                    tutorial.reportUserAction(.rotatedBand)
 
                 case .handMannequin:
                     target = scene.mannequin
+                    tutorial.reportUserAction(.rotatedGizmo)
 
                 default:
                     return
